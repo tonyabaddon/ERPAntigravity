@@ -58,7 +58,7 @@ export default function ComponentPicker({ onPick, onClose }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama atau SKU…"
-            className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+            className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
           />
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-2">

@@ -151,7 +151,7 @@ export default function PromoInlineEdit({
           value={discountValue}
           onChange={(e) => setDiscountValue(e.target.value)}
           placeholder={discountType === 'PERCENT' ? 'Misal 10' : 'Misal 5000'}
-          className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+          className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
         />
         {discountType === 'PERCENT' && <span className="text-xs text-slate-500">%</span>}
       </div>
@@ -174,7 +174,7 @@ export default function PromoInlineEdit({
             value={expiryDate}
             min={wibDateString()}
             onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+            className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
           />
         )}
       </div>

@@ -124,7 +124,7 @@ export default function CoAPicker({
           onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full border border-slate-200 rounded px-3 py-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:bg-slate-50 disabled:cursor-not-allowed"
+          className="w-full border border-slate-200 rounded px-3 py-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:bg-slate-50 disabled:cursor-not-allowed"
         />
         {value && !disabled && (
           <button

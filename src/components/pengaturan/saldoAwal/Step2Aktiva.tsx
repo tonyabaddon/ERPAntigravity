@@ -211,7 +211,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
               value={data.piutang.aggregate_amount}
               onChange={(n) => onChange({ ...data, piutang: { ...data.piutang, aggregate_amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
             <span className="text-[12px] text-slate-400">{formatIDR(data.piutang.aggregate_amount)}</span>
@@ -369,7 +369,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                   value={data.persediaan.final_amount}
                   onChange={(n) => onChange({ ...data, persediaan: { ...data.persediaan, final_amount: n } })}
                   allowDecimal={false}
-                  className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white"
+                  className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
                   placeholder="0"
                 />
                 <span className="text-[12px] text-slate-400">{formatIDR(data.persediaan.final_amount)}</span>
@@ -384,7 +384,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                     persediaan: { ...data.persediaan, override_reason: e.target.value || null },
                   })}
                   placeholder="Misal: Nilai stok dari laporan fisik opname"
-                  className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white"
+                  className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
                 />
               </div>
             </div>
@@ -405,7 +405,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
               value={data.aktiva_tetap.amount}
               onChange={(n) => onChange({ ...data, aktiva_tetap: { ...data.aktiva_tetap, amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
             <span className="text-[12px] text-slate-400">{formatIDR(data.aktiva_tetap.amount)}</span>
@@ -417,7 +417,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
               value={data.aktiva_tetap.notes}
               onChange={(e) => onChange({ ...data, aktiva_tetap: { ...data.aktiva_tetap, notes: e.target.value } })}
               placeholder="Misal: Rak gudang, forklift, PC toko"
-              className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+              className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             />
           </div>
         </div>

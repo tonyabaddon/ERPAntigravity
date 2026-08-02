@@ -175,7 +175,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
               value={data.hutang_usaha.aggregate_amount}
               onChange={(n) => onChange({ ...data, hutang_usaha: { ...data.hutang_usaha, aggregate_amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
             <span className="text-[12px] text-slate-400">{formatIDR(data.hutang_usaha.aggregate_amount)}</span>

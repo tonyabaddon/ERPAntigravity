@@ -146,7 +146,7 @@ export default function COAEditModal({
               </label>
               <input
                 type="text"
-                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
                 placeholder="Nama akun"
@@ -162,7 +162,7 @@ export default function COAEditModal({
                 Deskripsi
               </label>
               <textarea
-                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold resize-none"
+                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 resize-none"
                 rows={3}
                 value={description}
                 onChange={e => setDescription(e.target.value)}

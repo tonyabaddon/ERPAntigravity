@@ -350,7 +350,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
               value={newExpiresAt}
               onChange={(e) => setNewExpiresAt(e.target.value)}
               disabled={submitting}
-              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
               aria-label="Masa aktif baru"
             />
             {newExpiresAt && !isDateValid && (
@@ -375,7 +375,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                 setNewPlanCode(e.target.value as '' | 'STARTER' | 'PRO' | 'PREMIUM')
               }
               disabled={submitting}
-              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
               aria-label="Ganti paket"
             >
               <option value="">— Tidak diganti —</option>
@@ -401,7 +401,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
               maxLength={500}
               rows={3}
               placeholder="Contoh: renewal 1 tahun, bayar transfer BCA 5 Jul 2026"
-              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
               aria-label="Catatan internal"
             />
             <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>
@@ -454,7 +454,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                     onChange={(e) => setPayAmount(e.target.value)}
                     disabled={submitting}
                     placeholder="Contoh: 3600000"
-                    className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+                    className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
                     aria-label="Nominal pembayaran"
                     data-testid="renew-pay-amount"
                   />
@@ -480,7 +480,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                       setPayEwallet('');
                     }}
                     disabled={submitting}
-                    className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+                    className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
                     aria-label="Metode pembayaran (rantai)"
                     data-testid="renew-pay-method"
                   >
@@ -504,7 +504,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                       value={payBankName}
                       onChange={(e) => setPayBankName(e.target.value as BankName)}
                       disabled={submitting}
-                      className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+                      className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
                       aria-label="Bank (rantai)"
                     >
                       <option value="">— Pilih bank —</option>
@@ -532,7 +532,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                       value={payEwallet}
                       onChange={(e) => setPayEwallet(e.target.value as EwalletProvider)}
                       disabled={submitting}
-                      className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+                      className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
                       aria-label="Penyedia e-wallet (rantai)"
                     >
                       <option value="">— Pilih e-wallet —</option>
@@ -591,7 +591,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                     disabled={submitting}
                     maxLength={100}
                     placeholder="Contoh: TRF-0001-XYZ"
-                    className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-50"
+                    className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
                     aria-label="Referensi bank pembayaran"
                     data-testid="renew-pay-ref"
                   />

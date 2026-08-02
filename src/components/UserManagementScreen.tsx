@@ -338,7 +338,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Contoh: Budi Santoso"
-                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -350,7 +350,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="staff@email.com"
-                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -362,7 +362,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newWhatsapp}
                 onChange={(e) => setNewWhatsapp(e.target.value)}
                 placeholder="+62 812..."
-                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -398,7 +398,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
-                  className="flex-1 bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold text-xs font-semibold text-[#0b1c30] cursor-pointer"
+                  className="flex-1 bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-semibold text-[#0b1c30] cursor-pointer"
                 >
                   <option value="Pilih Peran...">Pilih Peran...</option>
                   {PERMISSION_ROLES.map(r => (

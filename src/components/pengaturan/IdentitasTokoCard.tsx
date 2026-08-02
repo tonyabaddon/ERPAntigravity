@@ -148,7 +148,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               </label>
               <input
                 type="text"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="Contoh: Sinar Elektrik"
                 value={form.nama_toko}
                 onChange={e => updateField('nama_toko', e.target.value)}
@@ -160,7 +160,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               <label className="block text-xs font-bold text-slate-600 mb-1">Nama Legal</label>
               <input
                 type="text"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="Contoh: PT Sinar Elektrik Jaya"
                 value={form.nama_legal}
                 onChange={e => updateField('nama_legal', e.target.value)}
@@ -172,7 +172,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               <label className="block text-xs font-bold text-slate-600 mb-1">Tagline</label>
               <input
                 type="text"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="Contoh: Listrik Terang, Hidup Tenang"
                 value={form.tagline}
                 onChange={e => updateField('tagline', e.target.value)}
@@ -186,7 +186,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               </label>
               <textarea
                 rows={2}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold resize-none"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 resize-none"
                 placeholder="Jl. Contoh No. 1, Kelurahan, Kecamatan, Kode Pos"
                 value={form.alamat_lengkap}
                 onChange={e => updateField('alamat_lengkap', e.target.value)}
@@ -200,7 +200,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               </label>
               <input
                 type="text"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="Contoh: Surabaya"
                 value={form.kota}
                 onChange={e => updateField('kota', e.target.value)}
@@ -214,7 +214,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               </label>
               <input
                 type="text"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="628xxxx"
                 value={form.telp_wa}
                 onChange={e => updateField('telp_wa', e.target.value)}
@@ -226,7 +226,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               <label className="block text-xs font-bold text-slate-600 mb-1">Email</label>
               <input
                 type="email"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="toko@email.com"
                 value={form.email}
                 onChange={e => updateField('email', e.target.value)}
@@ -238,7 +238,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               <label className="block text-xs font-bold text-slate-600 mb-1">Google Maps URL</label>
               <input
                 type="url"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="https://maps.app.goo.gl/..."
                 value={form.google_maps_url}
                 onChange={e => updateField('google_maps_url', e.target.value)}
@@ -250,7 +250,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               <label className="block text-xs font-bold text-slate-600 mb-1">NPWP</label>
               <input
                 type="text"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 placeholder="00.000.000.0-000.000"
                 value={form.npwp}
                 onChange={e => updateField('npwp', e.target.value)}

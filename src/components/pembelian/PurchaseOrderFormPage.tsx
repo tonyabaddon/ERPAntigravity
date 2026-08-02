@@ -244,7 +244,7 @@ export default function PurchaseOrderFormPage({
               value={notes}
               onChange={(e) => { setNotes(e.target.value); markDirty(); }}
               placeholder="(opsional)"
-              className="w-full text-sm border border-gray-200 rounded px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold placeholder-gray-400"
+              className="w-full text-sm border border-gray-200 rounded px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 placeholder-gray-400"
             />
           </div>
         </div>

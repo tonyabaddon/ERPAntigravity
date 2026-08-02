@@ -333,7 +333,7 @@ export default function BukuBesarTab({
             Akun:
           </label>
           <select
-            className="border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+            className="border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             value={accountId ?? ''}
             onChange={e => handleAccountChange(e.target.value)}
             disabled={loadingCoa}

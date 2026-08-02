@@ -113,7 +113,7 @@ function SkuPicker({ selected, onAdd, onRemove }: SkuPickerProps) {
         value={query}
         onChange={handleInput}
         placeholder="Ketik nama atau SKU…"
-        className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+        className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
       />
       {searching && <p className="text-xs text-slate-400 mt-1">Mencari…</p>}
       {results.length > 0 && (
@@ -339,7 +339,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
                 value={discountValue}
                 onChange={(e) => setDiscountValue(e.target.value)}
                 placeholder={discountType === 'PERCENT' ? 'Misal: 10' : 'Misal: 5000'}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
               {discountType === 'PERCENT' && (
                 <span className="text-sm text-slate-500 shrink-0">%</span>
@@ -376,7 +376,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
                 value={expiryDate}
                 min={wibDateString()}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+                className="border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             )}
           </div>
@@ -533,12 +533,12 @@ export default function PromoProdukPanel({ showToast }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari SKU atau nama…"
-          className="flex-1 min-w-40 border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+          className="flex-1 min-w-40 border border-slate-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as PromoFilter)}
-          className="border border-slate-300 rounded px-3 py-2 text-sm bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
+          className="border border-slate-300 rounded px-3 py-2 text-sm bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
         >
           <option value="active">Aktif</option>
           <option value="expiring_7d">Kadaluwarsa 7 hari</option>

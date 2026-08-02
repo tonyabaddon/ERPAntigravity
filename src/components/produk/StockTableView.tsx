@@ -279,7 +279,7 @@ export default function StockTableView({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Cari SKU atau nama barang..."
-              className="w-full pl-12 pr-4 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus-visible:ring-2 focus-visible:ring-caleo-gold text-xs font-bold text-slate-800 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-bold text-slate-800 outline-none"
             />
             <Search className="w-4 h-4 text-[#43474e]/60 absolute left-4 top-1/2 -translate-y-1/2" />
           </div>
@@ -287,7 +287,7 @@ export default function StockTableView({
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              className="pl-6 pr-12 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus-visible:ring-2 focus-visible:ring-caleo-gold text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
+              className="pl-6 pr-12 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
             >
               {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>

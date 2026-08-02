@@ -109,7 +109,7 @@ export default function Step2Items(props: Props) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Cari nama / SKU…"
-            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus:border-[var(--color-caleo-primary)]"
+            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 focus:border-[var(--color-caleo-primary)]"
           />
         </div>
 
