@@ -164,7 +164,7 @@ export function ActionPanel({
               <EmptyState
                 inline
                 message="Belum ada bukti dari customer"
-                className="flex-1 rounded-xl bg-[#f9fafb]"
+                className="flex-1 rounded bg-[#f9fafb]"
               />
               <button onClick={onUploadProof} style={{ background: 'var(--color-primary)', color: 'white', padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                 📤 Upload Bukti Manual
