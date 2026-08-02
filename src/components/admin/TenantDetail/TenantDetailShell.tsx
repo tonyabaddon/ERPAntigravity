@@ -93,7 +93,7 @@ function StatusBadge({ status }: { status: AdminTenantRow['status'] }) {
   if (status === 'ACTIVE') {
     return (
       <span
-        className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+        className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
         style={{ background: '#dcfce7', color: '#166534' }}
       >
         ● Aktif
@@ -103,7 +103,7 @@ function StatusBadge({ status }: { status: AdminTenantRow['status'] }) {
   if (status === 'SUSPENDED') {
     return (
       <span
-        className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+        className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
         style={{ background: '#fee2e2', color: '#991b1b' }}
       >
         ● Suspended
@@ -112,7 +112,7 @@ function StatusBadge({ status }: { status: AdminTenantRow['status'] }) {
   }
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
       style={{ background: '#f1f5f9', color: '#64748b' }}
     >
       ● {status}
@@ -177,7 +177,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
   if (loading) {
     return (
       <div
-        className="text-[13px] animate-pulse py-4"
+        className="text-caleo-13 animate-pulse py-4"
         style={{ color: '#9DB2CE' }}
         data-testid="tenant-detail-loading"
       >
@@ -196,15 +196,15 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
         data-testid="tenant-not-found"
       >
         <p
-          className="text-[14px] font-semibold mb-2"
+          className="text-sm font-semibold mb-2"
           style={{ color: '#0B2545' }}
         >
           Tenant tidak ditemukan
         </p>
-        <p className="text-[13px] mb-4" style={{ color: '#5A6472' }}>
+        <p className="text-caleo-13 mb-4" style={{ color: '#5A6472' }}>
           Slug{' '}
           <code
-            className="font-mono px-1.5 py-0.5 rounded text-[12px]"
+            className="font-mono px-1.5 py-0.5 rounded text-xs"
             style={{ background: '#f1f5f9', color: '#14161B' }}
           >
             {tenantSlug}
@@ -214,7 +214,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
         <a
           href="/admin/tenants"
           onClick={(e) => handleAdminSPAClick(e, '/admin/tenants')}
-          className="inline-block rounded px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
+          className="inline-block rounded px-4 py-2 text-caleo-13 font-semibold transition-opacity hover:opacity-80"
           style={{ background: '#0B2545', color: '#ffffff' }}
         >
           ← Kembali ke daftar tenant
@@ -228,7 +228,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
   return (
     <div className="space-y-4 font-caleo" data-testid="tenant-detail-shell">
       {/* Breadcrumb */}
-      <nav className="text-[12px]" style={{ color: '#9DB2CE' }} aria-label="Breadcrumb">
+      <nav className="text-xs" style={{ color: '#9DB2CE' }} aria-label="Breadcrumb">
         <a
           href="/admin/tenants"
           onClick={(e) => handleAdminSPAClick(e, '/admin/tenants')}
@@ -253,13 +253,13 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
       >
         <div>
           <h1
-            className="text-[16px] font-bold flex flex-wrap items-center gap-2"
+            className="text-base font-bold flex flex-wrap items-center gap-2"
             style={{ color: '#0B2545' }}
           >
             {tenant.name}
             {tenant.plan_code && (
               <span
-                className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
                 style={{ background: '#e0effe', color: '#2A6FDB' }}
               >
                 {tenant.plan_code}
@@ -268,7 +268,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
             <StatusBadge status={tenant.status} />
           </h1>
           <p
-            className="text-[12px] mt-1"
+            className="text-xs mt-1"
             style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
           >
             app.caleo.id/t/{tenant.slug}
@@ -291,7 +291,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
 
       {/* Tab strip */}
       <div
-        className="flex gap-0 border-b text-[13px]"
+        className="flex gap-0 border-b text-caleo-13"
         style={{ borderColor: '#ECEEF1' }}
         role="tablist"
         aria-label="Tab navigasi tenant"

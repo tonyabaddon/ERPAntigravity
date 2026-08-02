@@ -100,7 +100,7 @@ function renderSpecForm(
     <div className={`grid ${gridClass} gap-4`}>
       {fields.map(field => (
         <div key={field.key} className="space-y-1">
-          <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
+          <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1">
             {field.label}{field.required && <span className="text-rose-500 ml-0.5">*</span>}
           </label>
           {field.type === 'select' ? (
@@ -313,8 +313,8 @@ export default function StockTableView({
             <div key={`${item.sku}-${index}`}>
               <div className={`flex flex-col md:flex-row items-stretch md:items-center gap-4 p-5 rounded transition-all duration-300 border ${isEditing ? 'bg-blue-50 border-blue-200 rounded-b-none' : 'bg-[var(--color-caleo-cloud)]/60 hover:bg-white hover:shadow-xl border-transparent hover:border-slate-100'} group`}>
                 <div className="w-28 shrink-0">
-                  <div className="text-[10px] font-mono font-bold text-slate-500">{item.category}</div>
-                  <div className="text-[9px] font-mono text-slate-400">#{item.sku.slice(0, 8)}</div>
+                  <div className="text-caleo-10 font-mono font-bold text-slate-500">{item.category}</div>
+                  <div className="text-caleo-9 font-mono text-slate-400">#{item.sku.slice(0, 8)}</div>
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -322,14 +322,14 @@ export default function StockTableView({
                   {specEntries.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {specEntries.slice(0, 6).map(([k, v]) => (
-                        <span key={k} className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${pillColor}`}>{String(v)}</span>
+                        <span key={k} className={`text-caleo-9 font-black uppercase px-2 py-0.5 rounded-full ${pillColor}`}>{String(v)}</span>
                       ))}
                     </div>
                   )}
                 </div>
 
                 <div className="w-full md:w-44 shrink-0">
-                  <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 text-right pr-1 mb-0.5">
+                  <div className="text-caleo-9 font-black uppercase tracking-widest text-slate-400 text-right pr-1 mb-0.5">
                     {showGrosir ? 'Harga Eceran' : 'Harga'}
                   </div>
                   <button
@@ -350,7 +350,7 @@ export default function StockTableView({
                       </span>
                     )}
                   </button>
-                  <div className="mt-1 text-[10px] font-semibold text-gray-400 text-right pr-1 flex items-center justify-end gap-1.5">
+                  <div className="mt-1 text-caleo-10 font-semibold text-gray-400 text-right pr-1 flex items-center justify-end gap-1.5">
                     <span>Modal:</span>
                     <button
                       type="button"
@@ -372,7 +372,7 @@ export default function StockTableView({
                     </button>
                   </div>
                   {showGrosir && (
-                    <div className="mt-1 text-[10px] font-semibold text-right pr-1 flex items-center justify-end gap-1.5">
+                    <div className="mt-1 text-caleo-10 font-semibold text-right pr-1 flex items-center justify-end gap-1.5">
                       <span className="text-gray-400">Grosir:</span>
                       {item.price_grosir == null
                         ? <span className="text-amber-600 font-bold">Belum di-set</span>
@@ -381,7 +381,7 @@ export default function StockTableView({
                     </div>
                   )}
                   {extraTiers.map(t => (
-                    <div key={t.key} className="mt-1 text-[10px] font-semibold text-right pr-1 flex items-center justify-end gap-1.5">
+                    <div key={t.key} className="mt-1 text-caleo-10 font-semibold text-right pr-1 flex items-center justify-end gap-1.5">
                       <span className="text-gray-400">{t.label}:</span>
                       {(t.slot === 3 ? item.price_tier_3 : item.price_tier_4) == null
                         ? <span className="text-slate-400 font-bold">Sama dgn base</span>
@@ -392,7 +392,7 @@ export default function StockTableView({
                 </div>
 
                 <div className="w-full md:w-36 shrink-0">
-                  <div className="flex flex-wrap gap-1 text-[10px] font-bold">
+                  <div className="flex flex-wrap gap-1 text-caleo-10 font-bold">
                     <span className="inline-flex items-center">
                       <button
                         type="button"
@@ -430,18 +430,18 @@ export default function StockTableView({
                       <InTransitChip warehouseId={warehouses.find(w => w.code === 'BAWAH')?.id ?? ''} sku={item.sku} />
                     </span>
                   </div>
-                  <div className="text-[9px] text-slate-400 mt-0.5 font-semibold">
+                  <div className="text-caleo-9 text-slate-400 mt-0.5 font-semibold">
                     Total: {item.stock} pcs
                   </div>
                 </div>
 
                 <div className="w-full md:w-28 shrink-0">
                   {isWarning ? (
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-black uppercase tracking-tighter gap-1 border border-rose-200">
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 text-caleo-10 font-black uppercase tracking-tighter gap-1 border border-rose-200">
                       <AlertTriangle className="w-3 h-3" /> Stok Tipis
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-50 text-[#2d8a4e] text-[10px] font-black uppercase tracking-tighter gap-1 border border-emerald-200">
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-50 text-[#2d8a4e] text-caleo-10 font-black uppercase tracking-tighter gap-1 border border-emerald-200">
                       <CheckCircle className="w-3 h-3" /> Sinkron
                     </span>
                   )}
@@ -450,7 +450,7 @@ export default function StockTableView({
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => isEditing ? cancelEdit(item.sku) : startEdit(item)}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-black border cursor-pointer transition-all ${isEditing ? 'border-slate-300 bg-slate-100 text-slate-600' : 'border-[var(--color-caleo-mist-dark)] bg-[var(--color-caleo-cloud)] text-[#1e3d60] hover:bg-blue-100'}`}
+                    className={`px-3 py-1.5 rounded-full text-caleo-10 font-black border cursor-pointer transition-all ${isEditing ? 'border-slate-300 bg-slate-100 text-slate-600' : 'border-[var(--color-caleo-mist-dark)] bg-[var(--color-caleo-cloud)] text-[#1e3d60] hover:bg-blue-100'}`}
                   >
                     {isEditing
                       ? <span className="flex items-center gap-1"><ChevronUp className="w-3 h-3" />Tutup</span>
@@ -462,12 +462,12 @@ export default function StockTableView({
                   <button
                     type="button"
                     onClick={() => setEditingVolSku(item.sku)}
-                    className="px-3 py-1.5 rounded-full text-[10px] font-black border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 cursor-pointer transition-all"
+                    className="px-3 py-1.5 rounded-full text-caleo-10 font-black border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 cursor-pointer transition-all"
                     title="Edit harga volume (qty tier)"
                   >
                     Vol
                     {(item.qty_tiers?.length ?? 0) > 0 && (
-                      <span className="ml-1 text-[9px] font-black text-purple-600">
+                      <span className="ml-1 text-caleo-9 font-black text-purple-600">
                         ({item.qty_tiers!.length})
                       </span>
                     )}
@@ -475,7 +475,7 @@ export default function StockTableView({
                   )}
                   <button
                     onClick={() => onTransfer(item)}
-                    className="px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-all"
+                    className="px-3 py-1.5 rounded-full text-caleo-10 font-black border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-all"
                   >
                     ⇄ Transfer
                   </button>
@@ -483,7 +483,7 @@ export default function StockTableView({
                     onClick={() => onRequestAdjustment(item, warehouses.find(w => w.is_default)?.id ?? warehouses.find(w => w.code === 'ATAS')?.id ?? '')}
                     disabled={isEditing || !currentUser}
                     title={currentUser ? 'Ajukan penyesuaian stok (rusak / hilang / koreksi)' : 'Login diperlukan'}
-                    className="px-3 py-1.5 rounded-full text-[10px] font-black border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                    className="px-3 py-1.5 rounded-full text-caleo-10 font-black border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
                   >
                     ⚖ Penyesuaian
                   </button>
@@ -497,7 +497,7 @@ export default function StockTableView({
                 <div className="bg-blue-50 border border-blue-200 border-t-0 rounded-b-2xl p-5">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
+                      <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1">
                         {showGrosir ? 'Harga Eceran (Rp)' : 'Harga (Rp)'}
                       </label>
                       <input
@@ -508,7 +508,7 @@ export default function StockTableView({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
+                      <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1">
                         Harga Modal (HPP)
                       </label>
                       <NumberInput
@@ -521,7 +521,7 @@ export default function StockTableView({
                     </div>
                     {showGrosir ? (
                       <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga Grosir (Rp)</label>
+                        <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga Grosir (Rp)</label>
                         <NumberInput
                           nullable
                           value={vals.price_grosir ?? null}
@@ -535,7 +535,7 @@ export default function StockTableView({
                       </div>
                     ) : (
                       <div className="md:col-span-1 flex items-end">
-                        <div className="w-full bg-violet-50 border border-violet-200 rounded px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
+                        <div className="w-full bg-violet-50 border border-violet-200 rounded px-3 py-2 text-caleo-10 text-slate-500 italic leading-snug">
                           💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
                         </div>
                       </div>
@@ -547,7 +547,7 @@ export default function StockTableView({
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                       {extraTiers.map(t => (
                         <div key={t.key} className="space-y-1">
-                          <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
+                          <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1">
                             Harga {t.label} (Rp)
                           </label>
                           <NumberInput
@@ -569,13 +569,13 @@ export default function StockTableView({
                   )}
 
                   {showGrosir && (
-                    <div className="mb-4 bg-violet-50 border border-violet-200 rounded px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
+                    <div className="mb-4 bg-violet-50 border border-violet-200 rounded px-3 py-2 text-caleo-10 text-slate-500 italic leading-snug">
                       💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
                     </div>
                   )}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-blue-200" />
-                    <span className="text-[8.5px] font-black uppercase tracking-widest px-3 py-1 bg-blue-100 text-blue-800 rounded-full">⚙ Spesifikasi {item.category}</span>
+                    <span className="text-caleo-9 font-black uppercase tracking-widest px-3 py-1 bg-blue-100 text-blue-800 rounded-full">⚙ Spesifikasi {item.category}</span>
                     <div className="flex-1 h-px bg-blue-200" />
                   </div>
                   {renderSpecForm(

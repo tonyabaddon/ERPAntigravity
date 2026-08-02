@@ -113,7 +113,7 @@ export default function ServiceCatalogEditModal({
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded shadow-2xl w-full max-w-2xl my-4">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="text-[15px] font-extrabold text-[var(--color-caleo-primary)]">
+          <h2 className="text-caleo-15 font-extrabold text-[var(--color-caleo-primary)]">
             {initial ? 'Edit Layanan' : 'Tambah Layanan Baru'}
           </h2>
           <button
@@ -126,7 +126,7 @@ export default function ServiceCatalogEditModal({
         <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Nama Layanan *
               </label>
               <input
@@ -134,11 +134,11 @@ export default function ServiceCatalogEditModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Contoh: Wiring Panel MDB 3-fase 100A"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Kategori
               </label>
               <input
@@ -146,41 +146,41 @@ export default function ServiceCatalogEditModal({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Wiring"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Deskripsi (opsional)
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Labor Default (Rp)
               </label>
               <NumberInput
                 value={defaultLabor}
                 onChange={setDefaultLabor}
                 allowDecimal={false}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-right text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Include Material Default
               </label>
               <div className="flex gap-4 items-center pt-2">
-                <label className="flex items-center gap-2 text-[13px]">
+                <label className="flex items-center gap-2 text-caleo-13">
                   <input
                     type="radio"
                     checked={defaultIncludeMaterial}
@@ -188,7 +188,7 @@ export default function ServiceCatalogEditModal({
                   />
                   Ya
                 </label>
-                <label className="flex items-center gap-2 text-[13px]">
+                <label className="flex items-center gap-2 text-caleo-13">
                   <input
                     type="radio"
                     checked={!defaultIncludeMaterial}
@@ -201,11 +201,11 @@ export default function ServiceCatalogEditModal({
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Invoice Display
             </label>
             <div className="flex gap-4 items-center">
-              <label className="flex items-center gap-2 text-[13px]">
+              <label className="flex items-center gap-2 text-caleo-13">
                 <input
                   type="radio"
                   checked={invoiceDisplay === 'lump_sum'}
@@ -213,7 +213,7 @@ export default function ServiceCatalogEditModal({
                 />
                 Lump Sum (satu baris)
               </label>
-              <label className="flex items-center gap-2 text-[13px]">
+              <label className="flex items-center gap-2 text-caleo-13">
                 <input
                   type="radio"
                   checked={invoiceDisplay === 'itemized'}
@@ -226,13 +226,13 @@ export default function ServiceCatalogEditModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Akun Pendapatan *
               </label>
               <select
                 value={revenueCoa}
                 onChange={(e) => setRevenueCoa(e.target.value)}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-caleo-13 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               >
                 {revenueCoaOptions.map((opt) => (
                   <option key={opt.account_code} value={opt.account_code}>
@@ -242,13 +242,13 @@ export default function ServiceCatalogEditModal({
               </select>
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Akun Beban Labor *
               </label>
               <select
                 value={laborCoa}
                 onChange={(e) => setLaborCoa(e.target.value)}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-caleo-13 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               >
                 {laborCoaOptions.map((opt) => (
                   <option key={opt.account_code} value={opt.account_code}>
@@ -260,7 +260,7 @@ export default function ServiceCatalogEditModal({
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold text-slate-700 mb-2">
+            <label className="block text-xs font-semibold text-slate-700 mb-2">
               BOM Komponen
             </label>
             <BOMEditor value={bom} onChange={setBom} qtyLabel="Qty default" />
@@ -269,14 +269,14 @@ export default function ServiceCatalogEditModal({
         <div className="px-6 py-4 border-t border-slate-200 flex justify-between">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded hover:bg-slate-200"
+            className="px-4 py-2 text-caleo-13 font-semibold text-slate-600 bg-slate-100 rounded hover:bg-slate-200"
           >
             Batal
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded hover:opacity-90 disabled:opacity-60"
+            className="px-4 py-2 text-caleo-13 font-bold bg-[var(--color-caleo-primary)] text-white rounded hover:opacity-90 disabled:opacity-60"
           >
             {saving ? 'Menyimpan…' : 'Simpan'}
           </button>

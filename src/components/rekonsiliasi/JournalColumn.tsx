@@ -76,19 +76,19 @@ export default function JournalColumn({
       <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">
+            <div className="text-caleo-11 font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">
               GL · Journal Entries
             </div>
-            <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{bankAccountLabel}</div>
+            <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{bankAccountLabel}</div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+            <span className="text-caleo-10 font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
               {loading ? '…' : lines.length} belum cocok
             </span>
             <button
               onClick={handleAutoMatch}
               disabled={autoMatchLoading || !bankAccountId}
-              className={`text-[10px] font-extrabold px-3 py-1 rounded-full transition-colors ${
+              className={`text-caleo-10 font-extrabold px-3 py-1 rounded-full transition-colors ${
                 autoMatchLoading || !bankAccountId
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -116,7 +116,7 @@ export default function JournalColumn({
             <div className="text-xs font-bold text-slate-500">
               Tidak ada akun COA yang terhubung
             </div>
-            <div className="text-[10px] text-slate-400 font-semibold mt-1">
+            <div className="text-caleo-10 text-slate-400 font-semibold mt-1">
               Hubungkan akun bank ke Chart of Accounts di Kasbank → Pengaturan
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function JournalColumn({
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <div className="text-2xl mb-2">✓</div>
             <div className="text-xs font-bold text-emerald-600">Semua sudah cocok</div>
-            <div className="text-[10px] text-slate-400 font-semibold mt-1">
+            <div className="text-caleo-10 text-slate-400 font-semibold mt-1">
               Tidak ada journal entry yang belum dicocokkan
             </div>
           </div>
@@ -155,17 +155,17 @@ export default function JournalColumn({
                 {/* Entry number + date */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-mono font-bold text-blue-700">{line.entry_number}</span>
-                  <span className="text-[10px] text-slate-500 font-semibold">{fmtDate(line.entry_date)}</span>
+                  <span className="text-caleo-10 text-slate-500 font-semibold">{fmtDate(line.entry_date)}</span>
                 </div>
                 {/* Description */}
                 {line.description && (
-                  <div className="text-[10px] text-slate-600 font-semibold mt-0.5 truncate max-w-[170px]">
+                  <div className="text-caleo-10 text-slate-600 font-semibold mt-0.5 truncate max-w-[170px]">
                     {line.description}
                   </div>
                 )}
                 {/* Account code chip */}
                 <div className="mt-1">
-                  <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">
+                  <span className="text-caleo-9 font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">
                     {line.account_code}
                   </span>
                 </div>
@@ -175,7 +175,7 @@ export default function JournalColumn({
                 <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(line.amount)}</div>
                 {/* Side chip */}
                 <span
-                  className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${
+                  className={`text-caleo-9 font-extrabold px-2 py-0.5 rounded-full ${
                     line.side === 'DEBIT'
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-rose-100 text-rose-700'

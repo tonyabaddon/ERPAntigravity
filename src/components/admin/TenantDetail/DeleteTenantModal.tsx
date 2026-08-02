@@ -104,7 +104,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
 
         {/* Tenant slug */}
         <p
-          className="text-[13px] font-semibold mb-3"
+          className="text-caleo-13 font-semibold mb-3"
           style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0B2545' }}
         >
           {tenant.name}
@@ -112,7 +112,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
 
         {/* Warning */}
         <div
-          className="border-l-4 p-3 rounded mb-4 text-[13px]"
+          className="border-l-4 p-3 rounded mb-4 text-caleo-13"
           style={{
             background: '#fef2f2',
             borderColor: '#DC2626',
@@ -128,7 +128,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
           <div className="mb-4">
             <label
               htmlFor="delete-reason"
-              className="block text-[12px] font-semibold mb-1"
+              className="block text-xs font-semibold mb-1"
               style={{ color: '#0B2545' }}
             >
               Alasan hapus <span style={{ color: '#DC2626' }}>*</span>
@@ -144,7 +144,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               disabled={submitting}
               rows={3}
               placeholder="Contoh: tenant test, tidak ada data produksi"
-              className="w-full border rounded px-3 py-2 text-[13px] placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-caleo-13 placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -152,7 +152,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               } as React.CSSProperties}
               aria-label="Alasan hapus tenant"
             />
-            <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>
+            <p className="text-caleo-11 text-right mt-0.5" style={{ color: '#9DB2CE' }}>
               {reason.length}/500
             </p>
           </div>
@@ -161,12 +161,12 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
           <div className="mb-6">
             <label
               htmlFor="delete-slug-confirm"
-              className="block text-[12px] font-semibold mb-1"
+              className="block text-xs font-semibold mb-1"
               style={{ color: '#0B2545' }}
             >
               Ketik slug tenant untuk konfirmasi:{' '}
               <code
-                className="px-1.5 py-0.5 rounded text-[12px]"
+                className="px-1.5 py-0.5 rounded text-xs"
                 style={{
                   background: '#fef2f2',
                   color: '#DC2626',
@@ -185,7 +185,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               onChange={(e) => setSlugInput(e.target.value)}
               disabled={submitting}
               placeholder={tenant.slug}
-              className="w-full border rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
               style={{
                 borderColor: slugInput.length > 0 && !isSlugMatch ? '#DC2626' : '#ECEEF1',
                 color: '#0B2545',
@@ -195,7 +195,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               data-testid="slug-confirm-input"
             />
             {slugInput.length > 0 && !isSlugMatch && (
-              <p className="text-[11px] mt-0.5" style={{ color: '#DC2626' }}>
+              <p className="text-caleo-11 mt-0.5" style={{ color: '#DC2626' }}>
                 Slug tidak cocok.
               </p>
             )}
@@ -207,7 +207,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="border rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors hover:bg-gray-50"
+              className="border rounded-full px-4 py-2.5 text-caleo-13 font-medium disabled:opacity-40 transition-colors hover:bg-gray-50"
               style={{ color: '#0B2545', borderColor: '#ECEEF1' }}
             >
               Batal
@@ -215,7 +215,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="text-white font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="text-white font-extrabold rounded-full px-4 py-2.5 text-caleo-13 disabled:opacity-40 hover:opacity-90 transition-opacity"
               style={{ background: '#DC2626' }}
               data-testid="hapus-permanen-btn"
             >

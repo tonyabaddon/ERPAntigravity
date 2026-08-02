@@ -129,12 +129,12 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">PI / Tanggal</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Supplier (Grosir)</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Order Terkait</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Beli</th>
-                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Aksi</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase tracking-wide">PI / Tanggal</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase tracking-wide">Supplier (Grosir)</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase tracking-wide">Order Terkait</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase tracking-wide">Total Beli</th>
+                <th className="text-center px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase tracking-wide">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -146,7 +146,7 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
                   </td>
                   <td className="px-4 py-4">
                     <div className="font-semibold text-sm">{pi.supplier?.name ?? '—'}</div>
-                    {pi.supplier_invoice_number && <div className="text-[11px] text-gray-500 mt-0.5">Faktur: {pi.supplier_invoice_number}</div>}
+                    {pi.supplier_invoice_number && <div className="text-caleo-11 text-gray-500 mt-0.5">Faktur: {pi.supplier_invoice_number}</div>}
                   </td>
                   <td className="px-4 py-4">
                     <div className="text-sm font-semibold text-indigo-700">{shortOrderRef(pi.order_id)}</div>
@@ -157,12 +157,12 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
                     <div className="inline-flex gap-1">
                       {pi.status === 'BELUM_LUNAS' && !pi.voided_at && (
                         <button onClick={() => setPayTarget(pi)}
-                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                          className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
                           Tandai Lunas
                         </button>
                       )}
                       <button onClick={() => onOpenDetail(pi.pi_number)}
-                        className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                        className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                         Detail
                       </button>
                     </div>

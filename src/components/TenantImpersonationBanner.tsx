@@ -62,7 +62,7 @@ export const TenantImpersonationBanner: React.FC = () => {
 
   return (
     <div
-      className="w-full flex items-center justify-between px-6 h-7 text-[12px] border-b"
+      className="w-full flex items-center justify-between px-6 h-7 text-xs border-b"
       style={{ background: '#FFFBEB', borderBottomColor: '#FDE68A', color: '#78350F' }}
       data-testid="tenant-impersonation-banner"
     >

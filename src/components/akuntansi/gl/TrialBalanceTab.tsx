@@ -283,7 +283,7 @@ export default function TrialBalanceTab({
           ) : (
             <AlertTriangle className="w-5 h-5 text-rose-700 shrink-0" />
           )}
-          <p className="text-[12px]">
+          <p className="text-xs">
             {isBalanced ? (
               <span className="text-emerald-900">
                 <strong>✓ Neraca Saldo SEIMBANG</strong> · Total Debit = Total Kredit ={' '}
@@ -303,15 +303,15 @@ export default function TrialBalanceTab({
       <div className="px-6 pb-6 mt-6">
         <div className="rounded border border-[var(--color-caleo-mist-dark)] overflow-hidden">
           {loading ? (
-            <div className="py-16 text-center text-[13px] text-gray-500">Memuat...</div>
+            <div className="py-16 text-center text-caleo-13 text-gray-500">Memuat...</div>
           ) : rows.length === 0 ? (
-            <div className="py-16 text-center text-[13px] text-gray-500">
+            <div className="py-16 text-center text-caleo-13 text-gray-500">
               Belum ada transaksi di periode ini
             </div>
           ) : (
-            <table className="w-full text-[12px]">
+            <table className="w-full text-xs">
               <thead style={{ background: 'var(--color-caleo-cloud)' }}>
-                <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+                <tr className="text-caleo-10 uppercase font-extrabold text-gray-600">
                   <th className="text-left py-2 px-3">Kode</th>
                   <th className="text-left py-2 px-3">Nama Akun</th>
                   <th className="text-right py-2 px-3">Debit</th>

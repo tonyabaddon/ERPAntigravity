@@ -26,13 +26,13 @@ export function EmptyHomeState({ existingSlug }: Props) {
       </div>
 
       <h3
-        className="text-[15px] font-bold mb-2"
+        className="text-caleo-15 font-bold mb-2"
         style={{ color: '#0B2545', fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif' }}
       >
         Ayo onboard tenant kedua.
       </h3>
 
-      <p className="text-[13px] mb-5 max-w-sm mx-auto" style={{ color: '#5A6472' }}>
+      <p className="text-caleo-13 mb-5 max-w-sm mx-auto" style={{ color: '#5A6472' }}>
         Kamu sudah punya{' '}
         <strong style={{ color: '#0B2545' }}>{existingSlug}</strong>. Untuk tenant kedua, klik
         tombol di bawah — wizard akan pandu step-by-step.
@@ -41,13 +41,13 @@ export function EmptyHomeState({ existingSlug }: Props) {
       <a
         href="/admin/tenants/new"
         onClick={(e) => handleAdminSPAClick(e, '/admin/tenants/new')}
-        className="inline-block rounded px-6 py-2.5 font-semibold text-[14px] transition-opacity hover:opacity-90"
+        className="inline-block rounded px-6 py-2.5 font-semibold text-sm transition-opacity hover:opacity-90"
         style={{ background: '#F9B233', color: '#0B2545' }}
       >
         + Onboard tenant baru
       </a>
 
-      <div className="mt-3 text-[12px]" style={{ color: '#9DB2CE' }}>
+      <div className="mt-3 text-xs" style={{ color: '#9DB2CE' }}>
         Sudah punya?{' '}
         <a
           href="/admin/tenants"

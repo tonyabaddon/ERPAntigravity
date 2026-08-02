@@ -152,7 +152,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
           <h2 className="font-extrabold text-sm text-[var(--color-caleo-primary)]">Daftar Gudang</h2>
           <button
             onClick={() => setShowAdd(s => !s)}
-            className="bg-[var(--color-caleo-primary)] text-white px-3 py-1.5 rounded-full text-[11px] font-extrabold flex items-center gap-1"
+            className="bg-[var(--color-caleo-primary)] text-white px-3 py-1.5 rounded-full text-caleo-11 font-extrabold flex items-center gap-1"
           >
             <Plus className="w-3 h-3" /> Tambah Gudang
           </button>
@@ -176,16 +176,16 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                 className={`flex items-center gap-3 px-4 py-3 rounded border ${
                   w.is_active ? 'bg-[#f8f9ff] border-[#abc9f3]/40' : 'bg-gray-50 border-gray-200 opacity-60'}`}
               >
-                <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[var(--color-caleo-primary)] font-black text-[10px]">
+                <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[var(--color-caleo-primary)] font-black text-caleo-10">
                   {w.code.slice(0, 2)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-sm text-[var(--color-caleo-primary)]">{w.name}</span>
                     {w.is_default && <Crown className="w-3 h-3 text-amber-500" />}
-                    {!w.is_active && <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Nonaktif</span>}
+                    {!w.is_active && <span className="text-caleo-9 font-black uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Nonaktif</span>}
                   </div>
-                  <p className="text-[10px] text-gray-400 font-mono">{w.code}{w.address && ` · ${w.address}`}</p>
+                  <p className="text-caleo-10 text-gray-400 font-mono">{w.code}{w.address && ` · ${w.address}`}</p>
                 </div>
 
                 {/* Edit is allowed for any warehouse, active or inactive */}
@@ -197,7 +197,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
 
                 {w.is_active && !w.is_default && (
                   <button onClick={() => handleSetDefault(w.id)}
-                    className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800">
+                    className="text-caleo-10 font-extrabold text-blue-600 hover:text-blue-800">
                     Set Default
                   </button>
                 )}
@@ -211,7 +211,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                 {!w.is_active && (
                   <button onClick={() => handleReactivate(w.id)}
                     title="Aktifkan kembali"
-                    className="text-[10px] font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-emerald-50">
+                    className="text-caleo-10 font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-emerald-50">
                     <RotateCcw className="w-3 h-3" /> Aktifkan
                   </button>
                 )}
@@ -267,7 +267,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
               // operators see "Gudang Jakarta" instead of an opaque UUID prefix.
               const wh = warehouses.find(x => x.id === row.warehouse_id);
               return (
-                <li key={row.id} className="flex items-center gap-3 text-[11px] flex-wrap">
+                <li key={row.id} className="flex items-center gap-3 text-caleo-11 flex-wrap">
                   <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-extrabold uppercase">{row.action}</span>
                   <span className="font-extrabold text-[var(--color-caleo-primary)]">{wh?.name ?? row.warehouse_id.slice(0, 8)}</span>
                   <span className="text-slate-500">oleh</span>
@@ -300,7 +300,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
             </div>
             <div className="p-6 space-y-3">
               <div>
-                <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest block mb-1">Nama Gudang</label>
+                <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest block mb-1">Nama Gudang</label>
                 <input
                   value={editing.name}
                   onChange={e => setEditing({ ...editing, name: e.target.value })}
@@ -308,7 +308,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                 />
               </div>
               <div>
-                <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest block mb-1">Alamat (opsional)</label>
+                <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest block mb-1">Alamat (opsional)</label>
                 <input
                   value={editing.address}
                   onChange={e => setEditing({ ...editing, address: e.target.value })}
@@ -317,16 +317,16 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                 />
               </div>
               <div>
-                <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest block mb-1">Sort Order</label>
+                <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest block mb-1">Sort Order</label>
                 <input
                   type="number"
                   value={editing.sortOrder}
                   onChange={e => setEditing({ ...editing, sortOrder: e.target.value })}
                   className="w-full bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Urutan kecil = tampil duluan di daftar.</p>
+                <p className="text-caleo-10 text-slate-400 mt-1">Urutan kecil = tampil duluan di daftar.</p>
               </div>
-              <p className="text-[10px] text-slate-500 italic">
+              <p className="text-caleo-10 text-slate-500 italic">
                 Kode gudang ({editing.w.code}) tidak bisa diubah — kode dipakai oleh data historis.
               </p>
             </div>

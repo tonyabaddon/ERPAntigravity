@@ -90,18 +90,18 @@ function ProspectCards({ today, week, month }: ProspectCardsProps) {
           data-testid={`bot-kpi-${c.label.toLowerCase().replace(/\s/g, '-')}`}
         >
           <div
-            className="text-[11px] font-bold uppercase tracking-widest mb-1"
+            className="text-caleo-11 font-bold uppercase tracking-widest mb-1"
             style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
           >
             Prospek {c.label}
           </div>
           <div
-            className="text-[28px] font-bold leading-none"
+            className="text-3xl font-bold leading-none"
             style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0B2545' }}
           >
             {c.value}
           </div>
-          <div className="text-[11px] mt-1" style={{ color: '#9DB2CE' }}>
+          <div className="text-caleo-11 mt-1" style={{ color: '#9DB2CE' }}>
             sesi baru
           </div>
         </div>
@@ -128,7 +128,7 @@ const CHART_INNER_H = SVG_H - BAR_PAD_TOP - BAR_PAD_BOTTOM;
 function FaqBarChart({ items }: FaqBarChartProps) {
   if (items.length === 0) {
     return (
-      <p className="text-[13px] py-6 text-center" style={{ color: '#9DB2CE' }}>
+      <p className="text-caleo-13 py-6 text-center" style={{ color: '#9DB2CE' }}>
         Belum ada FAQ hits (30 hari terakhir).
       </p>
     );
@@ -248,7 +248,7 @@ function EscalationTrend({ days }: EscalationTrendProps) {
   return (
     <div style={{ overflowX: 'auto' }}>
       {allZero ? (
-        <p className="text-[13px] py-4 text-center" style={{ color: '#9DB2CE' }}>
+        <p className="text-caleo-13 py-4 text-center" style={{ color: '#9DB2CE' }}>
           Belum ada sesi dalam 7 hari terakhir.
         </p>
       ) : (
@@ -338,19 +338,19 @@ function FunnelDisplay({ prospects, demos, signups }: FunnelProps) {
             data-testid={stage.testId}
           >
             <div
-              className="text-[24px] font-bold leading-none"
+              className="text-2xl font-bold leading-none"
               style={{ fontFamily: 'JetBrains Mono, monospace', color: stage.color }}
             >
               {stage.value}
             </div>
             <div
-              className="text-[11px] font-bold uppercase tracking-widest mt-1"
+              className="text-caleo-11 font-bold uppercase tracking-widest mt-1"
               style={{ color: stage.color, fontFamily: 'JetBrains Mono, monospace' }}
             >
               {stage.label}
             </div>
             {i > 0 && prospects > 0 && (
-              <div className="text-[10px] mt-0.5" style={{ color: '#9DB2CE' }}>
+              <div className="text-caleo-10 mt-0.5" style={{ color: '#9DB2CE' }}>
                 {Math.round((stage.value / prospects) * 100)}% konversi
               </div>
             )}
@@ -450,14 +450,14 @@ export function CaleoBotDashboard() {
               Caleo Bot Analytics
             </h1>
           </div>
-          <p className="text-[12px] mt-0.5" style={{ color: '#64748B' }}>
+          <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
             Prospek masuk via landing page bot — data 30 hari terakhir.
           </p>
         </div>
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-caleo-13 font-medium transition-colors disabled:opacity-50"
           style={{ background: '#0B2545', color: '#FFFFFF' }}
           data-testid="bot-refresh-button"
         >
@@ -468,7 +468,7 @@ export function CaleoBotDashboard() {
       {/* Error state */}
       {error && (
         <div
-          className="rounded p-4 text-[13px]"
+          className="rounded p-4 text-caleo-13"
           style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B' }}
           data-testid="bot-error"
           role="alert"
@@ -486,7 +486,7 @@ export function CaleoBotDashboard() {
             <div className="flex items-center gap-2 mb-3">
               <Users size={14} strokeWidth={1.8} style={{ color: '#9DB2CE' }} />
               <span
-                className="text-[11px] font-bold uppercase tracking-widest"
+                className="text-caleo-11 font-bold uppercase tracking-widest"
                 style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
               >
                 Prospek Baru
@@ -506,7 +506,7 @@ export function CaleoBotDashboard() {
             aria-label="FAQ terpopuler"
           >
             <h3
-              className="text-[11px] font-bold uppercase tracking-widest mb-4"
+              className="text-caleo-11 font-bold uppercase tracking-widest mb-4"
               style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
             >
               Top 5 FAQ (30 Hari)
@@ -523,7 +523,7 @@ export function CaleoBotDashboard() {
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp size={14} strokeWidth={1.8} style={{ color: '#EF4444' }} />
               <h3
-                className="text-[11px] font-bold uppercase tracking-widest"
+                className="text-caleo-11 font-bold uppercase tracking-widest"
                 style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
               >
                 Escalation Rate 7 Hari
@@ -539,7 +539,7 @@ export function CaleoBotDashboard() {
             aria-label="Funnel konversi prospek"
           >
             <h3
-              className="text-[11px] font-bold uppercase tracking-widest mb-4"
+              className="text-caleo-11 font-bold uppercase tracking-widest mb-4"
               style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
             >
               Funnel Konversi (30 Hari)
@@ -552,7 +552,7 @@ export function CaleoBotDashboard() {
           </section>
 
           {/* Footnote */}
-          <div className="text-[11px]" style={{ color: '#94A3B8' }}>
+          <div className="text-caleo-11" style={{ color: '#94A3B8' }}>
             Data dari <code>caleo_admin_bot_analytics</code> via{' '}
             <code>get_bot_analytics_summary()</code>.
           </div>

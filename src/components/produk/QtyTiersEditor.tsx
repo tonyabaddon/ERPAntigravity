@@ -117,7 +117,7 @@ export default function QtyTiersEditor({
     >
       <div>
         <h3 className="text-sm font-bold text-[var(--color-caleo-primary)]">Harga Volume (opsional)</h3>
-        <p className="text-[11px] text-slate-500 mt-1">
+        <p className="text-caleo-11 text-slate-500 mt-1">
           Beli banyak lebih murah. Max 5 tier. Kosongkan semua kalau nggak dipakai.
         </p>
       </div>
@@ -167,7 +167,7 @@ export default function QtyTiersEditor({
       </div>
 
       {previewTier && (
-        <p className="text-[11px] text-slate-500 italic">
+        <p className="text-caleo-11 text-slate-500 italic">
           Contoh: beli {previewQty} pcs = Rp{' '}
           {(previewPrice * previewQty).toLocaleString('id-ID')} (auto Rp{' '}
           {previewPrice.toLocaleString('id-ID')}/pcs)

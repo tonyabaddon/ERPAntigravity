@@ -125,7 +125,7 @@ const EMPTY_MESSAGES: Record<FilterTab, string> = {
 function ItemsTable({ items, headerClass }: { items: DbOrder['items']; headerClass: string }) {
   return (
     <div className="border border-gray-200 rounded overflow-hidden text-xs mb-3">
-      <div className={`grid grid-cols-4 px-3 py-2 font-bold uppercase tracking-wide text-[10px] ${headerClass}`}>
+      <div className={`grid grid-cols-4 px-3 py-2 font-bold uppercase tracking-wide text-caleo-10 ${headerClass}`}>
         <span>Produk</span>
         <span className="text-center">Qty</span>
         <span className="text-right">Harga</span>
@@ -135,14 +135,14 @@ function ItemsTable({ items, headerClass }: { items: DbOrder['items']; headerCla
         <div key={i} className="grid grid-cols-4 px-3 py-2 border-t border-gray-100 bg-white">
           <div>
             <div className="font-semibold text-gray-800">{item.name}</div>
-            <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>
+            <div className="font-mono text-caleo-9 text-gray-400">{item.sku}</div>
           </div>
           <div className="text-center font-semibold">{item.qty}</div>
           <div className="text-right text-gray-500">{formatIDR(item.unit_price)}</div>
           <div className="text-right font-bold text-gray-800">{formatIDR(item.subtotal)}</div>
         </div>
       ))}
-      <div className="flex justify-end gap-6 px-3 py-2 border-t-2 border-gray-200 bg-gray-50 text-[11px]">
+      <div className="flex justify-end gap-6 px-3 py-2 border-t-2 border-gray-200 bg-gray-50 text-caleo-11">
         <div className="text-right text-gray-400 leading-relaxed">
           Subtotal<br />Ongkir<br /><strong className="text-gray-700">Total</strong>
         </div>
@@ -450,7 +450,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
           >
             {t.label} ({t.count})
             {t.dot && (
-              <span className="bg-amber-400 text-amber-900 rounded-full px-1.5 text-[9px] font-black">!</span>
+              <span className="bg-amber-400 text-amber-900 rounded-full px-1.5 text-caleo-9 font-black">!</span>
             )}
           </button>
         ))}
@@ -576,7 +576,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   <div className={`text-sm font-extrabold shrink-0 ${totalCl}`}>
                     {formatIDR(entry.total)}
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${CHANNEL_BADGE_CLASS[entry.channel]}`}>
+                  <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full shrink-0 ${CHANNEL_BADGE_CLASS[entry.channel]}`}>
                     {CHANNEL_LABEL[entry.channel]}
                   </span>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${badge.className}`}>
@@ -593,17 +593,17 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       {/* Left: detail */}
                       <div>
                         <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
-                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
-                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
-                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                          <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                          <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                          <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
                         </div>
                         <ItemsTable items={order.items} headerClass="bg-purple-100 text-purple-700" />
                         <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
-                        <div className="text-[10px] text-gray-400">⏱ Booking berakhir: {formatDate(order.booking_expires_at)}</div>
+                        <div className="text-caleo-10 text-gray-400">⏱ Booking berakhir: {formatDate(order.booking_expires_at)}</div>
                       </div>
                       {/* Right: action */}
                       <div className="flex flex-col gap-2 min-w-[140px]">
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center">Tetapkan Ongkir</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 text-center">Tetapkan Ongkir</div>
                         {order.delivery_type === 'PICKUP' ? (
                           <div className="text-xs text-gray-500 bg-gray-100 rounded px-3 py-2 text-center">Rp 0 (Pickup)</div>
                         ) : (
@@ -620,7 +620,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           </div>
                         )}
                         {/* Payment type selector */}
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center mt-2">Tipe Pembayaran</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 text-center mt-2">Tipe Pembayaran</div>
                         <div className="flex gap-2 justify-center">
                           {(['FULL', 'DP'] as const).map(t => (
                             <button
@@ -648,7 +648,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                     setDpInputTypes(prev => ({ ...prev, [order.id]: t }));
                                     setDpValues(prev => ({ ...prev, [order.id]: '' }));
                                   }}
-                                  className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${
+                                  className={`text-caleo-10 px-2 py-0.5 rounded border font-semibold ${
                                     (dpInputTypes[order.id] ?? 'AMOUNT') === t
                                       ? 'bg-indigo-600 text-white border-indigo-600'
                                       : 'bg-white text-gray-500 border-gray-200'
@@ -672,7 +672,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             </div>
                             {/* Preview computed IDR amount when % selected */}
                             {(dpInputTypes[order.id] ?? 'AMOUNT') === 'PERCENTAGE' && dpValues[order.id] && !isNaN(parseFloat(dpValues[order.id])) && (
-                              <div className="text-[9px] text-indigo-600 font-semibold mt-0.5 text-center">
+                              <div className="text-caleo-9 text-indigo-600 font-semibold mt-0.5 text-center">
                                 = {formatIDR(Math.round(
                                   ((order.total ?? 0) + (order.delivery_type === 'PICKUP' ? 0 : parseFloat(shippingFees[order.id] ?? '0')))
                                   * parseFloat(dpValues[order.id]) / 100
@@ -709,9 +709,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
                       <div>
                         <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
-                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
-                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
-                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                          <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                          <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                          <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
                         </div>
                         <ItemsTable items={order.items} headerClass="bg-blue-100 text-blue-700" />
                         <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
@@ -720,7 +720,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           {/* DP proof summary — shown for DP orders above full proof */}
                           {order.payment_type === 'DP' && (
                             <div className="mb-4 p-3 bg-teal-50 rounded border border-teal-200">
-                              <div className="text-[9px] font-bold uppercase tracking-wide text-teal-600 mb-1">
+                              <div className="text-caleo-9 font-bold uppercase tracking-wide text-teal-600 mb-1">
                                 ✓ DP Terverifikasi — {formatIDR(Number(order.dp_amount ?? 0))}
                               </div>
                               {order.dp_proof_url && (
@@ -729,7 +729,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                               )}
                             </div>
                           )}
-                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">
+                          <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-2">
                             {order.payment_type === 'DP' ? 'Bukti Pelunasan' : 'Bukti Transfer'}
                           </div>
                           <div className="flex items-start gap-3">
@@ -744,7 +744,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             ) : (
                               <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded flex flex-col items-center justify-center gap-1 flex-shrink-0">
                                 <span className="text-indigo-400 text-lg">🖼</span>
-                                <span className="text-[9px] text-indigo-400 font-semibold">Foto Bukti</span>
+                                <span className="text-caleo-9 text-indigo-400 font-semibold">Foto Bukti</span>
                               </div>
                             )}
                             <div>
@@ -757,7 +757,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                   Lihat Ukuran Penuh ↗
                                 </StorageLink>
                               )}
-                              <p className="text-[10px] text-gray-400 mt-1">
+                              <p className="text-caleo-10 text-gray-400 mt-1">
                                 Dikirim {formatDate(order.updated_at)}
                               </p>
                             </div>
@@ -766,7 +766,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       </div>
                       {/* Action */}
                       <div className="flex flex-col gap-2 min-w-[120px]">
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center">Tindakan</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 text-center">Tindakan</div>
                         <button
                           onClick={() => handleVerifyPayment(order.id)}
                           disabled={verifyingId === order.id}
@@ -791,15 +791,15 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       <div>
                         <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                           <div>
-                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
+                            <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
                             <div className="font-semibold text-gray-700">{order.customer_name}</div>
                           </div>
                           <div>
-                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
+                            <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
                             <div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div>
                           </div>
                           <div>
-                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div>
+                            <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div>
                             <div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div>
                           </div>
                         </div>
@@ -807,7 +807,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                         {/* DP Proof */}
                         <div className="mt-3">
-                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">
+                          <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-2">
                             Bukti DP {order.dp_amount ? `(${formatIDR(Number(order.dp_amount))})` : ''}
                           </div>
                           <div className="flex items-start gap-3">
@@ -822,7 +822,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             ) : (
                               <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded flex flex-col items-center justify-center gap-1 flex-shrink-0">
                                 <span className="text-indigo-400 text-lg">🖼</span>
-                                <span className="text-[9px] text-indigo-400 font-semibold">Foto DP</span>
+                                <span className="text-caleo-9 text-indigo-400 font-semibold">Foto DP</span>
                               </div>
                             )}
                             <div>
@@ -830,13 +830,13 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                 <StorageLink bucket="payment-proofs" storageRef={order.dp_proof_url}
                                   className="text-xs text-blue-600 font-semibold underline">Lihat Ukuran Penuh ↗</StorageLink>
                               )}
-                              <p className="text-[10px] text-gray-400 mt-1">Dikirim {formatDate(order.updated_at)}</p>
+                              <p className="text-caleo-10 text-gray-400 mt-1">Dikirim {formatDate(order.updated_at)}</p>
                             </div>
                           </div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 min-w-[120px]">
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center">Tindakan</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 text-center">Tindakan</div>
                         <button
                           onClick={() => handleVerifyDP(order.id)}
                           disabled={verifyingDPId === order.id}
@@ -859,15 +859,15 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   <div className="px-4 py-4 border-t border-teal-200 bg-teal-50">
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                       <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
                         <div className="font-semibold text-gray-700">{order.customer_name}</div>
                       </div>
                       <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
                         <div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div>
                       </div>
                       <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">DP Terverifikasi</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">DP Terverifikasi</div>
                         <div className="font-semibold text-teal-700">{formatIDR(Number(order.dp_amount ?? 0))}</div>
                       </div>
                     </div>
@@ -882,10 +882,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                 {isExpanded && order && order.status === 'WAITING_PAYMENT' && (
                   <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-800">{formatIDR(order.total)}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-800">{formatIDR(order.total)}</div></div>
                     </div>
                     <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
                     <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
@@ -894,11 +894,11 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                 {isExpanded && order && (order.status === 'PAYMENT_VERIFIED' || order.status === 'COMPLETED') && (
                   <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
                       <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Diverifikasi Oleh</div>
+                        <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Diverifikasi Oleh</div>
                         <div className="font-semibold text-gray-700">
                           {order.verified_by ?? '—'}{order.payment_verified_at ? ` · ${formatDate(order.payment_verified_at)}` : ''}
                         </div>
@@ -922,9 +922,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                 {isExpanded && order && (order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED' || order.status === 'DP_PROOF_REJECTED') && (
                   <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
-                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-400">{formatIDR(order.total)}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                      <div><div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-400">{formatIDR(order.total)}</div></div>
                     </div>
                     <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
                     <OrderBnlSection orderId={order.id} customerName={order.customer_name} />

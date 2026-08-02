@@ -181,7 +181,7 @@ export default function YearEndCloseModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4 text-[13px]">
+        <div className="p-6 space-y-4 text-caleo-13">
           {/* Year selector */}
           <div>
             <label className="block font-bold mb-1 text-[#1e3d60]">Tahun Fiskal *</label>
@@ -199,13 +199,13 @@ export default function YearEndCloseModal({
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
-            <p className="text-[10px] text-gray-500 mt-1">
+            <p className="text-caleo-10 text-gray-500 mt-1">
               Tutup buku tahun fiskal yang sudah selesai. Tahun berjalan ({currentYear}) belum bisa ditutup.
             </p>
           </div>
 
           {loading && (
-            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-6 text-center text-[13px] text-gray-500">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-6 text-center text-caleo-13 text-gray-500">
               Memuat snapshot...
             </div>
           )}
@@ -219,7 +219,7 @@ export default function YearEndCloseModal({
                   style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
                 >
                   <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                  <div className="text-[12px] text-amber-900">
+                  <div className="text-xs text-amber-900">
                     <strong>Periode bulanan belum semua ditutup.</strong>
                     <p className="mt-0.5">
                       {snapshot.closedMonths} dari {snapshot.totalMonths} bulan sudah CLOSED.
@@ -233,7 +233,7 @@ export default function YearEndCloseModal({
                   style={{ background: '#d1fae5', borderColor: '#6ee7b7' }}
                 >
                   <CheckCircle className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
-                  <div className="text-[12px] text-emerald-900">
+                  <div className="text-xs text-emerald-900">
                     <strong>Semua periode bulanan {year} sudah ditutup.</strong>
                     <p className="mt-0.5">
                       {snapshot.closedMonths}/{snapshot.totalMonths} bulan CLOSED. Tahun fiskal siap ditutup.
@@ -257,7 +257,7 @@ export default function YearEndCloseModal({
                   <span className="font-bold text-rose-700">({formatRp(snapshot.totalBeban)})</span>
                 </div>
                 <div
-                  className="flex justify-between border-t-2 pt-2 font-extrabold text-[14px]"
+                  className="flex justify-between border-t-2 pt-2 font-extrabold text-sm"
                   style={{ borderColor: '#1e40af', color: '#1e3d60' }}
                 >
                   <span>LABA NETO TAHUN BERJALAN</span>
@@ -269,10 +269,10 @@ export default function YearEndCloseModal({
 
               {/* JE preview */}
               <div className="rounded p-3 border" style={{ background: '#fef3c7', borderColor: '#fbbf24' }}>
-                <div className="font-extrabold text-amber-900 mb-2 text-[12px]">
+                <div className="font-extrabold text-amber-900 mb-2 text-xs">
                   Journal entries yang akan posted (4 step):
                 </div>
-                <ol className="space-y-1 text-[11px] text-amber-900 font-mono pl-4 list-decimal">
+                <ol className="space-y-1 text-caleo-11 text-amber-900 font-mono pl-4 list-decimal">
                   <li>D 4-XXXX Pendapatan {formatRp(snapshot.totalPendapatan)} / K 3-1900 Ikhtisar</li>
                   <li>D 3-1900 Ikhtisar {formatRp(snapshot.totalBeban)} / K 5-XXXX Beban</li>
                   <li>

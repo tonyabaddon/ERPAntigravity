@@ -182,7 +182,7 @@ export default function PurchaseOrderFormPage({
           </h2>
         </div>
         {isDirty && (
-          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">
+          <span className="text-caleo-10 font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">
             ● Belum disimpan
           </span>
         )}
@@ -233,9 +233,9 @@ export default function PurchaseOrderFormPage({
               />
             </div>
             {expectedReceiveDate && isPastDate(expectedReceiveDate) ? (
-              <p className="text-[10px] text-amber-700 font-semibold mt-1">⚠ Tanggal sudah lewat. Boleh disimpan, jadi acuan delay.</p>
+              <p className="text-caleo-10 text-amber-700 font-semibold mt-1">⚠ Tanggal sudah lewat. Boleh disimpan, jadi acuan delay.</p>
             ) : (
-              <p className="text-[10px] text-gray-400 mt-1">Optional · Kosongkan jika belum pasti</p>
+              <p className="text-caleo-10 text-gray-400 mt-1">Optional · Kosongkan jika belum pasti</p>
             )}
           </div>
           <div className="col-span-4">
@@ -256,7 +256,7 @@ export default function PurchaseOrderFormPage({
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-indigo-500 rounded-full" />
             <h3 className="text-sm font-bold text-gray-900">Items Pembelian</h3>
-            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">
+            <span className="text-caleo-10 font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">
               {items.length} item
             </span>
           </div>
@@ -265,7 +265,7 @@ export default function PurchaseOrderFormPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-12 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+        <div className="grid grid-cols-12 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-caleo-10 font-bold uppercase tracking-wide text-gray-500">
           <span className="col-span-2">SKU</span>
           <span className="col-span-4">Nama Produk</span>
           <span className="col-span-2 text-center">Qty</span>
@@ -339,7 +339,7 @@ export default function PurchaseOrderFormPage({
         <div className="flex gap-2">
           {/* PDF button only available after PO is ORDERED (in detail view) */}
           {isEdit && po!.status !== 'DRAFT' && (
-            <span className="text-[11px] text-gray-400 self-center mr-2">
+            <span className="text-caleo-11 text-gray-400 self-center mr-2">
               <FileText className="w-3 h-3 inline mr-1" />
               Download PDF di halaman detail PO
             </span>

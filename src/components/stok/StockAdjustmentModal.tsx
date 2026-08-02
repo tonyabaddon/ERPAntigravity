@@ -112,7 +112,7 @@ export default function StockAdjustmentModal({
           {item.sku} · {item.name}
         </p>
         <div>
-          <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Gudang</label>
+          <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest">Gudang</label>
           <WarehousePicker
             mode="single"
             warehouses={warehouses}

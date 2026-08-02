@@ -150,8 +150,8 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <div>
-            <h2 className="text-[15px] font-extrabold text-[var(--color-caleo-primary)]">Saldo Awal — Onboarding</h2>
-            <p className="text-[12px] text-slate-500 mt-0.5">
+            <h2 className="text-caleo-15 font-extrabold text-[var(--color-caleo-primary)]">Saldo Awal — Onboarding</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
               Step {step} dari 4 — {STEP_LABELS[step]}
             </p>
           </div>
@@ -167,15 +167,15 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
 
         {/* Cutover date */}
         <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-4">
-          <label className="text-[12px] font-semibold text-slate-600 shrink-0">Tanggal Cutover:</label>
+          <label className="text-xs font-semibold text-slate-600 shrink-0">Tanggal Cutover:</label>
           <input
             type="date"
             value={cutoverDate}
             max={wibDateString()}
             onChange={(e) => setCutoverDate(e.target.value)}
-            className="border border-slate-200 rounded px-3 py-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
+            className="border border-slate-200 rounded px-3 py-1.5 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
           />
-          <span className="text-[11px] text-slate-500">
+          <span className="text-caleo-11 text-slate-500">
             Jurnal Umum Saldo Awal akan diposting per tanggal ini (cutover − 1 hari di backend)
           </span>
         </div>
@@ -193,7 +193,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
               )}
               <div className="flex flex-col items-center gap-1">
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-colors ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-caleo-11 font-bold border-2 transition-colors ${
                     s === step
                       ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                       : s < step
@@ -204,7 +204,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                   {s < step ? '✓' : s}
                 </div>
                 <span
-                  className={`text-[10px] font-semibold ${
+                  className={`text-caleo-10 font-semibold ${
                     s === step ? 'text-[var(--color-caleo-primary)]' : s < step ? 'text-emerald-600' : 'text-slate-400'
                   }`}
                 >
@@ -256,7 +256,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
 
         {/* Live preview panel */}
         <div className="px-6 py-3 border-t border-slate-200 bg-slate-50">
-          <div className="flex items-center gap-6 text-[12px]">
+          <div className="flex items-center gap-6 text-xs">
             <span className="text-slate-500 font-semibold shrink-0">Preview Neraca:</span>
             {previewLoading ? (
               <span className="text-slate-400">Menghitung…</span>
@@ -293,7 +293,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded hover:bg-slate-200"
+              className="px-4 py-2 text-caleo-13 font-semibold text-slate-600 bg-slate-100 rounded hover:bg-slate-200"
             >
               Batal
             </button>
@@ -303,7 +303,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
               type="button"
               onClick={handleBack}
               disabled={step === 1}
-              className="px-4 py-2 text-[13px] font-semibold text-slate-700 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-caleo-13 font-semibold text-slate-700 border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ← Sebelumnya
             </button>
@@ -312,7 +312,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                 type="button"
                 onClick={handleNext}
                 disabled={saving}
-                className="px-4 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-caleo-13 font-bold bg-[var(--color-caleo-primary)] text-white rounded hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {saving ? 'Menyimpan draft…' : 'Berikutnya →'}
               </button>

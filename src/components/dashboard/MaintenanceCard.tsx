@@ -29,7 +29,7 @@ export default function MaintenanceCard({
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{title}</div>
+          <div className="text-caleo-11 font-bold text-slate-500 uppercase tracking-wider">{title}</div>
           <div className="text-2xl font-extrabold text-slate-800 mt-0.5">{count}</div>
           <div className="text-xs text-slate-600 mt-0.5 truncate">{detail}</div>
         </div>

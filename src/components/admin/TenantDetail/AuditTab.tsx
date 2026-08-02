@@ -59,7 +59,7 @@ export function AuditTab({ tenantId }: Props) {
     return (
       <div className="space-y-3" data-testid="audit-tab-loading">
         <div
-          className="text-[12px] animate-pulse"
+          className="text-xs animate-pulse"
           style={{ color: C.muted }}
         >
           Memuat log aktivitas…
@@ -78,10 +78,10 @@ export function AuditTab({ tenantId }: Props) {
         style={{ background: '#fff5f5', borderColor: '#fecaca' }}
         data-testid="audit-tab-error"
       >
-        <p className="text-[13px] font-semibold mb-1" style={{ color: C.danger }}>
+        <p className="text-caleo-13 font-semibold mb-1" style={{ color: C.danger }}>
           Gagal memuat log aktivitas
         </p>
-        <p className="text-[12px] mb-3" style={{ color: C.slate }}>
+        <p className="text-xs mb-3" style={{ color: C.slate }}>
           {error}
         </p>
         <button
@@ -97,7 +97,7 @@ export function AuditTab({ tenantId }: Props) {
               })
               .finally(() => setLoading(false));
           }}
-          className="rounded px-4 py-1.5 text-[12px] font-semibold border transition-opacity hover:opacity-80"
+          className="rounded px-4 py-1.5 text-xs font-semibold border transition-opacity hover:opacity-80"
           style={{ borderColor: C.danger, color: C.danger }}
         >
           Coba lagi
@@ -111,10 +111,10 @@ export function AuditTab({ tenantId }: Props) {
   return (
     <div className="space-y-3" data-testid="audit-tab">
       <div className="flex items-center justify-between">
-        <span className="text-[12px] font-semibold" style={{ color: C.navy }}>
+        <span className="text-xs font-semibold" style={{ color: C.navy }}>
           Log aktivitas ({events.length})
         </span>
-        <span className="text-[11px]" style={{ color: C.muted }}>
+        <span className="text-caleo-11" style={{ color: C.muted }}>
           100 entri terbaru
         </span>
       </div>

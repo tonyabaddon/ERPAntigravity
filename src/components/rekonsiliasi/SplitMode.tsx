@@ -28,7 +28,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
     <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(1,39,73,0.4)' }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} className="bg-white rounded p-6 w-full max-w-lg">
         <h3 className="text-base font-black text-[var(--color-caleo-primary)] mb-1">Pecah {fmt(totalAmount)} ke beberapa target</h3>
-        <p className="text-[11px] text-slate-500 font-semibold mb-4">Total alokasi harus sama dengan jumlah bank line.</p>
+        <p className="text-caleo-11 text-slate-500 font-semibold mb-4">Total alokasi harus sama dengan jumlah bank line.</p>
         {rows.map((r, i) => (
           <div key={i} className="flex gap-2 mb-2">
             <select
@@ -50,8 +50,8 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
             <button onClick={() => deleteRow(i)} className="text-red-600 px-2">×</button>
           </div>
         ))}
-        <button onClick={addRow} className="text-[10px] font-extrabold text-[var(--color-caleo-primary)] mb-3">+ Tambah target</button>
-        <div className={`text-[11px] font-extrabold mb-4 ${Math.abs(remaining) < 50 ? 'text-emerald-700' : 'text-red-700'}`}>
+        <button onClick={addRow} className="text-caleo-10 font-extrabold text-[var(--color-caleo-primary)] mb-3">+ Tambah target</button>
+        <div className={`text-caleo-11 font-extrabold mb-4 ${Math.abs(remaining) < 50 ? 'text-emerald-700' : 'text-red-700'}`}>
           Sisa: {fmt(remaining)} {Math.abs(remaining) < 50 ? '✓' : '— harus 0 sebelum Apply'}
         </div>
         <div className="flex gap-2 justify-end">

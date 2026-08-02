@@ -38,7 +38,7 @@ export function RevenuePlanBreakdown({ planStats }: RevenuePlanBreakdownProps) {
       aria-label="Rincian pendapatan per paket"
     >
       <h3
-        className="text-[12px] font-bold uppercase tracking-widest mb-4"
+        className="text-xs font-bold uppercase tracking-widest mb-4"
         style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
       >
         Rincian per paket
@@ -46,7 +46,7 @@ export function RevenuePlanBreakdown({ planStats }: RevenuePlanBreakdownProps) {
 
       {sorted.length === 0 ? (
         <p
-          className="text-[13px] py-4 text-center"
+          className="text-caleo-13 py-4 text-center"
           style={{ color: '#9DB2CE' }}
           data-testid="plan-breakdown-empty"
         >
@@ -68,20 +68,20 @@ export function RevenuePlanBreakdown({ planStats }: RevenuePlanBreakdownProps) {
                 {/* Row header */}
                 <div className="flex items-center justify-between mb-1.5">
                   <span
-                    className="text-[12px] font-semibold"
+                    className="text-xs font-semibold"
                     style={{ color: '#0B2545' }}
                   >
                     {label}
                   </span>
                   <span className="flex items-center gap-2">
                     <span
-                      className="text-[12px] font-bold"
+                      className="text-xs font-bold"
                       style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0B2545' }}
                     >
                       {formatIDR(row.amount)}
                     </span>
                     <span
-                      className="text-[11px]"
+                      className="text-caleo-11"
                       style={{ color: '#9DB2CE' }}
                     >
                       {row.count} tenant
@@ -115,7 +115,7 @@ export function RevenuePlanBreakdown({ planStats }: RevenuePlanBreakdownProps) {
                 {/* Percentage text */}
                 <div className="mt-1 text-right">
                   <span
-                    className="text-[11px]"
+                    className="text-caleo-11"
                     style={{ color: '#9DB2CE' }}
                   >
                     {pct.toFixed(1)}%

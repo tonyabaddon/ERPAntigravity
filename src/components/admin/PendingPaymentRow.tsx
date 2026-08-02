@@ -91,18 +91,18 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
         {/* Left — tenant + amount */}
         <div className="flex flex-col gap-1 min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[14px] font-bold" style={{ color: '#0B2545' }}>
+            <span className="text-sm font-bold" style={{ color: '#0B2545' }}>
               {payment.tenant_name}
             </span>
             <span
-              className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
+              className="text-caleo-11 font-mono font-bold px-1.5 py-0.5 rounded"
               style={{ background: '#E2E8F0', color: '#0B2545' }}
             >
               {payment.tenant_slug}
             </span>
             {payment.amount_anomaly && (
               <span
-                className="text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+                className="text-caleo-11 font-semibold px-2 py-0.5 rounded-full border"
                 style={{ background: '#FEF3C7', color: '#92400E', borderColor: '#FCD34D' }}
                 data-testid="amount-anomaly-badge"
               >
@@ -111,13 +111,13 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
             )}
           </div>
           <div
-            className="text-[13px] font-semibold"
+            className="text-caleo-13 font-semibold"
             style={{ color: '#0B2545' }}
             data-testid={`payment-amount-${payment.id}`}
           >
             {formatRupiah(payment.amount)}
           </div>
-          <div className="text-[12px]" style={{ color: '#6B7C93' }}>
+          <div className="text-xs" style={{ color: '#6B7C93' }}>
             {payment.payment_method}
             {payment.bank_reference && (
               <span> · Ref: <span className="font-mono">{payment.bank_reference}</span></span>
@@ -127,11 +127,11 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
 
         {/* Middle — dates + notes */}
         <div className="flex flex-col gap-1 min-w-0 flex-1">
-          <div className="text-[12px]" style={{ color: '#6B7C93' }}>
+          <div className="text-xs" style={{ color: '#6B7C93' }}>
             Tanggal: <span className="font-medium text-[#0B2545]">{formatDate(payment.payment_date)}</span>
           </div>
           {payment.notes && (
-            <div className="text-[12px] italic" style={{ color: '#6B7C93' }}>
+            <div className="text-xs italic" style={{ color: '#6B7C93' }}>
               &ldquo;{payment.notes}&rdquo;
             </div>
           )}
@@ -146,7 +146,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
                 type="button"
                 onClick={handleOpenProof}
                 disabled={openingProof}
-                className="text-[12px] font-medium underline disabled:opacity-60"
+                className="text-xs font-medium underline disabled:opacity-60"
                 style={{ color: '#2563EB' }}
                 data-testid={`proof-link-${payment.id}`}
               >
@@ -154,7 +154,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
               </button>
             ) : (
               <span
-                className="text-[12px] italic"
+                className="text-xs italic"
                 style={{ color: '#9DB2CE' }}
                 data-testid={`proof-missing-${payment.id}`}
               >
@@ -169,7 +169,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
               type="button"
               onClick={() => setShowRejectModal(true)}
               disabled={verifying}
-              className="px-3 py-1.5 rounded text-[12px] font-medium transition-colors"
+              className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
               style={{ border: '1px solid #DC2626', color: '#DC2626', background: 'white' }}
               data-testid={`reject-btn-${payment.id}`}
             >
@@ -179,7 +179,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
               type="button"
               onClick={handleVerify}
               disabled={verifying}
-              className="px-3 py-1.5 rounded text-[12px] font-medium transition-colors"
+              className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
               style={{
                 border: '1px solid #16A34A',
                 color: verifying ? '#9DB2CE' : '#16A34A',

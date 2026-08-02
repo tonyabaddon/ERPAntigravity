@@ -132,7 +132,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
               <div className="border-2 border-gray-300 rounded p-3 flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-sm">{supplier.name}</div>
-                  <div className="text-[11px] text-gray-500">Net {supplier.payment_term_days ?? 0} hari</div>
+                  <div className="text-caleo-11 text-gray-500">Net {supplier.payment_term_days ?? 0} hari</div>
                 </div>
                 <button type="button" onClick={() => setSupplier(null)} className="text-xs text-indigo-600 font-semibold hover:underline">Ganti</button>
               </div>
@@ -147,7 +147,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
                       <button key={s.id} type="button" onClick={() => { setSupplier(s); setSupplierQuery(''); setSupplierResults([]); }}
                         className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
                         <div className="font-semibold text-sm">{s.name}</div>
-                        <div className="text-[11px] text-gray-500">Net {s.payment_term_days} hari</div>
+                        <div className="text-caleo-11 text-gray-500">Net {s.payment_term_days} hari</div>
                       </button>
                     ))}
                   </div>
@@ -159,7 +159,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Estimasi Barang Datang</label>
             <input type="date" value={expectedReceiveAt} onChange={e => setExpectedReceiveAt(e.target.value)}
               className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
-            <div className="text-[11px] text-gray-500 mt-1">Opsional — bantu monitor JT pesanan.</div>
+            <div className="text-caleo-11 text-gray-500 mt-1">Opsional — bantu monitor JT pesanan.</div>
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Pajak (%)</label>
@@ -169,7 +169,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
                 setTaxRate(Math.min(1, Math.max(0, n)));
               }}
               className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
-            <div className="text-[11px] text-gray-500 mt-1">Format decimal — 0.11 untuk 11%. Maks 1 (=100%).</div>
+            <div className="text-caleo-11 text-gray-500 mt-1">Format decimal — 0.11 untuk 11%. Maks 1 (=100%).</div>
           </div>
           {/* "Status Awal" radios removed 2026-07-11 audit — the two buttons
               at the bottom ("Simpan Draft" / "Terbitkan Ordered") pass the
@@ -193,10 +193,10 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
         <table className="w-full">
           <thead>
             <tr>
-              <th className="text-left py-2 pr-2 text-[11px] font-semibold text-gray-500 uppercase">SKU / Nama</th>
-              <th className="text-center py-2 px-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Qty</th>
-              <th className="text-right py-2 px-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
-              <th className="text-right py-2 px-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
+              <th className="text-left py-2 pr-2 text-caleo-11 font-semibold text-gray-500 uppercase">SKU / Nama</th>
+              <th className="text-center py-2 px-2 w-20 text-caleo-11 font-semibold text-gray-500 uppercase">Qty</th>
+              <th className="text-right py-2 px-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Harga Beli</th>
+              <th className="text-right py-2 px-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Subtotal</th>
               <th className="w-8"></th>
             </tr>
           </thead>
@@ -246,15 +246,15 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Ringkasan</div>
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded p-4">
-            <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal</div>
+            <div className="text-caleo-11 text-gray-500 uppercase font-semibold">Subtotal</div>
             <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(subtotal)}</div>
           </div>
           <div className="bg-amber-50 rounded p-4">
-            <div className="text-[11px] text-amber-700 uppercase font-semibold">Pajak ({(taxRate * 100).toFixed(1)}%)</div>
+            <div className="text-caleo-11 text-amber-700 uppercase font-semibold">Pajak ({(taxRate * 100).toFixed(1)}%)</div>
             <div className="text-xl font-extrabold mt-1 text-amber-700">{formatIDR(taxAmount)}</div>
           </div>
           <div className="bg-indigo-50 rounded p-4">
-            <div className="text-[11px] text-indigo-600 uppercase font-semibold">Total</div>
+            <div className="text-caleo-11 text-indigo-600 uppercase font-semibold">Total</div>
             <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(total)}</div>
           </div>
         </div>

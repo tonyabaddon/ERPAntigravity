@@ -35,7 +35,7 @@ function RoleBadge({ role }: { role: TenantUserRow['role'] }) {
   const s = cfg[role] ?? cfg.staff;
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
       style={{ background: s.bg, color: s.color }}
     >
       {role}
@@ -49,7 +49,7 @@ function StatusBadge({ status }: { status: TenantUserRow['status'] }) {
   if (status === 'ACTIVE') {
     return (
       <span
-        className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+        className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
         style={{ background: '#dcfce7', color: '#166534' }}
       >
         aktif
@@ -58,7 +58,7 @@ function StatusBadge({ status }: { status: TenantUserRow['status'] }) {
   }
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
       style={{ background: '#fee2e2', color: '#991b1b' }}
     >
       disabled
@@ -134,7 +134,7 @@ export function UsersTab({ tenantId }: Props) {
   if (loading) {
     return (
       <div
-        className="text-[13px] animate-pulse py-4"
+        className="text-caleo-13 animate-pulse py-4"
         style={{ color: C.muted }}
         data-testid="users-tab-loading"
       >
@@ -152,10 +152,10 @@ export function UsersTab({ tenantId }: Props) {
         style={{ background: '#fff5f5', borderColor: '#fecaca' }}
         data-testid="users-tab-error"
       >
-        <p className="text-[13px] font-semibold mb-1" style={{ color: C.danger }}>
+        <p className="text-caleo-13 font-semibold mb-1" style={{ color: C.danger }}>
           Gagal memuat daftar pengguna
         </p>
-        <p className="text-[12px]" style={{ color: C.slate }}>
+        <p className="text-xs" style={{ color: C.slate }}>
           {error}
         </p>
       </div>
@@ -167,14 +167,14 @@ export function UsersTab({ tenantId }: Props) {
   if (users.length === 0) {
     return (
       <div
-        className="border rounded p-8 text-center text-[13px]"
+        className="border rounded p-8 text-center text-caleo-13"
         style={{ borderColor: C.surface, color: C.muted }}
         data-testid="users-tab-empty"
       >
         <p className="font-medium" style={{ color: C.slate }}>
           Belum ada pengguna terdaftar
         </p>
-        <p className="mt-1 text-[12px]">
+        <p className="mt-1 text-xs">
           Tenant ini belum memiliki staf yang terdaftar di sistem.
         </p>
       </div>
@@ -187,10 +187,10 @@ export function UsersTab({ tenantId }: Props) {
     <div className="space-y-3" data-testid="users-tab">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <span className="text-[12px] font-semibold" style={{ color: C.navy }}>
+        <span className="text-xs font-semibold" style={{ color: C.navy }}>
           Pengguna ({users.length})
         </span>
-        <span className="text-[11px]" style={{ color: C.muted }}>
+        <span className="text-caleo-11" style={{ color: C.muted }}>
           Read-only — tambah/hapus/edit tersedia di Wave 4
         </span>
       </div>
@@ -201,7 +201,7 @@ export function UsersTab({ tenantId }: Props) {
         style={{ borderColor: C.surface }}
       >
         <table
-          className="w-full text-[12px]"
+          className="w-full text-xs"
           style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
         >
           <thead>
@@ -218,7 +218,7 @@ export function UsersTab({ tenantId }: Props) {
               ).map((label) => (
                 <th
                   key={label}
-                  className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap"
+                  className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest whitespace-nowrap"
                   style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}
                 >
                   {label}
@@ -268,14 +268,14 @@ export function UsersTab({ tenantId }: Props) {
 
                 {/* Login terakhir */}
                 <td
-                  className="px-3 py-2 text-[11px]"
+                  className="px-3 py-2 text-caleo-11"
                   style={{ color: u.last_sign_in_at ? C.slate : C.muted }}
                 >
                   {fmtDateTime(u.last_sign_in_at)}
                 </td>
 
                 {/* Bergabung sejak */}
-                <td className="px-3 py-2 text-[11px]" style={{ color: C.slate }}>
+                <td className="px-3 py-2 text-caleo-11" style={{ color: C.slate }}>
                   {fmtDate(u.created_at)}
                 </td>
               </tr>

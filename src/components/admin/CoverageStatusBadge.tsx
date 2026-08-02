@@ -35,7 +35,7 @@ export function CoverageStatusBadge({ status }: CoverageStatusBadgeProps) {
   if (!status) {
     return (
       <span
-        className="text-[12px]"
+        className="text-xs"
         style={{ color: '#9DB2CE' }}
         data-testid="coverage-badge-null"
       >
@@ -47,7 +47,7 @@ export function CoverageStatusBadge({ status }: CoverageStatusBadgeProps) {
   const cfg = CONFIG[status];
   return (
     <span
-      className={`inline-block text-[11px] uppercase tracking-wide font-bold px-2 py-0.5 rounded-full ${cfg.bgClass} ${cfg.textClass}`}
+      className={`inline-block text-caleo-11 uppercase tracking-wide font-bold px-2 py-0.5 rounded-full ${cfg.bgClass} ${cfg.textClass}`}
       data-testid={`coverage-badge-${status}`}
     >
       {cfg.label}

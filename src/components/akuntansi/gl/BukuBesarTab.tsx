@@ -289,7 +289,7 @@ export default function BukuBesarTab({
         {onBackToTB && (
           <button
             onClick={onBackToTB}
-            className="text-[11px] text-blue-700 hover:underline inline-flex items-center gap-1 mb-3"
+            className="text-caleo-11 text-blue-700 hover:underline inline-flex items-center gap-1 mb-3"
           >
             <ArrowLeft className="w-3 h-3" />
             Trial Balance
@@ -329,7 +329,7 @@ export default function BukuBesarTab({
       <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
         {/* Account picker */}
         <div className="flex items-center gap-2 flex-1 min-w-[220px]">
-          <label className="text-[11px] font-bold text-gray-600 whitespace-nowrap">
+          <label className="text-caleo-11 font-bold text-gray-600 whitespace-nowrap">
             Akun:
           </label>
           <select
@@ -355,7 +355,7 @@ export default function BukuBesarTab({
 
         {/* Period presets */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-gray-600">Periode:</span>
+          <span className="text-caleo-11 font-bold text-gray-600">Periode:</span>
           {(
             [
               { key: 'bulan-ini', label: 'Bulan ini' },
@@ -366,7 +366,7 @@ export default function BukuBesarTab({
             <button
               key={key}
               onClick={() => handlePreset(key)}
-              className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
+              className={`text-caleo-11 font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                 activePreset === key
                   ? 'bg-[var(--color-caleo-primary)] text-white'
                   : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
@@ -377,7 +377,7 @@ export default function BukuBesarTab({
           ))}
           <button
             onClick={() => showToast('Custom date picker hadir di Phase 2', 'info')}
-            className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+            className="text-caleo-11 font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
           >
             Custom...
           </button>
@@ -388,7 +388,7 @@ export default function BukuBesarTab({
       <div className="p-6">
         {!accountId ? (
           /* No account selected */
-          <div className="py-16 text-center text-[13px] text-gray-500">
+          <div className="py-16 text-center text-caleo-13 text-gray-500">
             <BookOpen className="w-8 h-8 mx-auto mb-3 text-gray-300" />
             <p>Pilih akun di atas untuk melihat Buku Besar.</p>
           </div>
@@ -401,7 +401,7 @@ export default function BukuBesarTab({
                 className="p-3 rounded"
                 style={{ border: '1px solid var(--color-caleo-mist-dark)', background: '#fafbff' }}
               >
-                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">
+                <div className="text-caleo-10 uppercase tracking-widest text-gray-500 font-bold mb-1">
                   Saldo Awal
                 </div>
                 <div className="text-lg font-extrabold" style={{ color: '#1e3d60' }}>
@@ -414,7 +414,7 @@ export default function BukuBesarTab({
                 className="p-3 rounded"
                 style={{ border: '1px solid var(--color-caleo-mist-dark)', background: '#fafbff' }}
               >
-                <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">
+                <div className="text-caleo-10 uppercase tracking-widest text-gray-500 font-bold mb-1">
                   Movement bulan ini
                 </div>
                 <div
@@ -432,7 +432,7 @@ export default function BukuBesarTab({
                 className="p-3 rounded"
                 style={{ background: '#d1fae5', border: '1px solid #6ee7b7' }}
               >
-                <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-bold mb-1">
+                <div className="text-caleo-10 uppercase tracking-widest text-emerald-700 font-bold mb-1">
                   Saldo Akhir
                 </div>
                 <div className="text-lg font-extrabold text-emerald-700">
@@ -447,19 +447,19 @@ export default function BukuBesarTab({
               style={{ border: '1px solid var(--color-caleo-mist-dark)' }}
             >
               {loadingRows ? (
-                <div className="py-16 text-center text-[13px] text-gray-500">
+                <div className="py-16 text-center text-caleo-13 text-gray-500">
                   Memuat buku besar...
                 </div>
               ) : rows.length === 0 ? (
-                <div className="py-16 text-center text-[13px] text-gray-500">
+                <div className="py-16 text-center text-caleo-13 text-gray-500">
                   <BookOpen className="w-8 h-8 mx-auto mb-3 text-gray-300" />
                   <p>Belum ada transaksi di akun ini untuk periode ini.</p>
                 </div>
               ) : (
                 <>
-                  <table className="w-full text-[12px]">
+                  <table className="w-full text-xs">
                     <thead style={{ background: 'var(--color-caleo-cloud)' }}>
-                      <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+                      <tr className="text-caleo-10 uppercase font-extrabold text-gray-600">
                         <th className="text-left py-2 px-3">Tanggal</th>
                         <th className="text-left py-2 px-3">No. Entry</th>
                         <th className="text-left py-2 px-3">Keterangan</th>
@@ -503,7 +503,7 @@ export default function BukuBesarTab({
                         className="font-extrabold"
                         style={{ color: 'var(--color-caleo-primary)' }}
                       >
-                        <td colSpan={3} className="py-3 px-3 text-right text-[11px] uppercase tracking-wide">
+                        <td colSpan={3} className="py-3 px-3 text-right text-caleo-11 uppercase tracking-wide">
                           TOTAL {periodeLabel.toUpperCase()}
                         </td>
                         <td className="py-3 px-3 text-right text-emerald-700">
@@ -520,7 +520,7 @@ export default function BukuBesarTab({
                   </table>
 
                   {/* Pagination */}
-                  <div className="px-6 py-3 text-[11px] text-center text-gray-500">
+                  <div className="px-6 py-3 text-caleo-11 text-center text-gray-500">
                     Menampilkan {Math.min(visibleCount, rows.length)} dari {rows.length}
                     {hasMore && (
                       <>
@@ -542,14 +542,14 @@ export default function BukuBesarTab({
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => showToast('Export PDF hadir di Phase 4 Laporan', 'info')}
-                className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-caleo-11 font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 PDF Buku Besar
               </button>
               <button
                 onClick={() => showToast('Export Excel hadir di Phase 4 Laporan', 'info')}
-                className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-caleo-11 font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
               >
                 <Grid className="w-3.5 h-3.5" />
                 Excel

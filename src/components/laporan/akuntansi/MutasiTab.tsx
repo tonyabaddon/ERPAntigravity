@@ -234,21 +234,21 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
         <div className="flex gap-2">
           <button
             onClick={() => showToast('Export PDF hadir di Phase 4', 'info')}
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
           >
             <FileDown className="w-3.5 h-3.5" />
             PDF
           </button>
           <button
             onClick={() => showToast('Export Excel hadir di Phase 4', 'info')}
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
           >
             <Grid className="w-3.5 h-3.5" />
             Excel
           </button>
           <button
             onClick={() => showToast('Export CSV hadir di Phase 4', 'info')}
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
             CSV
@@ -257,10 +257,10 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
       </div>
 
       {/* ── Filter row ── */}
-      <div className="p-6 grid grid-cols-12 gap-3 text-[12px]">
+      <div className="p-6 grid grid-cols-12 gap-3 text-xs">
         {/* Akun (multi-select) */}
         <div className="col-span-4">
-          <label className="block font-bold text-[10px] uppercase text-gray-600 mb-1">
+          <label className="block font-bold text-caleo-10 uppercase text-gray-600 mb-1">
             Akun (multi-select)
           </label>
           <div
@@ -272,7 +272,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
               return (
                 <span
                   key={acc.cash_account_id}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-0.5 ${color.bg} ${color.text}`}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-0.5 ${color.bg} ${color.text}`}
                 >
                   {acc.internal_label}
                   <button
@@ -286,7 +286,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             })}
             <button
               onClick={() => setShowAccountPicker(!showAccountPicker)}
-              className="text-[10px] text-blue-700 font-bold"
+              className="text-caleo-10 text-blue-700 font-bold"
             >
               + Pilih
             </button>
@@ -298,7 +298,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
                 style={{ width: '280px' }}
               >
                 {loadingAccounts ? (
-                  <div className="text-[11px] text-gray-500">Memuat...</div>
+                  <div className="text-caleo-11 text-gray-500">Memuat...</div>
                 ) : (
                   <div className="space-y-1">
                     {accounts.map(acc => {
@@ -307,7 +307,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
                       return (
                         <label
                           key={acc.cash_account_id}
-                          className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-blue-50 text-[11px]"
+                          className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-blue-50 text-caleo-11"
                         >
                           <input
                             type="checkbox"
@@ -316,7 +316,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
                             className="w-4 h-4 rounded"
                           />
                           <span
-                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${color.bg} ${color.text}`}
+                            className={`px-1.5 py-0.5 rounded text-caleo-9 font-bold uppercase ${color.bg} ${color.text}`}
                           >
                             {acc.account_type}
                           </span>
@@ -333,7 +333,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
 
         {/* Periode */}
         <div className="col-span-3">
-          <label className="block font-bold text-[10px] uppercase text-gray-600 mb-1">
+          <label className="block font-bold text-caleo-10 uppercase text-gray-600 mb-1">
             Periode
           </label>
           <select
@@ -349,7 +349,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
 
         {/* Arah */}
         <div className="col-span-2">
-          <label className="block font-bold text-[10px] uppercase text-gray-600 mb-1">
+          <label className="block font-bold text-caleo-10 uppercase text-gray-600 mb-1">
             Arah
           </label>
           <select
@@ -365,7 +365,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
 
         {/* Kategori */}
         <div className="col-span-3">
-          <label className="block font-bold text-[10px] uppercase text-gray-600 mb-1">
+          <label className="block font-bold text-caleo-10 uppercase text-gray-600 mb-1">
             Kategori
           </label>
           <select
@@ -384,7 +384,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
       </div>
 
       {/* ── Summary bar ── */}
-      <div className="px-6 pb-4 flex items-center gap-6 text-[13px] flex-wrap">
+      <div className="px-6 pb-4 flex items-center gap-6 text-caleo-13 flex-wrap">
         <span>
           <strong className="text-gray-600">Total IN:</strong>{' '}
           <strong className="text-emerald-700">Rp {formatNum(totalIn)}</strong>
@@ -400,7 +400,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
           </strong>
         </span>
         <span className="text-gray-500">· {rows.length} mutasi</span>
-        <label className="ml-auto flex items-center gap-2 text-[11px]">
+        <label className="ml-auto flex items-center gap-2 text-caleo-11">
           <input
             type="checkbox"
             checked={includePersonal}
@@ -413,9 +413,9 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
 
       {/* ── Table ── */}
       <div className="border-t border-gray-200 relative">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-xs">
           <thead style={{ background: 'var(--color-caleo-cloud)' }}>
-            <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+            <tr className="text-caleo-10 uppercase font-extrabold text-gray-600">
               <th className="text-left py-2 px-3">Tanggal</th>
               <th className="text-left py-2 px-3">Akun</th>
               <th className="text-left py-2 px-3">Kategori</th>
@@ -427,13 +427,13 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
           <tbody>
             {loadingRows ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-[13px] text-gray-500">
+                <td colSpan={6} className="py-16 text-center text-caleo-13 text-gray-500">
                   Memuat mutasi...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-[13px] text-gray-500">
+                <td colSpan={6} className="py-16 text-center text-caleo-13 text-gray-500">
                   Belum ada mutasi dalam periode + filter ini.
                 </td>
               </tr>
@@ -452,7 +452,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
                     </td>
                     <td className="py-2 px-3">
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-0.5 ${color.bg} ${color.text}`}
+                        className={`inline-flex px-2 py-0.5 rounded text-caleo-10 font-bold uppercase tracking-0.5 ${color.bg} ${color.text}`}
                       >
                         {row.account_label}
                       </span>
@@ -490,7 +490,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
 
       {/* ── Pagination footer ── */}
       {rows.length > 0 && (
-        <div className="px-6 py-3 text-[11px] text-center text-gray-500">
+        <div className="px-6 py-3 text-caleo-11 text-center text-gray-500">
           Menampilkan {Math.min(visibleCount, rows.length)} dari {rows.length}
           {hasMore && (
             <>

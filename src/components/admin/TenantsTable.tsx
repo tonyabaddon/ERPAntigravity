@@ -24,7 +24,7 @@ function UsageBadge({ status }: { status: UsageStatus }) {
   const b = USAGE_BADGE[status] ?? USAGE_BADGE.IDLE;
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
       style={{ background: b.bg, color: b.color }}
     >
       {b.label}
@@ -42,7 +42,7 @@ function PlanBadge({ plan }: { plan: string | null }) {
     :                     '#5A6472';
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
       style={{ background: `${color}18`, color }}
     >
       {plan}
@@ -64,7 +64,7 @@ function SortableHeader({ label, colKey, sortBy, sortDir, onSort }: SortableHead
   const active = sortBy === colKey;
   return (
     <th
-      className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap"
+      className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest cursor-pointer select-none whitespace-nowrap"
       style={{
         color: active ? '#F9B233' : '#9DB2CE',
         fontFamily: 'JetBrains Mono, monospace',
@@ -122,7 +122,7 @@ function ImpersonateButton({ slug, name, onImpersonate, impersonating, access }:
       onClick={() => onImpersonate(slug)}
       disabled={impersonating !== null || isBlocked}
       title={title}
-      className="rounded px-2 py-0.5 text-[11px] font-semibold border transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+      className="rounded px-2 py-0.5 text-caleo-11 font-semibold border transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
       style={{
         borderColor: isBlocked ? '#cbd5e1' : '#F9B233',
         color: busy ? '#F9B233' : isBlocked ? '#94a3b8' : '#0B2545',
@@ -186,7 +186,7 @@ export function TenantsTable({
   if (rows.length === 0) {
     return (
       <div
-        className="border rounded p-8 text-center text-[13px]"
+        className="border rounded p-8 text-center text-caleo-13"
         style={{ borderColor: '#ECEEF1', color: '#9DB2CE' }}
         data-testid="tenants-empty"
       >
@@ -197,21 +197,21 @@ export function TenantsTable({
 
   return (
     <div className="border rounded overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
-      <table className="w-full text-[12px]" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <table className="w-full text-xs" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
         <thead>
           <tr style={{ background: '#0B2545' }}>
             <SortableHeader label="Nama"       colKey="name"          sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Slug</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Slug</th>
             <SortableHeader label="Paket"      colKey="plan_code"     sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Status</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Status</th>
             <SortableHeader label="Kedaluwarsa" colKey="expires_at"   sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
             <SortableHeader label="Login terakhir" colKey="last_login_at" sortBy={sortBy} sortDir={sortDir} onSort={onSort} />
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Pengguna</th>
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>SKU</th>
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Transaksi 7h</th>
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Aktifitas</th>
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Pembayaran</th>
-            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Aksi</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Pengguna</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>SKU</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Transaksi 7h</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Aktifitas</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Pembayaran</th>
+            <th className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -251,24 +251,24 @@ export function TenantsTable({
               {/* Status */}
               <td className="px-3 py-2">
                 {t.status === 'ACTIVE' ? (
-                  <span className="text-[12px] font-medium" style={{ color: '#1F8A5B' }}>● Aktif</span>
+                  <span className="text-xs font-medium" style={{ color: '#1F8A5B' }}>● Aktif</span>
                 ) : t.status === 'SUSPENDED' ? (
-                  <span className="text-[12px] font-medium" style={{ color: '#C0392B' }}>● Suspended</span>
+                  <span className="text-xs font-medium" style={{ color: '#C0392B' }}>● Suspended</span>
                 ) : (
-                  <span className="text-[12px] font-medium" style={{ color: '#9DB2CE' }}>● {t.status}</span>
+                  <span className="text-xs font-medium" style={{ color: '#9DB2CE' }}>● {t.status}</span>
                 )}
               </td>
               {/* Kedaluwarsa */}
               <td className="px-3 py-2" style={{ color: '#5A6472' }}>
                 {t.expires_at ?? <span style={{ color: '#9DB2CE' }}>—</span>}
                 {t.days_until_expiry !== null && t.days_until_expiry <= 45 && (
-                  <span className="ml-1 text-[11px] font-semibold" style={{ color: '#C0392B' }}>
+                  <span className="ml-1 text-caleo-11 font-semibold" style={{ color: '#C0392B' }}>
                     ({t.days_until_expiry}h)
                   </span>
                 )}
               </td>
               {/* Login terakhir */}
-              <td className="px-3 py-2 text-[11px]" style={{ color: '#5A6472' }}>
+              <td className="px-3 py-2 text-caleo-11" style={{ color: '#5A6472' }}>
                 {t.last_login_at
                   ? new Date(t.last_login_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })
                   : <span style={{ color: '#9DB2CE' }}>—</span>
@@ -310,7 +310,7 @@ export function TenantsTable({
                     <button
                       aria-label={`Suspend ${t.name}`}
                       onClick={() => setSuspendTarget(t)}
-                      className="text-caleo-danger border border-caleo-danger/40 hover:bg-caleo-danger/10 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors"
+                      className="text-caleo-danger border border-caleo-danger/40 hover:bg-caleo-danger/10 rounded-full px-3 py-1 text-xs font-semibold transition-colors"
                     >
                       Suspend
                     </button>
@@ -319,7 +319,7 @@ export function TenantsTable({
                     <button
                       aria-label={`Aktifkan ${t.name}`}
                       onClick={() => handleActivate(t)}
-                      className="bg-caleo-success text-white rounded-full px-3 py-1 text-[12px] font-semibold hover:opacity-90 transition-opacity"
+                      className="bg-caleo-success text-white rounded-full px-3 py-1 text-xs font-semibold hover:opacity-90 transition-opacity"
                     >
                       Aktifkan
                     </button>
@@ -327,7 +327,7 @@ export function TenantsTable({
                   {t.status === 'ARCHIVED' && (
                     <span
                       data-testid={`no-action-archived-${t.tenant_id}`}
-                      className="text-[12px]"
+                      className="text-xs"
                       style={{ color: '#9DB2CE' }}
                     >
                       —

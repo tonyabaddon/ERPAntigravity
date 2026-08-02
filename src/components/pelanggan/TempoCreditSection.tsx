@@ -121,13 +121,13 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
       <div className="bg-slate-50 rounded p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="text-sm font-semibold text-on-surface">Tempo & Limit Kredit</div>
-          <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">BELUM AKTIF</span>
+          <span className="bg-slate-200 text-slate-600 text-caleo-10 font-bold px-2 py-0.5 rounded-full">BELUM AKTIF</span>
         </div>
         <div className="text-xs text-slate-500 mb-3">
           Aktifkan jika ini customer langganan grosir terpercaya. Permintaan akan dikirim ke owner.
         </div>
         <div className="mb-3">
-          <label className="text-[11px] font-semibold text-slate-600 uppercase mb-1 block">Jangka Waktu (Net)</label>
+          <label className="text-caleo-11 font-semibold text-slate-600 uppercase mb-1 block">Jangka Waktu (Net)</label>
           <div className="flex gap-2 flex-wrap">
             {termOptions.map(d => (
               <button key={d} type="button"
@@ -139,7 +139,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
           </div>
         </div>
         <div className="mb-3">
-          <label className="text-[11px] font-semibold text-slate-600 uppercase mb-1 block">Limit Kredit Maksimum</label>
+          <label className="text-caleo-11 font-semibold text-slate-600 uppercase mb-1 block">Limit Kredit Maksimum</label>
           <div className="relative">
             <span className="absolute left-3 top-2 text-sm text-slate-500">Rp</span>
             <input type="text" value={limitInput} onChange={e => setLimitInput(e.target.value.replace(/\D/g, ''))}
@@ -147,7 +147,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
           </div>
         </div>
         <div className="mb-3">
-          <label className="text-[11px] font-semibold text-slate-600 uppercase mb-1 block">Alasan (opsional)</label>
+          <label className="text-caleo-11 font-semibold text-slate-600 uppercase mb-1 block">Alasan (opsional)</label>
           <input type="text" value={reasonInput} onChange={e => setReasonInput(e.target.value)}
             className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
         </div>
@@ -167,33 +167,33 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
         <div className="text-sm font-semibold text-on-surface flex items-center gap-2">
           <span className="text-secondary">●</span> Tempo & Limit Kredit
         </div>
-        <span className="bg-secondary/15 text-secondary text-[10px] font-bold px-2 py-0.5 rounded-full">AKTIF</span>
+        <span className="bg-secondary/15 text-secondary text-caleo-10 font-bold px-2 py-0.5 rounded-full">AKTIF</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <div className="text-[10px] text-slate-500 uppercase mb-0.5">Jangka Waktu</div>
+          <div className="text-caleo-10 text-slate-500 uppercase mb-0.5">Jangka Waktu</div>
           <div className="text-base font-semibold text-on-surface">Net {customer.term_days} hari</div>
         </div>
         <div>
-          <div className="text-[10px] text-slate-500 uppercase mb-0.5">Limit Kredit</div>
+          <div className="text-caleo-10 text-slate-500 uppercase mb-0.5">Limit Kredit</div>
           <div className="text-base font-semibold text-on-surface">{formatIDR(customer.credit_limit)}</div>
         </div>
       </div>
 
       <div className="mb-3">
-        <div className="flex justify-between text-[11px] text-slate-600 mb-1">
+        <div className="flex justify-between text-caleo-11 text-slate-600 mb-1">
           <span className="font-semibold">Terpakai</span>
           <span>{formatIDR(0)} / {formatIDR(customer.credit_limit)} ({usagePct}%)</span>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-2">
           <div className="bg-secondary rounded-full h-2" style={{ width: `${usagePct}%` }}></div>
         </div>
-        <div className="text-[11px] text-slate-500 mt-1">Outstanding tracking ditambahkan di Phase 1B</div>
+        <div className="text-caleo-11 text-slate-500 mt-1">Outstanding tracking ditambahkan di Phase 1B</div>
       </div>
 
       <div className="mb-3">
-        <label className="text-[11px] font-semibold text-slate-600 uppercase mb-1 block">Limit baru (untuk Ubah) atau Alasan (untuk Nonaktifkan)</label>
+        <label className="text-caleo-11 font-semibold text-slate-600 uppercase mb-1 block">Limit baru (untuk Ubah) atau Alasan (untuk Nonaktifkan)</label>
         <div className="relative">
           <span className="absolute left-3 top-2 text-sm text-slate-500">Rp</span>
           <input type="text" value={limitInput} onChange={e => setLimitInput(e.target.value.replace(/\D/g, ''))}
@@ -214,7 +214,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
           🚫 Nonaktifkan
         </button>
       </div>
-      <div className="text-[11px] text-slate-400 text-center mt-2">Kedua aksi di atas perlu approval owner</div>
+      <div className="text-caleo-11 text-slate-400 text-center mt-2">Kedua aksi di atas perlu approval owner</div>
     </div>
   );
 }

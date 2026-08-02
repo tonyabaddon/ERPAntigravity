@@ -251,19 +251,19 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
           <TrendingUp className="w-5 h-5 text-emerald-200" />
           <h3 className="text-xl font-extrabold">{companyName}</h3>
         </div>
-        <p className="text-[12px] text-emerald-100">
+        <p className="text-xs text-emerald-100">
           Laporan Laba Rugi · Periode {headerPeriodLabel} · (dalam Rupiah)
         </p>
       </div>
 
       {/* ── Period selector row ── */}
       <div className="px-6 pt-4 pb-2 flex items-center gap-2 border-b border-gray-100">
-        <span className="text-[11px] font-bold uppercase text-gray-500 mr-1">Periode:</span>
+        <span className="text-caleo-11 font-bold uppercase text-gray-500 mr-1">Periode:</span>
         {(['bulan-ini', '30-hari', 'tahun-ini'] as const).map(preset => (
           <button
             key={preset}
             onClick={() => handlePeriodPreset(preset)}
-            className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
+            className={`px-3 py-1 rounded-full text-caleo-11 font-bold transition-all ${
               periodPreset === preset
                 ? 'bg-emerald-700 text-white'
                 : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
@@ -276,7 +276,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
               : 'Tahun ini'}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-gray-500">
+        <span className="ml-auto text-caleo-11 text-gray-500">
           {period.fromDate} s/d {period.toDate}
         </span>
       </div>
@@ -284,27 +284,27 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
       {/* ── Body ── */}
       <div className="p-6">
         {loading ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">
+          <div className="py-16 text-center text-caleo-13 text-gray-500">
             Memuat data...
           </div>
         ) : error ? (
-          <div className="py-8 text-center text-[13px] text-rose-600">
+          <div className="py-8 text-center text-caleo-13 text-rose-600">
             Gagal memuat data: {error}
           </div>
         ) : isEmpty ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">
+          <div className="py-16 text-center text-caleo-13 text-gray-500">
             Belum ada transaksi pada periode ini.
           </div>
         ) : data ? (
           <>
             {/* ── P&L Table ── */}
-            <table className="w-full text-[13px]">
+            <table className="w-full text-caleo-13">
               <thead>
                 <tr style={{ background: '#f3f4f6' }}>
-                  <th className="text-left py-2 px-3 font-bold text-[11px] uppercase text-gray-600 w-full">
+                  <th className="text-left py-2 px-3 font-bold text-caleo-11 uppercase text-gray-600 w-full">
                     Keterangan
                   </th>
-                  <th className="text-right py-2 px-3 font-bold text-[11px] uppercase text-gray-600 whitespace-nowrap w-44">
+                  <th className="text-right py-2 px-3 font-bold text-caleo-11 uppercase text-gray-600 whitespace-nowrap w-44">
                     Rupiah
                   </th>
                 </tr>
@@ -312,7 +312,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
               <tbody>
                 {/* ── PENDAPATAN section ── */}
                 <tr style={{ background: '#ecfdf5' }}>
-                  <td colSpan={2} className="py-2 px-3 font-bold text-[12px] uppercase text-emerald-900">
+                  <td colSpan={2} className="py-2 px-3 font-bold text-xs uppercase text-emerald-900">
                     PENDAPATAN
                   </td>
                 </tr>
@@ -320,7 +320,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                   <tr key={item.code} className="border-t border-gray-50">
                     <td className="py-1.5 px-3 pl-6 text-gray-700">
                       {item.name}{' '}
-                      <span className="text-[10px] text-gray-400">({item.code})</span>
+                      <span className="text-caleo-10 text-gray-400">({item.code})</span>
                     </td>
                     <td className="py-1.5 px-3 text-right font-mono text-gray-800">
                       {formatRupiah(item.amount)}
@@ -339,7 +339,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
 
                 {/* ── HARGA POKOK PENJUALAN section ── */}
                 <tr style={{ background: '#fff7ed' }}>
-                  <td colSpan={2} className="py-2 px-3 font-bold text-[12px] uppercase text-orange-900">
+                  <td colSpan={2} className="py-2 px-3 font-bold text-xs uppercase text-orange-900">
                     HARGA POKOK PENJUALAN
                   </td>
                 </tr>
@@ -347,7 +347,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                   <tr key={item.code} className="border-t border-gray-50">
                     <td className="py-1.5 px-3 pl-6 text-gray-700">
                       {item.name}{' '}
-                      <span className="text-[10px] text-gray-400">({item.code})</span>
+                      <span className="text-caleo-10 text-gray-400">({item.code})</span>
                     </td>
                     <td className="py-1.5 px-3 text-right font-mono text-orange-800">
                       {formatRupiah(item.amount)}
@@ -378,7 +378,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
 
                 {/* ── BEBAN OPERASIONAL section ── */}
                 <tr style={{ background: '#fff7ed' }}>
-                  <td colSpan={2} className="py-2 px-3 font-bold text-[12px] uppercase text-orange-900">
+                  <td colSpan={2} className="py-2 px-3 font-bold text-xs uppercase text-orange-900">
                     BEBAN OPERASIONAL
                   </td>
                 </tr>
@@ -386,7 +386,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                   <tr key={item.code} className="border-t border-gray-50">
                     <td className="py-1.5 px-3 pl-6 text-gray-700">
                       {item.name}{' '}
-                      <span className="text-[10px] text-gray-400">({item.code})</span>
+                      <span className="text-caleo-10 text-gray-400">({item.code})</span>
                     </td>
                     <td className="py-1.5 px-3 text-right font-mono text-orange-800">
                       {formatRupiah(item.amount)}
@@ -417,7 +417,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                 {(data.pendapatanLainLain.length > 0 || data.bebanLainLain.length > 0) && (
                   <>
                     <tr style={{ background: '#f9fafb' }}>
-                      <td colSpan={2} className="py-2 px-3 font-bold text-[12px] uppercase text-gray-700">
+                      <td colSpan={2} className="py-2 px-3 font-bold text-xs uppercase text-gray-700">
                         PENDAPATAN/(BEBAN) LAIN-LAIN
                       </td>
                     </tr>
@@ -425,7 +425,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                       <tr key={item.code} className="border-t border-gray-50">
                         <td className="py-1.5 px-3 pl-6 text-gray-700">
                           {item.name}{' '}
-                          <span className="text-[10px] text-gray-400">({item.code})</span>
+                          <span className="text-caleo-10 text-gray-400">({item.code})</span>
                         </td>
                         <td className="py-1.5 px-3 text-right font-mono text-gray-800">
                           {formatRupiah(item.amount)}
@@ -436,7 +436,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                       <tr key={item.code} className="border-t border-gray-50">
                         <td className="py-1.5 px-3 pl-6 text-gray-700 italic">
                           {item.name}{' '}
-                          <span className="text-[10px] text-gray-400">({item.code})</span>
+                          <span className="text-caleo-10 text-gray-400">({item.code})</span>
                         </td>
                         <td className="py-1.5 px-3 text-right font-mono text-orange-800">
                           ({formatRupiah(item.amount)})
@@ -459,10 +459,10 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                 {/* Beban PPh row */}
                 {data.bebanPajak !== 0 && (
                   <tr className="border-t border-gray-100">
-                    <td className="py-1.5 px-3 pl-6 text-gray-600 italic text-[12px]">
+                    <td className="py-1.5 px-3 pl-6 text-gray-600 italic text-xs">
                       {configLoaded ? pphLabel : '(Beban PPh Final)'}
                     </td>
-                    <td className="py-1.5 px-3 text-right font-mono text-orange-800 text-[12px]">
+                    <td className="py-1.5 px-3 text-right font-mono text-orange-800 text-xs">
                       ({formatRupiah(data.bebanPajak)})
                     </td>
                   </tr>
@@ -473,10 +473,10 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                   className="border-t-4"
                   style={{ background: '#d1fae5', borderColor: '#059669' }}
                 >
-                  <td className="py-3 px-3 font-black text-[15px] text-emerald-900">
+                  <td className="py-3 px-3 font-black text-caleo-15 text-emerald-900">
                     LABA NETO BULAN INI
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-[15px] font-mono text-emerald-900">
+                  <td className="py-3 px-3 text-right font-black text-caleo-15 font-mono text-emerald-900">
                     {formatRupiah(data.labaNeto)}
                   </td>
                 </tr>
@@ -485,7 +485,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
 
             {/* ── Info banner ── */}
             <div
-              className="mt-6 rounded p-3 flex items-start gap-2 text-[11px] text-amber-900 border"
+              className="mt-6 rounded p-3 flex items-start gap-2 text-caleo-11 text-amber-900 border"
               style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
             >
               <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -499,14 +499,14 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
               <button
                 onClick={handlePdfExport}
                 disabled={exporting || !data}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 {exporting ? 'Menghasilkan...' : 'PDF SAK EMKM'}
               </button>
               <button
                 onClick={() => showToast('Export Excel akan hadir segera', 'info')}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
               >
                 <Grid className="w-3.5 h-3.5" />
                 Excel

@@ -38,7 +38,7 @@ function ActionBadge({ code }: { code: string }) {
   const s = ACTION_STYLES[code] ?? DEFAULT_ACTION_STYLE;
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap"
+      className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold whitespace-nowrap"
       style={{ background: s.bg, color: s.color }}
     >
       {code}
@@ -75,14 +75,14 @@ function DetailCell({ detail }: { detail: Record<string, unknown> | null }) {
   return (
     <div className="space-y-1">
       <pre
-        className="text-[11px] rounded p-2 overflow-auto max-w-[340px] max-h-[160px] whitespace-pre-wrap break-words"
+        className="text-caleo-11 rounded p-2 overflow-auto max-w-[340px] max-h-[160px] whitespace-pre-wrap break-words"
         style={{ background: '#f8f9fa', color: C.ink, border: `1px solid ${C.surface}` }}
       >
         {JSON.stringify(detail, null, 2)}
       </pre>
       <button
         onClick={() => setExpanded(false)}
-        className="text-[11px] hover:underline"
+        className="text-caleo-11 hover:underline"
         style={{ color: C.muted }}
       >
         Tutup
@@ -142,10 +142,10 @@ export function AuditTable({ events, hideTenant = false }: AuditTableProps) {
         style={{ borderColor: C.surface, color: C.muted }}
         data-testid="audit-table-empty"
       >
-        <p className="text-[13px] font-medium" style={{ color: C.slate }}>
+        <p className="text-caleo-13 font-medium" style={{ color: C.slate }}>
           Belum ada aktivitas
         </p>
-        <p className="mt-1 text-[12px]">
+        <p className="mt-1 text-xs">
           Riwayat audit akan muncul di sini setelah ada aksi admin.
         </p>
       </div>
@@ -165,33 +165,33 @@ export function AuditTable({ events, hideTenant = false }: AuditTableProps) {
         <thead>
           <tr style={{ background: C.navy }}>
             <th
-              className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap"
+              className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest whitespace-nowrap"
               style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}
             >
               Waktu
             </th>
             <th
-              className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap"
+              className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest whitespace-nowrap"
               style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}
             >
               Pelaku
             </th>
             {!hideTenant && (
               <th
-                className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap"
+                className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest whitespace-nowrap"
                 style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}
               >
                 Tenant
               </th>
             )}
             <th
-              className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap"
+              className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest whitespace-nowrap"
               style={{ color: C.gold, fontFamily: 'JetBrains Mono, monospace' }}
             >
               Aksi
             </th>
             <th
-              className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest"
+              className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest"
               style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}
             >
               Detail

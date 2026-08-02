@@ -269,32 +269,32 @@ export default function PeriodCloseModal({
           {/* Snapshot sub-card */}
           <div className="rounded border border-[var(--color-caleo-mist-dark)] overflow-hidden">
             <div className="px-4 py-2.5 border-b border-[var(--color-caleo-mist-dark)]" style={{ background: 'var(--color-caleo-cloud)' }}>
-              <span className="text-[11px] font-bold text-[var(--color-caleo-primary)] uppercase tracking-wide">
+              <span className="text-caleo-11 font-bold text-[var(--color-caleo-primary)] uppercase tracking-wide">
                 Snapshot Periode
               </span>
             </div>
 
             {loadingSnap ? (
-              <div className="py-8 text-center text-[13px] text-gray-500">Memuat data...</div>
+              <div className="py-8 text-center text-caleo-13 text-gray-500">Memuat data...</div>
             ) : snapError ? (
-              <div className="py-8 text-center text-[12px] text-rose-600 px-4">
+              <div className="py-8 text-center text-xs text-rose-600 px-4">
                 Gagal memuat snapshot: {snapError}
               </div>
             ) : snapshot ? (
               <div className="divide-y divide-gray-100">
                 {/* Total entries */}
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-[12px] text-gray-600">Total entries</span>
-                  <span className="text-[13px] font-bold text-[#1a1a1a]">
+                  <span className="text-xs text-gray-600">Total entries</span>
+                  <span className="text-caleo-13 font-bold text-[#1a1a1a]">
                     {snapshot.totalEntries.toLocaleString('id-ID')}
                   </span>
                 </div>
 
                 {/* Trial Balance */}
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-[12px] text-gray-600">Trial Balance</span>
+                  <span className="text-xs text-gray-600">Trial Balance</span>
                   <span
-                    className={`inline-flex items-center gap-1.5 text-[12px] font-bold ${
+                    className={`inline-flex items-center gap-1.5 text-xs font-bold ${
                       snapshot.isBalanced ? 'text-emerald-700' : 'text-rose-700'
                     }`}
                   >
@@ -314,8 +314,8 @@ export default function PeriodCloseModal({
 
                 {/* Omzet */}
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-[12px] text-gray-600">Omzet {monthLabel}</span>
-                  <span className="text-[13px] font-bold text-[#1a1a1a]">
+                  <span className="text-xs text-gray-600">Omzet {monthLabel}</span>
+                  <span className="text-caleo-13 font-bold text-[#1a1a1a]">
                     {formatRp(snapshot.omzet)}
                   </span>
                 </div>
@@ -334,7 +334,7 @@ export default function PeriodCloseModal({
                 style={{ borderColor: '#fbbf24' }}
               >
                 <Receipt className="w-4 h-4 text-amber-700" />
-                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">
+                <span className="text-caleo-11 font-bold text-amber-900 uppercase tracking-wide">
                   Tax Accrual Otomatis (akan posted bareng close)
                 </span>
               </div>
@@ -342,17 +342,17 @@ export default function PeriodCloseModal({
               <div className="px-4 py-3 space-y-2">
                 {/* Formula row */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] text-amber-900">
+                  <span className="text-xs text-amber-900">
                     Omzet {monthLabel} × PPh Final {pphRate}%
                   </span>
-                  <span className="text-[13px] font-bold text-amber-900">
+                  <span className="text-caleo-13 font-bold text-amber-900">
                     {formatRp(taxAmount)}
                   </span>
                 </div>
 
                 {/* Journal preview */}
                 <div
-                  className="rounded px-3 py-2 text-[11px] font-mono text-amber-800 leading-relaxed"
+                  className="rounded px-3 py-2 text-caleo-11 font-mono text-amber-800 leading-relaxed"
                   style={{ background: 'rgba(255,255,255,0.7)' }}
                 >
                   <div>D 5-3300 Beban Pajak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{formatRp(taxAmount)}</div>
@@ -366,7 +366,7 @@ export default function PeriodCloseModal({
           {!loadingSnap && snapshot && !snapshot.isBalanced && (
             <div className="rounded border border-rose-300 bg-rose-50 px-4 py-3 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-              <p className="text-[12px] text-rose-700">
+              <p className="text-xs text-rose-700">
                 Trial Balance tidak seimbang. Perbaiki semua entry sebelum menutup periode.
               </p>
             </div>
@@ -382,7 +382,7 @@ export default function PeriodCloseModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 rounded text-[13px] font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded text-caleo-13 font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
             Batal
           </button>
@@ -395,7 +395,7 @@ export default function PeriodCloseModal({
               !snapshot ||
               !snapshot.isBalanced
             }
-            className="px-4 py-2 rounded text-[13px] font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+            className="px-4 py-2 rounded text-caleo-13 font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
             style={{ background: '#dc2626' }}
           >
             <Lock className="w-3.5 h-3.5" />

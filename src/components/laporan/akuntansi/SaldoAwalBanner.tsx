@@ -58,7 +58,7 @@ export default function SaldoAwalBanner({ onNavigate }: SaldoAwalBannerProps): R
 
   return (
     <div
-      className="flex items-start gap-3 px-4 py-3 rounded border text-[13px]"
+      className="flex items-start gap-3 px-4 py-3 rounded border text-caleo-13"
       style={{
         background: '#fffbeb',
         borderColor: '#fde68a',
@@ -73,7 +73,7 @@ export default function SaldoAwalBanner({ onNavigate }: SaldoAwalBannerProps): R
       </span>
       <button
         onClick={() => onNavigate('settings')}
-        className="inline-flex items-center gap-1 font-bold text-[12px] px-3 py-1 rounded-full shrink-0 transition-colors"
+        className="inline-flex items-center gap-1 font-bold text-xs px-3 py-1 rounded-full shrink-0 transition-colors"
         style={{
           background: '#fef3c7',
           borderWidth: 1,

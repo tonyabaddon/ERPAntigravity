@@ -73,7 +73,7 @@ export function RevenueTopTenants({
         style={{ borderColor: '#ECEEF1' }}
       >
         <h3
-          className="text-[12px] font-bold uppercase tracking-widest"
+          className="text-xs font-bold uppercase tracking-widest"
           style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
         >
           Tenant teratas
@@ -82,47 +82,47 @@ export function RevenueTopTenants({
 
       {rows.length === 0 ? (
         <div
-          className="px-4 py-8 text-center text-[13px]"
+          className="px-4 py-8 text-center text-caleo-13"
           style={{ color: '#9DB2CE' }}
           data-testid="top-tenants-empty"
         >
           Belum ada data pembayaran.
         </div>
       ) : (
-        <table className="w-full text-[13px]" aria-label="Top 10 tenant berdasarkan pendapatan">
+        <table className="w-full text-caleo-13" aria-label="Top 10 tenant berdasarkan pendapatan">
           <thead>
             <tr style={{ background: '#FAF7F0' }}>
               <th
                 scope="col"
-                className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
+                className="px-4 py-2.5 text-left text-caleo-11 font-bold uppercase tracking-widest"
                 style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace', width: 40 }}
               >
                 #
               </th>
               <th
                 scope="col"
-                className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
+                className="px-3 py-2.5 text-left text-caleo-11 font-bold uppercase tracking-widest"
                 style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
               >
                 Nama
               </th>
               <th
                 scope="col"
-                className="px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
+                className="px-3 py-2.5 text-left text-caleo-11 font-bold uppercase tracking-widest"
                 style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
               >
                 Paket
               </th>
               <th
                 scope="col"
-                className="px-3 py-2.5 text-right text-[11px] font-bold uppercase tracking-widest"
+                className="px-3 py-2.5 text-right text-caleo-11 font-bold uppercase tracking-widest"
                 style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
               >
                 Total
               </th>
               <th
                 scope="col"
-                className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
+                className="px-4 py-2.5 text-left text-caleo-11 font-bold uppercase tracking-widest"
                 style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
               >
                 Status
@@ -164,7 +164,7 @@ export function RevenueTopTenants({
                   }}
                 >
                   <td
-                    className="px-4 py-3 text-[12px] font-bold"
+                    className="px-4 py-3 text-xs font-bold"
                     style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
                   >
                     {idx + 1}
@@ -175,7 +175,7 @@ export function RevenueTopTenants({
                   <td className="px-3 py-3">
                     {row.plan_code ? (
                       <span
-                        className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full"
+                        className="inline-block text-caleo-11 font-bold px-2 py-0.5 rounded-full"
                         style={{ background: planStyle.bg, color: planStyle.color }}
                       >
                         {row.plan_code}

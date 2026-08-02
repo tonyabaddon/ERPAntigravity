@@ -104,7 +104,7 @@ export function SuspendTenantModal({ open, tenant, onClose, onSuccess }: Props) 
 
         {/* Tenant name */}
         <p
-          className="text-[14px] font-semibold mb-3"
+          className="text-sm font-semibold mb-3"
           style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0B2545' }}
         >
           {tenant.name}
@@ -112,7 +112,7 @@ export function SuspendTenantModal({ open, tenant, onClose, onSuccess }: Props) 
 
         {/* Warning callout */}
         <div
-          className="bg-caleo-danger/10 border-l-4 border-caleo-danger p-3 rounded mb-4 text-[13px]"
+          className="bg-caleo-danger/10 border-l-4 border-caleo-danger p-3 rounded mb-4 text-caleo-13"
           style={{ color: '#0B2545' }}
           role="alert"
         >
@@ -126,7 +126,7 @@ export function SuspendTenantModal({ open, tenant, onClose, onSuccess }: Props) 
           <div className="mb-6">
             <label
               htmlFor="suspend-reason"
-              className="block text-[12px] font-semibold text-caleo-navy mb-1"
+              className="block text-xs font-semibold text-caleo-navy mb-1"
             >
               Alasan <span className="text-caleo-danger">*</span>
             </label>
@@ -141,10 +141,10 @@ export function SuspendTenantModal({ open, tenant, onClose, onSuccess }: Props) 
               disabled={submitting}
               rows={4}
               placeholder="Contoh: pembayaran overdue 60 hari, tidak ada respons"
-              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-danger focus-visible:ring-offset-2 disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-caleo-13 text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-danger focus-visible:ring-offset-2 disabled:opacity-50"
               aria-label="Alasan suspend"
             />
-            <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>
+            <p className="text-caleo-11 text-right mt-0.5" style={{ color: '#9DB2CE' }}>
               {reason.length}/500
             </p>
           </div>
@@ -155,14 +155,14 @@ export function SuspendTenantModal({ open, tenant, onClose, onSuccess }: Props) 
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-4 py-2.5 text-caleo-13 font-medium disabled:opacity-40 transition-colors"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting || !isReasonValid}
-              className="bg-caleo-danger text-white font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="bg-caleo-danger text-white font-extrabold rounded-full px-4 py-2.5 text-caleo-13 disabled:opacity-40 hover:opacity-90 transition-opacity"
             >
               {submitting ? 'Menyimpan…' : 'Konfirmasi Suspend'}
             </button>

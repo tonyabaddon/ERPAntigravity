@@ -367,7 +367,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-caleo-11 font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                 Jenis Kelamin
               </label>
               <div className="flex gap-2">
@@ -413,7 +413,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                     // For now this button is a hint that preset will be applied.
                     // Future: could pre-fill checkbox preview UI in the form.
                   }}
-                  className="text-[10px] font-bold text-[var(--color-caleo-primary)] underline shrink-0"
+                  className="text-caleo-10 font-bold text-[var(--color-caleo-primary)] underline shrink-0"
                   disabled={newRole === 'Pilih Peran...'}
                   title="Preset akan diterapkan otomatis saat 'BUAT AKUN'"
                 >
@@ -489,15 +489,15 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                           <p className="font-extrabold text-[var(--color-caleo-primary)] text-sm leading-none truncate">{adm.name}</p>
                           {isOwner && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                         </div>
-                        <p className="text-[10px] font-semibold text-gray-400 mt-0.5 truncate">{adm.email}</p>
+                        <p className="text-caleo-10 font-semibold text-gray-400 mt-0.5 truncate">{adm.email}</p>
                       </div>
-                      <span className="text-[10px] font-bold text-[#43474e] hidden sm:block shrink-0">{adm.role}</span>
-                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full shrink-0 ${
+                      <span className="text-caleo-10 font-bold text-[#43474e] hidden sm:block shrink-0">{adm.role}</span>
+                      <span className={`text-caleo-10 font-black px-2.5 py-1 rounded-full shrink-0 ${
                         isOwner ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
                       }`}>
                         {isOwner ? 'Semua akses' : `${activeCount}/${totalCount} aktif`}
                       </span>
-                      <span className="inline-block px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-50 text-[#0b743b] border border-emerald-100 shrink-0">
+                      <span className="inline-block px-3 py-1 text-caleo-10 font-black uppercase tracking-wider rounded-full bg-emerald-50 text-[#0b743b] border border-emerald-100 shrink-0">
                         {adm.status}
                       </span>
                       <div className="flex items-center gap-1 shrink-0">
@@ -515,7 +515,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                     {isExpanded && (
                       <div className="border-t border-[var(--color-caleo-cloud)] bg-[#fafbff] px-4 py-5 space-y-5">
                         {isOwner && (
-                          <p className="text-[10px] font-bold text-amber-600 mb-3 flex items-center gap-1.5">
+                          <p className="text-caleo-10 font-bold text-amber-600 mb-3 flex items-center gap-1.5">
                             <Crown className="w-3 h-3" /> Owner memiliki akses penuh — hak akses tidak dapat diubah.
                           </p>
                         )}
@@ -524,7 +524,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                           if (entries.length === 0) return null;
                           return (
                             <div key={category}>
-                              <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                              <h4 className="text-caleo-10 font-bold text-slate-500 uppercase tracking-wider mb-2">
                                 {category}
                               </h4>
                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -540,7 +540,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                                         className="w-3 h-3 text-slate-400 shrink-0"
                                         aria-label={description}
                                       />
-                                      <span className="text-[11px] font-bold text-[#43474e] truncate" title={description}>
+                                      <span className="text-caleo-11 font-bold text-[#43474e] truncate" title={description}>
                                         {label}
                                       </span>
                                     </div>

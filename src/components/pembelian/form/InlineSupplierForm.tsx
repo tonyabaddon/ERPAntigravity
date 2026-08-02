@@ -79,7 +79,7 @@ export default function InlineSupplierForm({
             className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white placeholder-gray-400"
           />
           {prefillName && (
-            <p className="text-[10px] text-emerald-600 mt-0.5">✓ Diisi dari pencarian</p>
+            <p className="text-caleo-10 text-emerald-600 mt-0.5">✓ Diisi dari pencarian</p>
           )}
         </div>
         <div>
@@ -109,7 +109,7 @@ export default function InlineSupplierForm({
             onChange={(e) => setTermDays(e.target.value)}
             className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
           />
-          <p className="text-[10px] text-gray-500 mt-0.5">0 = Cash. 30 = Net 30 hari.</p>
+          <p className="text-caleo-10 text-gray-500 mt-0.5">0 = Cash. 30 = Net 30 hari.</p>
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-indigo-100">

@@ -62,16 +62,16 @@ export default function CatalogListView({
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left border-b-2 border-slate-200 bg-slate-50/50">
-            <th className="py-2.5 pl-3 pr-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-14">Foto</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">SKU</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Nama Produk</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Kategori</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Harga</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Promo</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Berlaku Hingga</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-center">Stok</th>
-            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-10"></th>
-            <th className="py-2.5 px-2 pr-3 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+            <th className="py-2.5 pl-3 pr-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider w-14">Foto</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider">SKU</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider">Nama Produk</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider">Kategori</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider text-right">Harga</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider">Promo</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider">Berlaku Hingga</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider text-center">Stok</th>
+            <th className="py-2.5 px-2 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider w-10"></th>
+            <th className="py-2.5 px-2 pr-3 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -105,7 +105,7 @@ export default function CatalogListView({
                       </div>
                     )}
                   </td>
-                  <td className="py-2 px-2 font-mono text-[12px] text-slate-600">{item.sku}</td>
+                  <td className="py-2 px-2 font-mono text-xs text-slate-600">{item.sku}</td>
                   <td className="py-2 px-2 font-bold text-[var(--color-caleo-primary)]">{item.name}</td>
                   <td className="py-2 px-2 text-slate-600">{item.category}</td>
                   <td className="py-2 px-2 text-right font-extrabold text-[var(--color-caleo-primary)]">

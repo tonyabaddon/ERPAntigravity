@@ -283,7 +283,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
           <div className="border-2 border-indigo-200 bg-indigo-50/40 rounded p-3 flex items-center justify-between">
             <div>
               <div className="font-bold text-sm text-indigo-800">{supplier.name}</div>
-              <div className="text-[11px] text-gray-600">Net {supplier.payment_term_days ?? 0} hari</div>
+              <div className="text-caleo-11 text-gray-600">Net {supplier.payment_term_days ?? 0} hari</div>
             </div>
             {!prefillSupplierId && (
               <button type="button" onClick={() => { setSupplier(null); setRows([]); }} className="text-xs text-indigo-600 font-semibold hover:underline">Ganti</button>
@@ -300,7 +300,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                   <button key={s.id} type="button" onClick={() => { setSupplier(s); setSupplierQuery(''); setSupplierResults([]); }}
                     className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
                     <div className="font-semibold text-sm">{s.name}</div>
-                    <div className="text-[11px] text-gray-500">Net {s.payment_term_days} hari</div>
+                    <div className="text-caleo-11 text-gray-500">Net {s.payment_term_days} hari</div>
                   </button>
                 ))}
               </div>
@@ -316,15 +316,15 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
             <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Yang Dibayar</div>
             <div className="flex gap-2">
               <button type="button" onClick={selectAll}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
+                className="text-caleo-11 font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
                 Pilih Semua Outstanding
               </button>
               <button type="button" onClick={selectJtThisWeek}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100">
+                className="text-caleo-11 font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100">
                 Pilih JT ≤ 7 Hari
               </button>
               <button type="button" onClick={clearAll}
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-gray-50">
+                className="text-caleo-11 font-semibold px-2.5 py-1 rounded-full bg-white text-gray-600 border border-gray-200 hover:bg-gray-50">
                 Reset
               </button>
             </div>
@@ -337,7 +337,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
             <div className="space-y-5">
               {/* --- Tagihan section --- */}
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 mb-2">
+                <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-600 mb-2">
                   Tagihan Outstanding <span className="text-gray-400 font-semibold">({outstandingTagihan.length})</span>
                 </div>
                 {outstandingTagihan.length === 0 ? (
@@ -347,10 +347,10 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                     <thead className="border-b border-gray-200">
                       <tr>
                         <th className="w-8"></th>
-                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
-                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
-                        <th className="text-right py-2 text-[11px] font-semibold text-gray-500 uppercase">Sisa</th>
-                        <th className="text-right py-2 w-40 text-[11px] font-semibold text-gray-500 uppercase">Bayar *</th>
+                        <th className="text-left py-2 text-caleo-11 font-semibold text-gray-500 uppercase">Tagihan</th>
+                        <th className="text-left py-2 text-caleo-11 font-semibold text-gray-500 uppercase">JT</th>
+                        <th className="text-right py-2 text-caleo-11 font-semibold text-gray-500 uppercase">Sisa</th>
+                        <th className="text-right py-2 w-40 text-caleo-11 font-semibold text-gray-500 uppercase">Bayar *</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -392,7 +392,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
 
               {/* --- Tukar Faktur section --- */}
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 mb-2 flex items-center gap-1.5">
+                <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-600 mb-2 flex items-center gap-1.5">
                   <Layers className="w-3.5 h-3.5 text-amber-700" />
                   Tukar Faktur Outstanding <span className="text-gray-400 font-semibold">({outstandingTf.length})</span>
                 </div>
@@ -403,10 +403,10 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                     <thead className="border-b border-gray-200">
                       <tr>
                         <th className="w-8"></th>
-                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">Tukar Faktur</th>
-                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
-                        <th className="text-right py-2 text-[11px] font-semibold text-gray-500 uppercase">Sisa</th>
-                        <th className="text-right py-2 w-40 text-[11px] font-semibold text-gray-500 uppercase">Bayar *</th>
+                        <th className="text-left py-2 text-caleo-11 font-semibold text-gray-500 uppercase">Tukar Faktur</th>
+                        <th className="text-left py-2 text-caleo-11 font-semibold text-gray-500 uppercase">JT</th>
+                        <th className="text-right py-2 text-caleo-11 font-semibold text-gray-500 uppercase">Sisa</th>
+                        <th className="text-right py-2 w-40 text-caleo-11 font-semibold text-gray-500 uppercase">Bayar *</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -431,7 +431,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                             <td className="py-2">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-sm text-amber-800">{r.display_number}</span>
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                <span className="text-caleo-10 font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
                                   {r.tagihan_count ?? 0} faktur
                                 </span>
                               </div>
@@ -453,7 +453,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
 
               <div className="flex justify-end pt-2 border-t border-gray-200">
                 <div className="text-right">
-                  <div className="text-[11px] font-semibold text-gray-500">SUBTOTAL ({selectedCount} baris)</div>
+                  <div className="text-caleo-11 font-semibold text-gray-500">SUBTOTAL ({selectedCount} baris)</div>
                   <div className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(runningTotal)}</div>
                 </div>
               </div>
@@ -502,14 +502,14 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                 value={accountLabel}
                 onChange={e => setAccountLabel(e.target.value)}
                 placeholder="Catatan tambahan akun (opsional)"
-                className="mt-2 w-full text-[11px] py-1.5 px-2 rounded border border-gray-200 text-gray-600"
+                className="mt-2 w-full text-caleo-11 py-1.5 px-2 rounded border border-gray-200 text-gray-600"
               />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Diskon (opsional)</label>
               <NumberInput value={discount} onChange={setDiscount}
                 className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
-              <div className="text-[11px] text-gray-500 mt-1">Misal supplier kasih potongan, isi di sini.</div>
+              <div className="text-caleo-11 text-gray-500 mt-1">Misal supplier kasih potongan, isi di sini.</div>
             </div>
             <div className="col-span-2">
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Bukti Bayar (opsional)</label>
@@ -535,15 +535,15 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">4. Ringkasan</div>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded p-4">
-              <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal ({selectedCount} baris)</div>
+              <div className="text-caleo-11 text-gray-500 uppercase font-semibold">Subtotal ({selectedCount} baris)</div>
               <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(runningTotal)}</div>
             </div>
             <div className="bg-amber-50 rounded p-4">
-              <div className="text-[11px] text-amber-700 uppercase font-semibold">Diskon</div>
+              <div className="text-caleo-11 text-amber-700 uppercase font-semibold">Diskon</div>
               <div className="text-xl font-extrabold mt-1 text-amber-700">{formatIDR(discount)}</div>
             </div>
             <div className="bg-indigo-50 rounded p-4">
-              <div className="text-[11px] text-indigo-700 uppercase font-semibold">Net Dibayar</div>
+              <div className="text-caleo-11 text-indigo-700 uppercase font-semibold">Net Dibayar</div>
               <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(netTotal)}</div>
             </div>
           </div>

@@ -65,7 +65,7 @@ export default function SupplierModal({ supplier, onClose, onSaved, showToast }:
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1">Term Pembayaran (hari)</label>
             <input type="number" min="0" value={termDays} onChange={e => setTermDays(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2" placeholder="30" />
-            <p className="text-[10px] text-gray-400 mt-1">0 = Cash. 30 = Net 30, dst.</p>
+            <p className="text-caleo-10 text-gray-400 mt-1">0 = Cash. 30 = Net 30, dst.</p>
           </div>
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">

@@ -112,7 +112,7 @@ export default function COAEditModal({
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
                 Kode Akun
               </label>
-              <div className="px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-gray-50 font-mono text-[13px] text-gray-600">
+              <div className="px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-gray-50 font-mono text-caleo-13 text-gray-600">
                 {account.account_code}
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function COAEditModal({
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
                 Tipe Akun
               </label>
-              <div className="px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-gray-50 text-[13px] text-gray-600">
+              <div className="px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-gray-50 text-caleo-13 text-gray-600">
                 {account.account_type}
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function COAEditModal({
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
                   Akun Induk
                 </label>
-                <div className="px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-gray-50 text-[13px] text-gray-600">
+                <div className="px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-gray-50 text-caleo-13 text-gray-600">
                   {account.parent_id}
                 </div>
               </div>
@@ -146,12 +146,12 @@ export default function COAEditModal({
               </label>
               <input
                 type="text"
-                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-caleo-13 text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
                 placeholder="Nama akun"
               />
-              <p className="text-[10px] text-gray-500 mt-1">
+              <p className="text-caleo-10 text-gray-500 mt-1">
                 {nameLength} / 3 min
               </p>
             </div>
@@ -162,7 +162,7 @@ export default function COAEditModal({
                 Deskripsi
               </label>
               <textarea
-                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 resize-none"
+                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-caleo-13 text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 resize-none"
                 rows={3}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
@@ -183,7 +183,7 @@ export default function COAEditModal({
                 <span className="text-xs font-bold text-gray-700">Aktif</span>
               </label>
               {isSystemAccount && (
-                <p className="text-[10px] text-gray-500 mt-1">
+                <p className="text-caleo-10 text-gray-500 mt-1">
                   Akun sistem tidak bisa dinonaktifkan
                 </p>
               )}
@@ -193,14 +193,14 @@ export default function COAEditModal({
           {/* ── Footer ── */}
           <div className="px-6 py-4 border-t border-gray-200 flex items-center gap-2 justify-end">
             <button
-              className="px-4 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] font-bold text-[var(--color-caleo-primary)] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-caleo-13 font-bold text-[var(--color-caleo-primary)] hover:bg-gray-50 transition-colors"
               onClick={onClose}
               disabled={saving}
             >
               Batal
             </button>
             <button
-              className="px-4 py-2 rounded bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold hover:bg-[#0a1a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded bg-[var(--color-caleo-primary)] text-white text-caleo-13 font-bold hover:bg-[#0a1a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSave}
               disabled={saving || !isNameValid}
             >

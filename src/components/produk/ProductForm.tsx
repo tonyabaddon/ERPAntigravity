@@ -331,7 +331,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           />
           {/* Auto-name preview pill */}
           <div className="bg-purple-50 border border-purple-200 rounded px-3 py-2 mt-3">
-            <div className="text-[9px] font-black uppercase tracking-widest text-purple-700">Nama Produk</div>
+            <div className="text-caleo-9 font-black uppercase tracking-widest text-purple-700">Nama Produk</div>
             <div className="text-sm font-extrabold text-purple-900">{previewName || '—'}</div>
           </div>
         </div>
@@ -340,10 +340,10 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">📷 Foto Produk <span className="text-[10px] font-medium text-slate-400 ml-1">(opsional)</span></h5>
-              <p className="text-[10.5px] text-slate-500">Max 5 · drop dari folder atau drag slot untuk urutan</p>
+              <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">📷 Foto Produk <span className="text-caleo-10 font-medium text-slate-400 ml-1">(opsional)</span></h5>
+              <p className="text-caleo-10 text-slate-500">Max 5 · drop dari folder atau drag slot untuk urutan</p>
             </div>
-            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
+            <span className="text-caleo-10 font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
               {photos.length} / {MAX_PHOTOS} terisi
             </span>
           </div>
@@ -385,7 +385,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           >
             {dragOverFiles && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/10 rounded z-10">
-                <div className="bg-white px-4 py-2 rounded-full border-2 border-dashed border-emerald-500 text-[12px] font-extrabold text-emerald-700 uppercase tracking-widest">
+                <div className="bg-white px-4 py-2 rounded-full border-2 border-dashed border-emerald-500 text-xs font-extrabold text-emerald-700 uppercase tracking-widest">
                   Lepas untuk upload {photos.length < MAX_PHOTOS ? `(sisa ${MAX_PHOTOS - photos.length} slot)` : '(slot penuh)'}
                 </div>
               </div>
@@ -418,7 +418,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               ))}
             </div>
           </div>
-          <p className="text-[11px] text-slate-500 italic mt-3">
+          <p className="text-caleo-11 text-slate-500 italic mt-3">
             Foto opsional — kalau ada, foto pertama jadi thumbnail + di-index AI ~5 detik setelah simpan. Tanpa foto, produk tetap muncul di Katalog dengan placeholder dan tidak bisa dicari via "Cari by Foto".
           </p>
         </div>
@@ -428,19 +428,19 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">💰 Harga & Stok</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
+              <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">
                 {showGrosir ? 'Harga Eceran (Rp) *' : 'Harga Jual (Rp) *'}
               </label>
               <NumberInput value={price} onChange={setPrice}
-                     className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
-              <p className="text-[10px] text-slate-400 pl-1">per {unit}</p>
+                     className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold" />
+              <p className="text-caleo-10 text-slate-400 pl-1">per {unit}</p>
             </div>
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
+                <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">
                   {hargaModalIsAktual ? `Harga Modal Aktual (${costingMethod})` : 'Harga Modal Awal'}
                 </label>
-                <span className={`text-[8.5px] font-black uppercase tracking-widest border rounded-full px-1.5 py-0.5 ${
+                <span className={`text-caleo-9 font-black uppercase tracking-widest border rounded-full px-1.5 py-0.5 ${
                   hargaModalIsAktual ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : 'text-amber-700 bg-amber-100 border-amber-200'
                 }`}>
                   {hargaModalIsAktual ? '🔒 Dari Pembelian' : 'Estimasi'}
@@ -448,10 +448,10 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               </div>
               <NumberInput nullable value={hargaModal ?? null} readOnly={hargaModalIsAktual}
                      onChange={setHargaModal}
-                     className={`w-full rounded px-3 py-2.5 border text-[13px] font-semibold ${
+                     className={`w-full rounded px-3 py-2.5 border text-caleo-13 font-semibold ${
                        hargaModalIsAktual ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white border-slate-200'
                      }`} />
-              <p className="text-[10px] text-emerald-700 font-bold pl-1">
+              <p className="text-caleo-10 text-emerald-700 font-bold pl-1">
                 {marginPct !== null ? `Margin: ${marginPct.toFixed(1)}%` : 'Margin: —'}
                 {!hargaModalIsAktual && ' · akan di-update otomatis dari PO'}
               </p>
@@ -460,13 +460,13 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
 
           {showGrosir && (
             <div className="mb-3 space-y-1">
-              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Harga Grosir (Rp)</label>
+              <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">Harga Grosir (Rp)</label>
               <NumberInput
                 nullable
                 value={priceGrosir ?? null}
                 onChange={setPriceGrosir}
                 placeholder="Kosongkan jika belum di-set"
-                className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+                className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold"
               />
               {priceGrosir != null && priceGrosir > price && (
                 <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga grosir di atas eceran — tidak biasa. Pastikan benar.</p>
@@ -480,7 +480,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             const onChange = t.slot === 3 ? setPriceTier3 : setPriceTier4;
             return (
               <div key={t.key} className="mb-3 space-y-1">
-                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
+                <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">
                   Harga {t.label} (Rp)
                 </label>
                 <NumberInput
@@ -488,7 +488,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                   value={value ?? null}
                   onChange={onChange}
                   placeholder="Kosongkan untuk pakai harga base"
-                  className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+                  className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold"
                 />
                 {value != null && value > price && (
                   <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga {t.label} di atas eceran — tidak biasa. Pastikan benar.</p>
@@ -512,17 +512,17 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           )}
 
           <div className="border-t border-slate-100 pt-3">
-            <div className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest mb-2 pl-1">Stok Awal & Penempatan</div>
+            <div className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest mb-2 pl-1">Stok Awal & Penempatan</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Jumlah Stok (opsional)</label>
+                <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest">Jumlah Stok (opsional)</label>
                 <NumberInput allowDecimal={false} value={stokAwal} onChange={setStokAwal}
-                       className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                       className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold" />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Gudang Tujuan</label>
+                <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest">Gudang Tujuan</label>
                 <select value={gudangTujuanId ?? ''} onChange={e => setGudangTujuanId(e.target.value || null)}
-                        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
+                        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold">
                   {warehouses.filter(w => w.is_active).map(w => (
                     <option key={w.id} value={w.id}>{w.name} ({w.code}){w.is_default ? ' · Default' : ''}</option>
                   ))}
@@ -534,10 +534,10 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               <div className="mt-3 bg-amber-50 border border-amber-200 rounded px-3 py-2.5 flex items-start gap-2">
                 <span className="material-symbols-outlined text-amber-600 text-base shrink-0">verified_user</span>
                 <div className="flex-1">
-                  <p className="text-[11px] font-bold text-amber-900 leading-tight">
+                  <p className="text-caleo-11 font-bold text-amber-900 leading-tight">
                     Stok {stokAwal} {unit} akan dikirim ke owner untuk approval
                   </p>
-                  <p className="text-[10px] text-amber-800 mt-0.5 leading-snug">
+                  <p className="text-caleo-10 text-amber-800 mt-0.5 leading-snug">
                     Produk dibuat sekarang & bisa di-edit, tapi stok belum aktif sampai owner approve via WhatsApp/inbox.
                   </p>
                 </div>
@@ -554,7 +554,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             </div>
             <div className="flex-1">
               <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Pengaturan Lanjutan</h5>
-              <p className="text-[10.5px] text-slate-500">Multi-satuan, batas stok min, deskripsi — opsional</p>
+              <p className="text-caleo-10 text-slate-500">Multi-satuan, batas stok min, deskripsi — opsional</p>
             </div>
             <span className="material-symbols-outlined text-slate-400 transition group-open:rotate-180">expand_more</span>
           </summary>
@@ -569,29 +569,29 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                          if (!on) { setUnitAlt(null); setUnitAltFactor(null); }
                        }}
                        className="accent-emerald-600 w-3.5 h-3.5" />
-                <span className="text-[11px] font-extrabold text-[var(--color-caleo-primary)]">Aktifkan multi-satuan konversi</span>
+                <span className="text-caleo-11 font-extrabold text-[var(--color-caleo-primary)]">Aktifkan multi-satuan konversi</span>
               </label>
               {multiSatuanOn && (
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-5 gap-2 items-end">
                   <div className="space-y-1">
-                    <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">1 Paket (Sekunder)</label>
+                    <label className="text-caleo-9 font-extrabold text-gray-500 uppercase tracking-widest">1 Paket (Sekunder)</label>
                     <select value={unitAlt ?? ''} onChange={e => setUnitAlt(e.target.value || null)}
-                            className="w-full bg-white rounded px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold">
+                            className="w-full bg-white rounded px-2.5 py-1.5 border border-slate-200 text-caleo-11 font-bold">
                       <option value="">—</option>
                       {units.filter(u => u.name !== unit).map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                     </select>
                   </div>
                   <div className="flex items-center justify-center pb-1.5"><span className="text-base font-black text-slate-400">=</span></div>
                   <div className="space-y-1">
-                    <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Berapa</label>
+                    <label className="text-caleo-9 font-extrabold text-gray-500 uppercase tracking-widest">Berapa</label>
                     <NumberInput nullable allowDecimal={false} value={unitAltFactor ?? null} onChange={setUnitAltFactor}
-                           className="w-full bg-white rounded px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
+                           className="w-full bg-white rounded px-2.5 py-1.5 border border-slate-200 text-caleo-11 font-bold" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Satuan Utama</label>
-                    <input readOnly value={unit} className="w-full bg-slate-100 rounded px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
+                    <label className="text-caleo-9 font-extrabold text-gray-500 uppercase tracking-widest">Satuan Utama</label>
+                    <input readOnly value={unit} className="w-full bg-slate-100 rounded px-2.5 py-1.5 border border-slate-200 text-caleo-11 font-bold" />
                   </div>
-                  <p className="text-[9.5px] text-blue-800 italic pb-1.5">Stok dilacak per Satuan Utama.</p>
+                  <p className="text-caleo-10 text-blue-800 italic pb-1.5">Stok dilacak per Satuan Utama.</p>
                 </div>
               )}
             </div>
@@ -599,31 +599,31 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             {/* Batas Stok Min */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Batas Stok Min</label>
+                <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">Batas Stok Min</label>
                 <NumberInput nullable allowDecimal={false} value={minStockPerProduct ?? null}
                        onChange={setMinStockPerProduct}
                        placeholder="kosong = global"
-                       className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
-                <p className="text-[10px] text-slate-400">Alert kalau stok ≤ angka ini</p>
+                       className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold" />
+                <p className="text-caleo-10 text-slate-400">Alert kalau stok ≤ angka ini</p>
               </div>
             </div>
 
             {/* Deskripsi */}
             <div className="space-y-1">
               <div className="flex items-end justify-between">
-                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Deskripsi Produk</label>
+                <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">Deskripsi Produk</label>
                 <button type="button" disabled={photos.length === 0}
                         onClick={() => {
                           // Wired in Phase 3 (Task 3.6): backend /describe-product
                           showToast('✨ Generate dari Foto akan tersedia setelah Phase 3', 'info');
                         }}
-                        className="text-[10px] font-extrabold text-purple-700 hover:text-purple-900 bg-purple-50 border border-purple-200 rounded-full px-3 py-1 disabled:opacity-50">
+                        className="text-caleo-10 font-extrabold text-purple-700 hover:text-purple-900 bg-purple-50 border border-purple-200 rounded-full px-3 py-1 disabled:opacity-50">
                   ✨ Generate dari Foto
                 </button>
               </div>
               <textarea rows={3} value={description} onChange={e => setDescription(e.target.value.slice(0, 500))}
-                        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] resize-none" />
-              <p className="text-[10px] text-slate-400 text-right">{description.length} / 500</p>
+                        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 resize-none" />
+              <p className="text-caleo-10 text-slate-400 text-right">{description.length} / 500</p>
             </div>
           </div>
         </details>
@@ -657,11 +657,11 @@ function CategoryDropdown(p: { value: string; options: string[]; onChange: (v: s
   const [newName, setNewName] = useState('');
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Kategori *</label>
+      <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">Kategori *</label>
       <select
         value={p.value}
         onChange={e => { if (e.target.value === '__new__') setCreating(true); else p.onChange(e.target.value); }}
-        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold"
       >
         {p.options.map(o => <option key={o} value={o}>{o}</option>)}
         <option value="__new__">+ Buat kategori baru…</option>
@@ -685,11 +685,11 @@ function SubCategoryDropdown(p: { value: string; options: string[]; parentName: 
   void p.parentName;
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Sub-Kategori (opsional)</label>
+      <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">Sub-Kategori (opsional)</label>
       <select
         value={p.value}
         onChange={e => { if (e.target.value === '__new__') setCreating(true); else p.onChange(e.target.value); }}
-        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold"
       >
         <option value="">— Tidak ada —</option>
         {p.options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -712,9 +712,9 @@ function UnitDropdown(p: { value: string; options: string[]; onChange: (v: strin
   const [newName, setNewName] = useState('');
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Satuan *</label>
+      <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">Satuan *</label>
       <select value={p.value} onChange={e => { if (e.target.value === '__new__') setCreating(true); else p.onChange(e.target.value); }}
-              className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
+              className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold">
         {p.options.map(o => <option key={o} value={o}>{o}</option>)}
         <option value="__new__">+ Buat satuan baru…</option>
       </select>
@@ -733,10 +733,10 @@ function UnitDropdown(p: { value: string; options: string[]; onChange: (v: strin
 function SkuInput(p: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Kode / SKU</label>
+      <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">Kode / SKU</label>
       <input value={p.value} onChange={e => p.onChange(e.target.value)}
              placeholder="Kosongkan untuk auto"
-             className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+             className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold" />
     </div>
   );
 }
@@ -758,12 +758,12 @@ function SpecForm(p: {
         if (f.type === 'select') {
           return (
             <div key={f.key} className="space-y-1">
-              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
+              <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">
                 {f.label}{f.required && ' *'}
               </label>
               <select value={p.specs[f.key] ?? ''}
                       onChange={e => { if (e.target.value === '__new_brand__') setAddingBrand(true); else p.onChange(f.key, e.target.value); }}
-                      className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
+                      className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold">
                 <option value="">—</option>
                 {options.map(o => <option key={o} value={o}>{o}</option>)}
                 {isMcbMerek && <option value="__new_brand__">+ Tambah merek baru…</option>}
@@ -782,18 +782,18 @@ function SpecForm(p: {
         if (f.type === 'number') {
           return (
             <div key={f.key} className="space-y-1">
-              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">{f.label}{f.required && ' *'}</label>
+              <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">{f.label}{f.required && ' *'}</label>
               <input type="number" value={p.specs[f.key] ?? ''} onChange={e => p.onChange(f.key, e.target.value)}
-                     className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                     className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold" />
             </div>
           );
         }
         // text
         return (
           <div key={f.key} className="space-y-1 sm:col-span-3">
-            <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">{f.label}{f.required && ' *'}</label>
+            <label className="text-caleo-10 font-extrabold text-gray-600 uppercase tracking-widest">{f.label}{f.required && ' *'}</label>
             <input type="text" value={p.specs[f.key] ?? ''} onChange={e => p.onChange(f.key, e.target.value)}
-                   className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                   className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-caleo-13 font-semibold" />
           </div>
         );
       })}
@@ -818,7 +818,7 @@ const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
     return (
       <label className="aspect-square rounded border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-700 cursor-pointer hover:bg-emerald-50/40">
         <span className="material-symbols-outlined text-3xl mb-1">add_a_photo</span>
-        <span className="text-[10px] font-extrabold uppercase tracking-widest">Tambah</span>
+        <span className="text-caleo-10 font-extrabold uppercase tracking-widest">Tambah</span>
         <input type="file" accept="image/*" multiple className="hidden"
                onChange={e => p.onPick(e.target.files)} />
       </label>
@@ -835,7 +835,7 @@ const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
     >
       {thumb ? <img src={thumb} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-200" />}
       {p.isThumbnail && (
-        <div className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">★ Thumbnail</div>
+        <div className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-caleo-9 font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">★ Thumbnail</div>
       )}
       {p.photo.status === 'uploading' && (
         <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
@@ -843,7 +843,7 @@ const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
         </div>
       )}
       {p.photo.status === 'failed' && (
-        <div className="absolute inset-x-0 bottom-0 bg-rose-600 text-white text-[8.5px] font-black uppercase tracking-widest px-1 py-0.5 text-center">Upload gagal</div>
+        <div className="absolute inset-x-0 bottom-0 bg-rose-600 text-white text-caleo-9 font-black uppercase tracking-widest px-1 py-0.5 text-center">Upload gagal</div>
       )}
       {p.photo.status === 'uploaded' && (
         <button onClick={p.onDelete}

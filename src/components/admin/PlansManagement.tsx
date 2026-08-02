@@ -57,7 +57,7 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
     >
       {plan.is_recommended && (
         <div
-          className="text-center text-[11px] font-bold tracking-widest py-1.5"
+          className="text-center text-caleo-11 font-bold tracking-widest py-1.5"
           style={{
             background: '#F9B233',
             color: '#0B2545',
@@ -72,26 +72,26 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
       <div className="p-5 flex flex-col gap-3 flex-1">
         <div>
           <h2
-            className="text-[15px] font-bold leading-tight"
+            className="text-caleo-15 font-bold leading-tight"
             style={{ color: '#0B2545' }}
           >
             {plan.code}
           </h2>
           {plan.target_segment && (
-            <p className="text-[12px] mt-0.5" style={{ color: '#9DB2CE' }}>
+            <p className="text-xs mt-0.5" style={{ color: '#9DB2CE' }}>
               Untuk siapa: {plan.target_segment}
             </p>
           )}
         </div>
 
         {plan.description && (
-          <p className="text-[13px]" style={{ color: '#5A6472' }}>
+          <p className="text-caleo-13" style={{ color: '#5A6472' }}>
             {plan.description}
           </p>
         )}
 
         <div
-          className="inline-flex items-center gap-1 text-[12px] font-medium px-2.5 py-1 rounded-full self-start"
+          className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full self-start"
           style={{ background: '#ECEEF1', color: '#5A6472' }}
         >
           {plan.tenant_count} tenant aktif
@@ -99,13 +99,13 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
 
         <div className="flex-1">
           <p
-            className="text-[11px] font-bold uppercase tracking-widest mb-2"
+            className="text-caleo-11 font-bold uppercase tracking-widest mb-2"
             style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
           >
             Fitur termasuk
           </p>
           {enabledFeatures.length === 0 ? (
-            <p className="text-[13px] italic" style={{ color: '#9DB2CE' }}>
+            <p className="text-caleo-13 italic" style={{ color: '#9DB2CE' }}>
               —
             </p>
           ) : (
@@ -116,7 +116,7 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
               {enabledFeatures.map((key) => (
                 <li
                   key={key}
-                  className="flex items-center gap-2 text-[13px]"
+                  className="flex items-center gap-2 text-caleo-13"
                   style={{ color: '#14161B' }}
                 >
                   <span
@@ -135,7 +135,7 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
           <button
             type="button"
             onClick={onEdit}
-            className="mt-2 w-full text-[13px] font-bold py-2 rounded-full bg-caleo-gold text-caleo-navy hover:brightness-95 transition"
+            className="mt-2 w-full text-caleo-13 font-bold py-2 rounded-full bg-caleo-gold text-caleo-navy hover:brightness-95 transition"
             data-testid={`edit-btn-${plan.code}`}
           >
             Edit paket
@@ -145,7 +145,7 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
             type="button"
             disabled
             title="Butuh peran super admin"
-            className="mt-2 w-full text-[13px] font-medium py-2 rounded border cursor-not-allowed"
+            className="mt-2 w-full text-caleo-13 font-medium py-2 rounded border cursor-not-allowed"
             style={{
               border: '1px solid #E2E8F0',
               color: '#9DB2CE',
@@ -253,60 +253,60 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
       style={{ borderColor: '#0B2545', borderWidth: '2px' }}
       data-testid={`edit-form-${plan.code}`}
     >
-      <h2 className="text-[15px] font-bold text-caleo-navy">
+      <h2 className="text-caleo-15 font-bold text-caleo-navy">
         Edit {plan.code}
       </h2>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-caleo-slate">
         Nama paket
         <input
           type="text"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
+          className="border rounded p-2 text-caleo-13 font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           data-testid={`edit-name-${plan.code}`}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-caleo-slate">
         Deskripsi
         <textarea
           value={form.description}
           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
+          className="border rounded p-2 text-caleo-13 font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           rows={2}
           data-testid={`edit-description-${plan.code}`}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-caleo-slate">
         Segmen target
         <input
           type="text"
           value={form.target_segment}
           onChange={(e) => setForm((f) => ({ ...f, target_segment: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
+          className="border rounded p-2 text-caleo-13 font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           data-testid={`edit-target-${plan.code}`}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-caleo-slate">
         Harga tahunan (IDR)
         <input
           type="number"
           value={form.price_annual}
           onChange={(e) => setForm((f) => ({ ...f, price_annual: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none font-mono"
+          className="border rounded p-2 text-caleo-13 font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none font-mono"
           placeholder="Contoh: 9000000"
           min={0}
           data-testid={`edit-price-annual-${plan.code}`}
         />
-        <span className="text-[11px] font-normal text-caleo-muted">
+        <span className="text-caleo-11 font-normal text-caleo-muted">
           Nominal referensi tahunan; dipakai untuk perhitungan MRR/ARR + status coverage pembayaran.
         </span>
       </label>
 
-      <label className="flex items-center gap-2 text-[13px] font-semibold text-caleo-navy">
+      <label className="flex items-center gap-2 text-caleo-13 font-semibold text-caleo-navy">
         <input
           type="checkbox"
           checked={form.is_recommended}
@@ -316,18 +316,18 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
         Rekomendasi (PALING POPULER)
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-caleo-slate">
         Fitur (JSON)
         <textarea
           value={form.feature_bundle_json}
           onChange={(e) => handleFeatureChange(e.target.value)}
-          className="border rounded p-2 text-[12px] font-mono text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
+          className="border rounded p-2 text-xs font-mono text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           rows={6}
           spellCheck={false}
           data-testid={`edit-features-${plan.code}`}
         />
         {featureError && (
-          <span className="text-[11px] text-caleo-danger" data-testid={`edit-features-error-${plan.code}`}>
+          <span className="text-caleo-11 text-caleo-danger" data-testid={`edit-features-error-${plan.code}`}>
             {featureError}
           </span>
         )}
@@ -338,7 +338,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="text-[13px] font-semibold px-4 py-2 rounded-full border border-caleo-navy/30 text-caleo-navy hover:bg-caleo-cream disabled:opacity-50"
+          className="text-caleo-13 font-semibold px-4 py-2 rounded-full border border-caleo-navy/30 text-caleo-navy hover:bg-caleo-cream disabled:opacity-50"
           data-testid={`edit-cancel-${plan.code}`}
         >
           Batal
@@ -347,7 +347,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="button"
           onClick={handleSave}
           disabled={submitting || !!featureError}
-          className="text-[13px] font-extrabold px-4 py-2 rounded-full bg-caleo-gold text-caleo-navy disabled:opacity-50"
+          className="text-caleo-13 font-extrabold px-4 py-2 rounded-full bg-caleo-gold text-caleo-navy disabled:opacity-50"
           data-testid={`edit-save-${plan.code}`}
         >
           {submitting ? 'Menyimpan…' : 'Simpan'}
@@ -424,7 +424,7 @@ export function PlansManagement() {
 
   if (loading) {
     return (
-      <div className="text-[13px] p-4" style={{ color: '#9DB2CE' }}>
+      <div className="text-caleo-13 p-4" style={{ color: '#9DB2CE' }}>
         Memuat paket...
       </div>
     );
@@ -434,12 +434,12 @@ export function PlansManagement() {
     <div className="space-y-4 p-4">
       <div>
         <h1
-          className="text-[18px] font-bold"
+          className="text-lg font-bold"
           style={{ color: '#0B2545' }}
         >
           Paket ({plans.length})
         </h1>
-        <p className="text-[13px] mt-0.5" style={{ color: '#9DB2CE' }}>
+        <p className="text-caleo-13 mt-0.5" style={{ color: '#9DB2CE' }}>
           {canEdit
             ? 'Klik "Edit paket" untuk mengubah deskripsi, segmen, atau bundel fitur.'
             : 'Tampilan hanya-baca. Edit paket butuh peran super admin.'}
@@ -458,7 +458,7 @@ export function PlansManagement() {
       </div>
 
       {plans.length === 0 && (
-        <p className="text-[13px] text-center py-8" style={{ color: '#9DB2CE' }}>
+        <p className="text-caleo-13 text-center py-8" style={{ color: '#9DB2CE' }}>
           Tidak ada paket ditemukan.
         </p>
       )}

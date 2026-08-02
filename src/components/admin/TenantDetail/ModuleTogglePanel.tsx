@@ -169,14 +169,14 @@ export function ModuleTogglePanel({ tenantId }: Props) {
           aria-hidden="true"
         />
         <h2
-          className="text-[14px] font-bold"
+          className="text-sm font-bold"
           style={{ color: C.navy, fontFamily: 'var(--font-caleo, inherit)' }}
         >
           Pengaturan Modul
         </h2>
       </div>
       <p
-        className="text-[12px] mb-4 ml-4"
+        className="text-xs mb-4 ml-4"
         style={{ color: C.slate }}
       >
         Aktifkan atau matikan modul untuk tenant ini. Override paket default.
@@ -185,7 +185,7 @@ export function ModuleTogglePanel({ tenantId }: Props) {
       {/* Load error */}
       {loadError && (
         <p
-          className="text-[12px] px-3 py-2 rounded mb-3"
+          className="text-xs px-3 py-2 rounded mb-3"
           style={{ background: '#fff7ed', color: '#92400e' }}
           data-testid="module-toggle-error"
         >
@@ -196,7 +196,7 @@ export function ModuleTogglePanel({ tenantId }: Props) {
       {/* Loading skeleton */}
       {features === null && !loadError && (
         <p
-          className="text-[12px] animate-pulse"
+          className="text-xs animate-pulse"
           style={{ color: C.muted }}
           data-testid="module-toggle-loading"
         >
@@ -207,7 +207,7 @@ export function ModuleTogglePanel({ tenantId }: Props) {
       {/* Empty state */}
       {features !== null && moduleEntries.length === 0 && (
         <p
-          className="text-[12px]"
+          className="text-xs"
           style={{ color: C.muted }}
           data-testid="module-toggle-empty"
         >
@@ -232,13 +232,13 @@ export function ModuleTogglePanel({ tenantId }: Props) {
               >
                 <div>
                   <p
-                    className="text-[13px] font-medium"
+                    className="text-caleo-13 font-medium"
                     style={{ color: C.navy }}
                   >
                     {moduleLabel(key)}
                   </p>
                   <p
-                    className="text-[11px]"
+                    className="text-caleo-11"
                     style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}
                   >
                     {key}

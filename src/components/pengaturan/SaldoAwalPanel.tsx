@@ -60,7 +60,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
   // ── Loading ───────────────────────────────────────────────────────────────
   if (snapshot === undefined) {
     return (
-      <div className="py-10 text-center text-[13px] text-slate-400">Memuat status Saldo Awal…</div>
+      <div className="py-10 text-center text-caleo-13 text-slate-400">Memuat status Saldo Awal…</div>
     );
   }
 
@@ -100,22 +100,22 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           <div className="bg-emerald-50 border border-emerald-200 rounded p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold uppercase tracking-wide">
+                <span className="text-caleo-11 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold uppercase tracking-wide">
                   Terpost
                 </span>
-                <span className="text-[13px] font-bold text-emerald-800">
+                <span className="text-caleo-13 font-bold text-emerald-800">
                   Saldo Awal per {cutoverFormatted}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setReverseOpen(true)}
-                className="text-[12px] text-rose-600 border border-rose-200 bg-white rounded px-3 py-1.5 hover:bg-rose-50 font-semibold"
+                className="text-xs text-rose-600 border border-rose-200 bg-white rounded px-3 py-1.5 hover:bg-rose-50 font-semibold"
               >
                 Reverse & Edit
               </button>
             </div>
-            <div className="text-[11px] text-emerald-700">
+            <div className="text-caleo-11 text-emerald-700">
               Dipost pada {postedFormatted}
               {snapshot.posted_je_id && (
                 <span className="ml-2 font-mono">(Jurnal Umum ID: {snapshot.posted_je_id.slice(0, 8)}…)</span>
@@ -131,8 +131,8 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           </div>
 
           {/* Detail */}
-          <div className="border border-slate-200 rounded overflow-hidden text-[12px]">
-            <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 font-extrabold text-[10.5px] text-slate-500 uppercase tracking-wider">
+          <div className="border border-slate-200 rounded overflow-hidden text-xs">
+            <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 font-extrabold text-caleo-10 text-slate-500 uppercase tracking-wider">
               Ringkasan Aktiva
             </div>
             <div className="divide-y divide-slate-100">
@@ -153,20 +153,20 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           >
             <div className="bg-white rounded shadow-2xl w-full max-w-md">
               <div className="px-4 py-4 border-b border-slate-200">
-                <h3 className="text-[14px] font-bold text-rose-700">Reverse Saldo Awal?</h3>
-                <p className="text-[12px] text-slate-600 mt-1">
+                <h3 className="text-sm font-bold text-rose-700">Reverse Saldo Awal?</h3>
+                <p className="text-xs text-slate-600 mt-1">
                   Ini akan membuat Jurnal Reversal dan mereset status ke draft. Setelah ini kamu bisa isi ulang via wizard.
                 </p>
               </div>
               <div className="px-4 py-4 space-y-3">
                 <label className="block">
-                  <span className="text-[12px] font-semibold text-slate-700">Alasan reversal *</span>
+                  <span className="text-xs font-semibold text-slate-700">Alasan reversal *</span>
                   <textarea
                     value={reverseReason}
                     onChange={(e) => setReverseReason(e.target.value)}
                     rows={3}
                     placeholder="Misal: Angka modal awal salah, perlu koreksi piutang"
-                    className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                    className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                   />
                 </label>
               </div>
@@ -175,7 +175,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
                   type="button"
                   onClick={() => { setReverseOpen(false); setReverseReason(''); }}
                   disabled={reversing}
-                  className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50"
+                  className="px-4 py-2 text-caleo-13 font-semibold text-slate-600 bg-slate-100 rounded hover:bg-slate-200 disabled:opacity-50"
                 >
                   Batal
                 </button>
@@ -183,7 +183,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
                   type="button"
                   onClick={handleReverse}
                   disabled={reversing || reverseReason.trim().length < 3}
-                  className="px-4 py-2 text-[13px] font-semibold text-white bg-rose-600 rounded hover:bg-rose-700 disabled:opacity-50"
+                  className="px-4 py-2 text-caleo-13 font-semibold text-white bg-rose-600 rounded hover:bg-rose-700 disabled:opacity-50"
                 >
                   {reversing ? 'Memproses…' : 'Reverse & Reset'}
                 </button>
@@ -207,20 +207,20 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
       <>
         <div className="border border-amber-200 bg-amber-50 rounded p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-bold uppercase tracking-wide">
+            <span className="text-caleo-11 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-bold uppercase tracking-wide">
               Draft
             </span>
-            <span className="text-[13px] font-semibold text-amber-800">
+            <span className="text-caleo-13 font-semibold text-amber-800">
               Cutover: {cutoverFormatted}
             </span>
           </div>
-          <p className="text-[12px] text-amber-800">
+          <p className="text-xs text-amber-800">
             Draft tersimpan pada {updatedFormatted}. Klik "Lanjutkan" untuk melanjutkan pengisian wizard.
           </p>
           <button
             type="button"
             onClick={() => setWizardOpen(true)}
-            className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded hover:opacity-90"
+            className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-caleo-13 font-bold rounded hover:opacity-90"
           >
             Lanjutkan Wizard
           </button>
@@ -247,15 +247,15 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           📒
         </div>
         <div>
-          <h3 className="text-[14px] font-bold text-slate-800">Belum ada Saldo Awal</h3>
-          <p className="text-[12px] text-slate-500 mt-1 max-w-md mx-auto">
+          <h3 className="text-sm font-bold text-slate-800">Belum ada Saldo Awal</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
             Masukkan data neraca per tanggal cutover agar laporan Neraca, Laba Rugi, dan Piutang Aging mencerminkan kondisi sebenarnya.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="px-4 py-2.5 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded hover:opacity-90"
+          className="px-4 py-2.5 bg-[var(--color-caleo-primary)] text-white text-caleo-13 font-bold rounded hover:opacity-90"
         >
           Buat Saldo Awal
         </button>
@@ -283,15 +283,15 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
       : 'bg-slate-50 border-slate-200 text-slate-700';
   return (
     <div className={`border rounded p-3 ${colorClass}`}>
-      <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{label}</div>
-      <div className="text-[14px] font-bold mt-1">{formatIDR(value)}</div>
+      <div className="text-caleo-11 font-semibold uppercase tracking-wide opacity-70">{label}</div>
+      <div className="text-sm font-bold mt-1">{formatIDR(value)}</div>
     </div>
   );
 }
 
 function SummaryRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="px-4 py-2 flex items-center justify-between text-[12px]">
+    <div className="px-4 py-2 flex items-center justify-between text-xs">
       <span className="text-slate-600">{label}</span>
       <span className="font-medium text-slate-800">{formatIDR(value)}</span>
     </div>

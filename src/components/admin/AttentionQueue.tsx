@@ -193,7 +193,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
   if (error) {
     return (
       <div
-        className="border rounded px-4 py-3 text-[13px] flex justify-between items-center"
+        className="border rounded px-4 py-3 text-caleo-13 flex justify-between items-center"
         style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
         data-testid="attention-queue-error"
       >
@@ -201,7 +201,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
         <button
           type="button"
           onClick={refetch}
-          className="text-[12px] font-semibold px-3 py-1 rounded-full bg-white text-caleo-danger border border-caleo-danger hover:bg-caleo-danger hover:text-white transition"
+          className="text-xs font-semibold px-3 py-1 rounded-full bg-white text-caleo-danger border border-caleo-danger hover:bg-caleo-danger hover:text-white transition"
           data-testid="attention-queue-retry"
         >
           Coba lagi
@@ -213,7 +213,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
   if (rows.length === 0) {
     return (
       <div
-        className="border rounded px-4 py-3 text-[13px]"
+        className="border rounded px-4 py-3 text-caleo-13"
         style={{ background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }}
         data-testid="attention-queue-empty"
       >
@@ -225,7 +225,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
   return (
     <div className="border rounded overflow-hidden bg-white" style={{ borderColor: '#fcd34d' }} data-testid="attention-queue-live">
       <div
-        className="px-4 py-2 text-[12px] font-bold uppercase tracking-widest"
+        className="px-4 py-2 text-xs font-bold uppercase tracking-widest"
         style={{
           background: '#fffbeb',
           color: '#92400e',
@@ -239,7 +239,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
       {rows.map((t) => (
         <div
           key={t.tenant_id}
-          className="px-4 py-3 flex justify-between items-center text-[13px]"
+          className="px-4 py-3 flex justify-between items-center text-caleo-13"
           style={{ borderBottom: '1px solid #fef3c7' }}
           data-testid={`attention-row-${t.slug}`}
         >
@@ -247,20 +247,20 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold" style={{ color: '#0B2545' }}>{t.name}</span>
               <span
-                className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded"
+                className="text-caleo-11 font-mono font-bold px-1.5 py-0.5 rounded"
                 style={{ background: '#E2E8F0', color: '#0B2545' }}
                 data-testid={`attention-plan-${t.slug}`}
               >
                 {t.plan_code}
               </span>
               <span
-                className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${reasonChipClass(t.attention_reason)}`}
+                className={`text-caleo-11 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${reasonChipClass(t.attention_reason)}`}
                 data-testid={`attention-reason-${t.slug}`}
               >
                 {REASON_LABEL[t.attention_reason]}
               </span>
             </div>
-            <div className="text-[12px] text-caleo-slate">
+            <div className="text-xs text-caleo-slate">
               {t.expires_at && (
                 <>
                   <span className={`font-mono font-bold ${daysColor(t.days_until_expiry)}`}>
@@ -279,7 +279,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
                 ? `/admin/tenants/${t.slug}?tab=pembayaran`
                 : `/admin/tenants/${t.slug}?tab=ringkasan`
             }
-            className="text-[12px] px-3 py-1 rounded border font-medium hover:bg-caleo-navy hover:text-white transition shrink-0"
+            className="text-xs px-3 py-1 rounded border font-medium hover:bg-caleo-navy hover:text-white transition shrink-0"
             style={{ borderColor: '#0B2545', color: '#0B2545' }}
             data-testid={`attention-link-${t.slug}`}
           >

@@ -282,7 +282,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               Persisted on store_settings.logo_url (the table the invoice
               renderer reads). Uploaded to Storage bucket 'branding'. */}
           <div className="bg-white rounded border border-gray-200 p-6">
-            <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-2">
+            <label className="text-caleo-11 font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-2">
               Logo Toko (untuk invoice PDF)
             </label>
             <div className="flex items-center gap-4">
@@ -320,11 +320,11 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                     Hapus Logo
                   </button>
                 )}
-                <p className="text-[10px] text-slate-400">PNG / JPG, maks 1 MB. Rekomendasi 200×200 px (akan ter-dithered di printout dotmatrix).</p>
+                <p className="text-caleo-10 text-slate-400">PNG / JPG, maks 1 MB. Rekomendasi 200×200 px (akan ter-dithered di printout dotmatrix).</p>
               </div>
             </div>
             {companyLoading && (
-              <p className="text-[10px] text-slate-400 mt-2">Memuat status logo...</p>
+              <p className="text-caleo-10 text-slate-400 mt-2">Memuat status logo...</p>
             )}
           </div>
 

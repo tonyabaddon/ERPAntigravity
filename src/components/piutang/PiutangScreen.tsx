@@ -211,7 +211,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
               <button key={k} onClick={() => setFilter(k)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold ${active ? 'text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
                 style={active ? { background: 'var(--color-caleo-primary)' } : {}}>
-                {label} <span className="ml-1 text-[10px] opacity-80">({count})</span>
+                {label} <span className="ml-1 text-caleo-10 opacity-80">({count})</span>
               </button>
             );
           })}
@@ -279,13 +279,13 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                   <tr key={r.order.id} className={`${rowBg} border-b border-gray-100 hover:brightness-95`}>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-sm">{r.customer?.name ?? r.order.customer_name}</div>
-                      <div className="text-[11px] text-gray-500">{r.customer?.wa_number ?? r.order.customer_phone ?? '—'}</div>
+                      <div className="text-caleo-11 text-gray-500">{r.customer?.wa_number ?? r.order.customer_phone ?? '—'}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-mono text-[11px] text-gray-700">{r.order.id.slice(0, 8)}</div>
-                      <div className="text-[11px] text-gray-500">Dibuat {fmtDate(r.order.created_at)}</div>
+                      <div className="font-mono text-caleo-11 text-gray-700">{r.order.id.slice(0, 8)}</div>
+                      <div className="text-caleo-11 text-gray-500">Dibuat {fmtDate(r.order.created_at)}</div>
                       {r.order.status === 'INVOICE_WRITTEN_OFF' && (
-                        <div className="text-[11px] text-red-700 italic mt-0.5" title={r.order.write_off_reason ?? undefined}>
+                        <div className="text-caleo-11 text-red-700 italic mt-0.5" title={r.order.write_off_reason ?? undefined}>
                           Tulis-off {r.order.written_off_at ? fmtDate(r.order.written_off_at) : ''} · {r.order.write_off_reason ?? '—'}
                         </div>
                       )}
@@ -294,17 +294,17 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                     <td className="px-4 py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
                       {formatIDR(outstandingOf(r))}
                       {(r.order.piutang_paid_amount ?? 0) > 0 && (
-                        <div className="text-[10px] font-medium text-gray-500 mt-0.5">
+                        <div className="text-caleo-10 font-medium text-gray-500 mt-0.5">
                           dari {formatIDR(r.order.total)}
                         </div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="text-sm font-semibold">{fmtDate(r.order.due_date)}</div>
-                      <div className="text-[11px] text-gray-500">{daysLabel}</div>
+                      <div className="text-caleo-11 text-gray-500">{daysLabel}</div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeClass}`}>
+                      <span className={`text-caleo-11 font-bold px-2 py-0.5 rounded-full ${badgeClass}`}>
                         {badgeLabel}
                       </span>
                     </td>
@@ -322,7 +322,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                                 onClick={() => void handleSendWa(r.order.id)}
                                 disabled={sendingWa === r.order.id}
                                 title="Kirim WA reminder manual"
-                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <MessageSquare className="w-3 h-3" />
                                 {sendingWa === r.order.id ? '...' : 'WA'}
                               </button>
@@ -330,25 +330,25 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                               <button
                                 disabled
                                 title="WA reminder tersedia di paket Premium"
-                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
+                                className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
                                 <MessageSquare className="w-3 h-3" /> WA
                               </button>
                             )}
                             <button
                               onClick={() => setPayTarget(r)}
-                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                              className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
                               ✓ Catat Bayar
                             </button>
                             <button
                               onClick={() => setWriteOffTarget(r)}
-                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100">
+                              className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100">
                               Tulis-off
                             </button>
                           </>
                         ) : r.order.status === 'INVOICE_WRITTEN_OFF' && isOwner ? (
                           <button
                             onClick={() => setRevertTarget(r)}
-                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+                            className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
                             Batal Tulis-off
                           </button>
                         ) : null}
@@ -404,7 +404,7 @@ function ReminderBadge({ info }: { info: ReminderInfo }) {
   })();
   const isSent = info.status === 'SENT';
   return (
-    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isSent ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
+    <span className={`text-caleo-10 font-semibold px-1.5 py-0.5 rounded-full ${isSent ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
       title={`${info.rule_type} · ${new Date(info.sent_at).toLocaleString('id-ID')}`}>
       {isSent ? '✓' : '!'} {info.rule_type} · {sentAgo}
     </span>
@@ -418,9 +418,9 @@ function KpiCard(props: { icon: React.ReactNode; iconBg: string; iconColor: stri
       <div className={`inline-flex items-center justify-center w-8 h-8 rounded ${props.iconBg} ${props.iconColor} mb-3`}>
         {props.icon}
       </div>
-      <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{props.label}</div>
+      <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500">{props.label}</div>
       <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{props.value}</div>
-      <div className="text-[11px] text-gray-500 mt-0.5">{props.sub}</div>
+      <div className="text-caleo-11 text-gray-500 mt-0.5">{props.sub}</div>
     </div>
   );
 }
@@ -443,7 +443,7 @@ function AgingBar({ segments, onSelect }: { segments: ReturnType<typeof computeA
           );
         })}
       </div>
-      <div className="flex flex-wrap gap-3 text-[11px]">
+      <div className="flex flex-wrap gap-3 text-caleo-11">
         {segments.map(s => (
           <div key={s.label} className="inline-flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded" style={{ background: s.color }} />
@@ -541,7 +541,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>
         </div>
         <div className="px-4 py-4 space-y-3">
-          <div className="bg-gray-50 rounded px-3 py-3 text-[13px] space-y-1">
+          <div className="bg-gray-50 rounded px-3 py-3 text-caleo-13 space-y-1">
             <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Total Invoice</span><span className="font-semibold">{formatIDR(row.order.total)}</span></div>
             {(row.order.piutang_paid_amount ?? 0) > 0 && (
@@ -552,11 +552,11 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
           </div>
           {/* F-11: partial-payment amount input + sisa-setelah-bayar preview. */}
           <div>
-            <label className="text-[13px] font-semibold text-slate-700 block mb-1">
+            <label className="text-caleo-13 font-semibold text-slate-700 block mb-1">
               Jumlah Bayar <span className="text-rose-600">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-slate-500">Rp</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-caleo-13 text-slate-500">Rp</span>
               <input
                 type="number"
                 min={1}
@@ -564,18 +564,18 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
                 step={1}
                 value={amountStr}
                 onChange={(e) => setAmountStr(e.target.value)}
-                className={`w-full pl-9 pr-3 py-2 rounded border text-[13px] font-mono focus-visible:outline-none focus-visible:ring-2 ${
+                className={`w-full pl-9 pr-3 py-2 rounded border text-caleo-13 font-mono focus-visible:outline-none focus-visible:ring-2 ${
                   amountValid
                     ? 'border-slate-300 focus-visible:ring-caleo-gold'
                     : 'border-rose-300 focus-visible:ring-caleo-gold bg-rose-50/40'
                 }`}
               />
             </div>
-            <div className="flex items-center justify-between mt-1 text-[12px]">
+            <div className="flex items-center justify-between mt-1 text-xs">
               <button
                 type="button"
                 onClick={() => setAmountStr(String(outstandingSisa))}
-                className="text-[11px] font-semibold text-emerald-700 hover:underline"
+                className="text-caleo-11 font-semibold text-emerald-700 hover:underline"
               >
                 Isi penuh (lunasi)
               </button>
@@ -605,7 +605,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
                 ) : (
                   <div className="text-xs text-gray-600 flex items-center gap-1">📄 {proofFile.name}</div>
                 )}
-                <div className="flex items-center justify-between text-[11px] text-gray-500">
+                <div className="flex items-center justify-between text-caleo-11 text-gray-500">
                   <span>{(proofFile.size / 1024).toFixed(0)} KB</span>
                   <button onClick={() => setProofFile(null)} className="text-rose-600 hover:underline">Ganti</button>
                 </div>
@@ -614,7 +614,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
               <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded px-4 py-4 text-xs text-gray-400 hover:border-indigo-300 cursor-pointer">
                 <Upload className="w-6 h-6 mb-1 text-gray-300" />
                 Klik untuk upload bukti
-                <span className="text-[10px] mt-0.5">PDF / JPG / PNG</span>
+                <span className="text-caleo-10 mt-0.5">PDF / JPG / PNG</span>
                 <input type="file" accept={TEMPO_PROOF_ACCEPT} className="hidden" onChange={handleFileSelect} />
               </label>
             )}
@@ -640,7 +640,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
 
 function Th({ children, align }: { children: React.ReactNode; align?: 'left' | 'right' | 'center' }) {
   return (
-    <th className={`px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide text-${align ?? 'left'}`}>
+    <th className={`px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase tracking-wide text-${align ?? 'left'}`}>
       {children}
     </th>
   );

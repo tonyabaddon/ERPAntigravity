@@ -56,7 +56,7 @@ function formatTime(iso: string): string {
 function ChannelPill({ channel }: { channel: KasirChannel }) {
   const def = CHANNEL_VISUAL[channel];
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${def.bgClass} ${def.textClass}`}>
+    <span className={`inline-block px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-wide ${def.bgClass} ${def.textClass}`}>
       {def.label}
     </span>
   );
@@ -91,7 +91,7 @@ function KpiCard({ label, value, sub, color, icon, locked }: KpiCardProps) {
     return (
       <div className="bg-white border border-dashed border-gray-200 rounded p-5 flex flex-col items-center justify-center gap-1">
         <Lock className="w-5 h-5 text-gray-300" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">{label}</span>
+        <span className="text-caleo-10 font-bold uppercase tracking-widest text-gray-300">{label}</span>
       </div>
     );
   }
@@ -100,9 +100,9 @@ function KpiCard({ label, value, sub, color, icon, locked }: KpiCardProps) {
     <div className={`rounded p-5 border relative overflow-hidden ${colorMap[color]}`}>
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${topBar[color]}`} />
       <div className={`text-lg mb-2 ${color === 'navy' ? 'text-white' : ''}`}>{icon}</div>
-      <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${labelColor}`}>{label}</div>
+      <div className={`text-caleo-10 font-black uppercase tracking-widest mb-1 ${labelColor}`}>{label}</div>
       <div className={`text-xl font-black leading-none ${textColor}`}>{value}</div>
-      <div className={`text-[10px] font-semibold mt-1.5 ${subColor}`}>{sub}</div>
+      <div className={`text-caleo-10 font-semibold mt-1.5 ${subColor}`}>{sub}</div>
     </div>
   );
 }
@@ -215,7 +215,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-lg">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-black tracking-widest text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full flex items-center gap-1.5">
+            <span className="text-caleo-10 font-black tracking-widest text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
               Rekonsiliasi Aktif
             </span>
@@ -253,7 +253,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           <button
             type="button"
             onClick={() => onOpenPenjualanBaru?.()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#2d8a4e] text-white font-extrabold text-[13px] rounded hover:bg-green-700"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#2d8a4e] text-white font-extrabold text-caleo-13 rounded hover:bg-green-700"
           >
             📋 Catat Penjualan
           </button>
@@ -325,7 +325,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-caleo-11 font-bold transition-all ${
                     filter === key ? 'bg-[var(--color-caleo-primary)] text-white' : 'bg-slate-50 text-gray-500 hover:text-[var(--color-caleo-primary)]'
                   }`}
                 >
@@ -349,17 +349,17 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 return (
                   <div key={`wa-${o.id}`} className="flex items-center gap-3 p-3 rounded border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/30 transition-all">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 flex-shrink-0">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 flex-shrink-0">
                       💬 WA Order
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-bold text-slate-800 truncate">
                         {o.gjp_order_id ?? o.id.slice(0, 8)} — {o.customer_name}
                       </div>
-                      <div className="text-[10px] text-gray-400 font-medium">Auto-sync · {formatTime(o.updated_at)}</div>
+                      <div className="text-caleo-10 text-gray-400 font-medium">Auto-sync · {formatTime(o.updated_at)}</div>
                     </div>
                     {isOwner && waHpp > 0 && (
-                      <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded flex-shrink-0">
+                      <span className="text-caleo-10 font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded flex-shrink-0">
                         HPP {formatRp(waHpp)}
                       </span>
                     )}
@@ -375,7 +375,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                   {tx.channel ? (
                     <ChannelPill channel={tx.channel} />
                   ) : (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-50 text-red-600 flex-shrink-0">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-wide bg-red-50 text-red-600 flex-shrink-0">
                       📤 Keluar
                     </span>
                   )}
@@ -385,7 +385,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                         ? `${tx.expense_category} — ${tx.description}`
                         : tx.items.map(i => `${i.name} ×${i.qty}`).join(', ')}
                     </div>
-                    <div className="text-[10px] text-gray-400 font-medium flex items-center gap-2">
+                    <div className="text-caleo-10 text-gray-400 font-medium flex items-center gap-2">
                       {tx.invoice_number && <span>{tx.invoice_number}</span>}
                       {tx.payment_method && <span>· {PAYMENT_LABEL[tx.payment_method]}</span>}
                       {tx.po_id && <span className="text-violet-500">🔗 dari PO</span>}
@@ -393,13 +393,13 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                     </div>
                     {tx.status === 'AWAITING_LUNAS' && (
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300">
+                        <span className="px-2 py-0.5 rounded-full text-caleo-10 font-extrabold bg-amber-100 text-amber-700 border border-amber-300">
                           💰 Belum Lunas {formatRp((tx.total_amount ?? tx.subtotal) - (tx.dp_amount ?? 0))}
                         </span>
                         <button
                           type="button"
                           onClick={() => setMarkLunasTx(tx)}
-                          className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500 text-white hover:bg-amber-600"
+                          className="px-2 py-0.5 rounded text-caleo-10 font-extrabold bg-amber-500 text-white hover:bg-amber-600"
                         >
                           Tandai Lunas
                         </button>
@@ -407,7 +407,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                     )}
                   </div>
                   {isOwner && isIncome && tx.hpp_total > 0 && (
-                    <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded flex-shrink-0">
+                    <span className="text-caleo-10 font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded flex-shrink-0">
                       HPP {formatRp(tx.hpp_total)}
                     </span>
                   )}
@@ -435,13 +435,13 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           {/* Add transaction */}
           <div className="bg-white rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl p-5">
             <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-1">Catat Transaksi</h3>
-            <p className="text-[10px] text-gray-400 mb-4">Pilih jenis transaksi</p>
+            <p className="text-caleo-10 text-gray-400 mb-4">Pilih jenis transaksi</p>
 
             <div className="bg-emerald-50 border border-emerald-200 rounded px-4 py-3 flex items-start gap-2.5 mb-4">
               <span className="w-2 h-2 mt-1 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
               <div>
-                <div className="text-[11px] font-bold text-emerald-800">WA Orders — Auto-Sync</div>
-                <div className="text-[10px] text-emerald-600">Order terverifikasi otomatis masuk</div>
+                <div className="text-caleo-11 font-bold text-emerald-800">WA Orders — Auto-Sync</div>
+                <div className="text-caleo-10 text-emerald-600">Order terverifikasi otomatis masuk</div>
               </div>
             </div>
 
@@ -451,7 +451,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 className="flex flex-col items-center justify-center p-4 rounded border-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 transition-all hover:scale-[1.02] text-center"
               >
                 <span className="text-xl mb-1">📤</span>
-                <span className="text-[11px] font-black uppercase tracking-wide">Pengeluaran</span>
+                <span className="text-caleo-11 font-black uppercase tracking-wide">Pengeluaran</span>
               </button>
             </div>
           </div>
@@ -460,7 +460,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           {!loading && summary && (
             <div className="bg-white rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl p-5">
               <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-0.5">Rekap Pembayaran</h3>
-              <p className="text-[10px] text-gray-400 mb-3">Cek laci kas & rekening</p>
+              <p className="text-caleo-10 text-gray-400 mb-3">Cek laci kas & rekening</p>
               <div className="space-y-2">
                 {([
                   { key: 'cash', label: '💵 Tunai (Laci Kas)', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
@@ -470,8 +470,8 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                   const val = summary.byPaymentMethod[key] ?? 0;
                   return (
                     <div key={key} className={`flex items-center justify-between px-3 py-2 rounded border ${color}`}>
-                      <span className="text-[11px] font-bold">{label}</span>
-                      <span className="text-[11px] font-black">{formatRp(val)}</span>
+                      <span className="text-caleo-11 font-bold">{label}</span>
+                      <span className="text-caleo-11 font-black">{formatRp(val)}</span>
                     </div>
                   );
                 })}
@@ -484,10 +484,10 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
             <div className="bg-white rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl overflow-hidden">
               <div className="p-5 pb-4">
                 <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-1">Tutup Buku Harian</h3>
-                <p className="text-[10px] text-gray-400 mb-4">Ringkasan &amp; cetak laporan</p>
+                <p className="text-caleo-10 text-gray-400 mb-4">Ringkasan &amp; cetak laporan</p>
               </div>
               <div className="mx-5 mb-5 bg-gradient-to-br from-[var(--color-caleo-primary)] to-[#1e3d60] rounded p-4 text-white">
-                <div className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-3">
+                <div className="text-caleo-10 font-black uppercase tracking-widest opacity-50 mb-3">
                   Rekap {new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
                 {(Object.entries(summary.byChannel) as [string, number][]).filter(([, v]) => v > 0).map(([ch, val]) => (
@@ -642,7 +642,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
 
         <div className="p-5 space-y-4">
           <div>
-            <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Kategori</label>
+            <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Kategori</label>
             {isError ? (
               <div className="flex items-center gap-2">
                 <div className="flex-1 text-xs text-red-600">Gagal memuat kategori.</div>
@@ -674,7 +674,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
           </div>
 
           <div>
-            <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Deskripsi</label>
+            <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Deskripsi</label>
             <input
               value={description}
               onChange={e => setDescription(e.target.value)}
@@ -684,7 +684,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
           </div>
 
           <div>
-            <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Jumlah (Rp)</label>
+            <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Jumlah (Rp)</label>
             <input
               type="number"
               min="0"

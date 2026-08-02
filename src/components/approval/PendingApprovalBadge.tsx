@@ -19,8 +19,8 @@ interface PendingApprovalBadgeProps {
 }
 
 const SIZES = {
-  sm: { dot: 'w-2 h-2', pill: 'min-w-[18px] h-[18px] text-[10px] px-1' },
-  md: { dot: 'w-2.5 h-2.5', pill: 'min-w-[20px] h-5 text-[11px] px-1.5' },
+  sm: { dot: 'w-2 h-2', pill: 'min-w-[18px] h-[18px] text-caleo-10 px-1' },
+  md: { dot: 'w-2.5 h-2.5', pill: 'min-w-[20px] h-5 text-caleo-11 px-1.5' },
 } as const;
 
 export default function PendingApprovalBadge({

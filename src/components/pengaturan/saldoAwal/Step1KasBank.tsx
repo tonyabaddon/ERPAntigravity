@@ -48,15 +48,15 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
 
   if (loading) {
     return (
-      <div className="py-10 text-center text-[13px] text-slate-400">Memuat akun Kas & Bank…</div>
+      <div className="py-10 text-center text-caleo-13 text-slate-400">Memuat akun Kas & Bank…</div>
     );
   }
 
   if (accounts.length === 0) {
     return (
       <div className="py-10 text-center space-y-2">
-        <p className="text-[13px] text-slate-600 font-medium">Belum ada akun Kas & Bank.</p>
-        <p className="text-[12px] text-slate-500">
+        <p className="text-caleo-13 text-slate-600 font-medium">Belum ada akun Kas & Bank.</p>
+        <p className="text-xs text-slate-500">
           Setup akun Kas & Bank di menu Kas & Bank terlebih dahulu sebelum mengisi Saldo Awal.
         </p>
       </div>
@@ -95,20 +95,20 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-[14px] font-bold text-[var(--color-caleo-primary)] mb-1">Kas & Bank — Saldo Awal</h3>
-        <p className="text-[12px] text-slate-500">
+        <h3 className="text-sm font-bold text-[var(--color-caleo-primary)] mb-1">Kas & Bank — Saldo Awal</h3>
+        <p className="text-xs text-slate-500">
           Masukkan saldo awal setiap akun per tanggal cutover. Angka ini akan masuk ke Jurnal Saldo Awal sebagai sisi Debit.
         </p>
       </div>
 
       {showCrossCheck && (
-        <div className="border border-amber-200 bg-amber-50 rounded px-4 py-3 text-[12px] text-amber-800 space-y-1">
+        <div className="border border-amber-200 bg-amber-50 rounded px-4 py-3 text-xs text-amber-800 space-y-1">
           <div className="font-semibold">Perhatian: Saldo wizard berbeda dari data Kas & Bank saat ini</div>
           <div>Total wizard: <strong>{formatIDR(wizardTotal)}</strong> · Total saat ini: <strong>{formatIDR(dbTotal)}</strong></div>
           <button
             type="button"
             onClick={syncFromDB}
-            className="mt-1 text-amber-700 font-semibold underline text-[12px] hover:text-amber-900"
+            className="mt-1 text-amber-700 font-semibold underline text-xs hover:text-amber-900"
           >
             Sinkronkan dari Kas & Bank
           </button>
@@ -116,12 +116,12 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
       )}
 
       <div className="border border-slate-200 rounded overflow-hidden">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-caleo-13">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-left">
-              <th className="px-4 py-2.5 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Akun</th>
-              <th className="px-4 py-2.5 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Saldo Awal</th>
-              <th className="px-4 py-2.5 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Tanggal Saldo</th>
+              <th className="px-4 py-2.5 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider">Akun</th>
+              <th className="px-4 py-2.5 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider text-right">Saldo Awal</th>
+              <th className="px-4 py-2.5 text-caleo-10 font-extrabold text-slate-500 uppercase tracking-wider">Tanggal Saldo</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -132,7 +132,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-800">{acc.cash_account_name}</div>
                     {master && (
-                      <div className="text-[11px] text-slate-400 mt-0.5">
+                      <div className="text-caleo-11 text-slate-400 mt-0.5">
                         {master.account_type === 'BANK' ? `${master.bank_code ?? ''} · ${master.account_number ?? ''}` : master.account_type}
                       </div>
                     )}
@@ -142,7 +142,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       value={acc.opening_balance}
                       onChange={(n) => updateAccount(acc.cash_account_id, { opening_balance: n })}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-right text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                       placeholder="0"
                     />
                   </td>
@@ -151,7 +151,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       type="date"
                       value={acc.as_of}
                       onChange={(e) => updateAccount(acc.cash_account_id, { as_of: e.target.value })}
-                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                     />
                   </td>
                 </tr>
@@ -160,8 +160,8 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
           </tbody>
           <tfoot>
             <tr className="bg-slate-50 border-t border-slate-200">
-              <td className="px-4 py-2.5 text-[12px] font-bold text-slate-600">Total Kas & Bank</td>
-              <td className="px-4 py-2.5 text-right font-bold text-[13px] text-emerald-700">
+              <td className="px-4 py-2.5 text-xs font-bold text-slate-600">Total Kas & Bank</td>
+              <td className="px-4 py-2.5 text-right font-bold text-caleo-13 text-emerald-700">
                 {formatIDR(wizardTotal)}
               </td>
               <td />

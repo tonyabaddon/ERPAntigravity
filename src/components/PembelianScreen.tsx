@@ -832,7 +832,7 @@ function OrdersTab({
         </div>
 
         <div className="bg-white rounded border border-gray-200 overflow-hidden">
-          <div className="grid grid-cols-8 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+          <div className="grid grid-cols-8 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-caleo-10 font-bold uppercase tracking-wide text-gray-500">
             <span className="col-span-1">No. PO</span>
             <span className="col-span-1">Supplier</span>
             <span className="col-span-1 text-center">Tgl Pesan</span>
@@ -863,7 +863,7 @@ function OrdersTab({
                 <span className="col-span-1 text-xs font-mono font-semibold text-gray-800">{po.po_number}</span>
                 <div className="col-span-1">
                   <div className="text-sm font-semibold text-gray-800 truncate">{po.supplier?.name ?? '—'}</div>
-                  <div className="text-[10px] text-gray-400">{po.supplier?.payment_term_days === 0 ? 'Cash' : `Net ${po.supplier?.payment_term_days}`}</div>
+                  <div className="text-caleo-10 text-gray-400">{po.supplier?.payment_term_days === 0 ? 'Cash' : `Net ${po.supplier?.payment_term_days}`}</div>
                 </div>
                 <span className="col-span-1 text-xs text-gray-500 text-center">{formatDate(po.ordered_at)}</span>
                 <div className="col-span-1 flex flex-col items-center gap-0.5">
@@ -873,7 +873,7 @@ function OrdersTab({
                         {formatDate(po.expected_receive_date)}
                       </span>
                       {isReceiveOverdue(po) && (
-                        <span className="text-[9px] font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">
+                        <span className="text-caleo-9 font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">
                           Telat {daysReceiveOverdue(po)} hari
                         </span>
                       )}
@@ -887,14 +887,14 @@ function OrdersTab({
                     {po.payment_due_at ? formatDate(po.payment_due_at) : '—'}
                   </span>
                   {isOverdue(po) && (
-                    <span className="text-[9px] font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">Terlambat</span>
+                    <span className="text-caleo-9 font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">Terlambat</span>
                   )}
                 </div>
                 <span className={`col-span-1 text-sm font-bold text-right ${po.status === 'PAID' ? 'text-green-700' : 'text-gray-800'}`}>
                   {formatIDR(po.total)}
                 </span>
                 <div className="col-span-1 flex justify-center">
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[po.status]?.className}`}>
+                  <span className={`text-caleo-10 font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[po.status]?.className}`}>
                     {STATUS_BADGE[po.status]?.label}
                   </span>
                 </div>
@@ -1005,7 +1005,7 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
           <div className="py-12 text-center text-sm text-gray-400">Belum ada supplier.</div>
         ) : (
           <>
-            <div className="grid grid-cols-5 px-4 py-2 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+            <div className="grid grid-cols-5 px-4 py-2 bg-gray-50 border-b border-gray-200 text-caleo-10 font-bold uppercase tracking-wide text-gray-500">
               <span className="col-span-2">Nama Supplier</span>
               <span className="col-span-1">Kontak</span>
               <span className="col-span-1 text-center">Term Bayar</span>
@@ -1015,11 +1015,11 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
               <div key={s.id} className="grid grid-cols-5 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50">
                 <div className="col-span-2">
                   <div className="text-sm font-semibold text-gray-800">{s.name}</div>
-                  {s.contact_name && <div className="text-[10px] text-gray-400">{s.contact_name}</div>}
+                  {s.contact_name && <div className="text-caleo-10 text-gray-400">{s.contact_name}</div>}
                 </div>
                 <span className="text-xs text-gray-600">{s.phone ?? '—'}</span>
                 <div className="flex justify-center">
-                  <span className="bg-blue-100 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">{termLabel(s.payment_term_days)}</span>
+                  <span className="bg-blue-100 text-blue-700 text-caleo-10 font-semibold px-2 py-0.5 rounded-full">{termLabel(s.payment_term_days)}</span>
                 </div>
                 <div className="flex justify-center gap-1">
                   <button onClick={() => setModalSupplier(s)} className="text-xs text-gray-500 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>

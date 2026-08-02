@@ -62,7 +62,7 @@ export function RevenueMonthlyTrend({ monthlyStats }: RevenueMonthlyTrendProps) 
       aria-label="Tren pendapatan 12 bulan"
     >
       <h3
-        className="text-[12px] font-bold uppercase tracking-widest mb-4"
+        className="text-xs font-bold uppercase tracking-widest mb-4"
         style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
       >
         Tren 12 bulan
@@ -70,7 +70,7 @@ export function RevenueMonthlyTrend({ monthlyStats }: RevenueMonthlyTrendProps) 
 
       {allZero ? (
         <p
-          className="text-[13px] py-4 text-center"
+          className="text-caleo-13 py-4 text-center"
           style={{ color: '#9DB2CE' }}
           data-testid="trend-empty"
         >

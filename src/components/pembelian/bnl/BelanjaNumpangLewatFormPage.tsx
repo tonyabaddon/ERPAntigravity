@@ -187,7 +187,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
               <div className="border-2 border-gray-300 rounded p-3 flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-sm">{supplier.name}</div>
-                  <div className="text-[11px] text-gray-500">Net {supplier.payment_term_days ?? 0} hari</div>
+                  <div className="text-caleo-11 text-gray-500">Net {supplier.payment_term_days ?? 0} hari</div>
                 </div>
                 <button type="button" onClick={() => setSupplier(null)} className="text-xs text-indigo-600 font-semibold hover:underline">Ganti</button>
               </div>
@@ -202,7 +202,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                       <button key={s.id} type="button" onClick={() => { setSupplier(s); setSupplierQuery(''); setSupplierResults([]); }}
                         className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
                         <div className="font-semibold text-sm">{s.name}</div>
-                        <div className="text-[11px] text-gray-500">Net {s.payment_term_days} hari</div>
+                        <div className="text-caleo-11 text-gray-500">Net {s.payment_term_days} hari</div>
                       </button>
                     ))}
                   </div>
@@ -222,7 +222,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
               className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
           </div>
           <div className="col-span-2">
-            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Foto Faktur Supplier <span className="text-[11px] font-normal text-amber-700 ml-2">(Recommended — bukti dispute)</span></label>
+            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Foto Faktur Supplier <span className="text-caleo-11 font-normal text-amber-700 ml-2">(Recommended — bukti dispute)</span></label>
             <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded cursor-pointer text-xs text-gray-500 hover:border-indigo-300">
               <Upload className="w-4 h-4" />
               {supplierInvoicePhoto ? supplierInvoicePhoto.name : (supplierInvoicePhotoUrl ? 'Sudah ada foto (klik untuk ganti)' : 'Klik atau drag foto faktur (JPG/PNG/PDF, max 5MB)')}
@@ -242,18 +242,18 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
       <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Barang yang Dibeli</div>
-          <div className="text-[11px] text-violet-700 bg-violet-50 px-2 py-1 rounded-full font-semibold inline-flex items-center gap-1">
+          <div className="text-caleo-11 text-violet-700 bg-violet-50 px-2 py-1 rounded-full font-semibold inline-flex items-center gap-1">
             <Info className="w-3 h-3" /> Stok tidak berubah — barang langsung jual ke customer
           </div>
         </div>
         <table className="w-full">
           <thead>
             <tr>
-              <th className="text-left py-2 pr-2 text-[11px] font-semibold text-gray-500 uppercase">SKU / Nama</th>
-              <th className="text-center py-2 px-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Qty</th>
-              <th className="text-right py-2 px-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
-              <th className="text-right py-2 px-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Jual</th>
-              <th className="text-right py-2 px-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
+              <th className="text-left py-2 pr-2 text-caleo-11 font-semibold text-gray-500 uppercase">SKU / Nama</th>
+              <th className="text-center py-2 px-2 w-20 text-caleo-11 font-semibold text-gray-500 uppercase">Qty</th>
+              <th className="text-right py-2 px-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Harga Beli</th>
+              <th className="text-right py-2 px-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Harga Jual</th>
+              <th className="text-right py-2 px-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Subtotal</th>
               <th className="w-8"></th>
             </tr>
           </thead>
@@ -313,7 +313,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                 <label className="text-xs font-semibold text-fuchsia-700 block mb-1.5">Jatuh Tempo Bayar *</label>
                 <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)}
                   className="w-full text-sm py-2 px-3 rounded border border-fuchsia-200" />
-                <div className="text-[11px] text-fuchsia-700 mt-2">Auto-fill dari supplier Net {supplier?.payment_term_days ?? 0} hari.</div>
+                <div className="text-caleo-11 text-fuchsia-700 mt-2">Auto-fill dari supplier Net {supplier?.payment_term_days ?? 0} hari.</div>
               </div>
             )}
           </div>
@@ -346,15 +346,15 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">4. Ringkasan</div>
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded p-4">
-            <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Beli</div>
+            <div className="text-caleo-11 text-gray-500 uppercase font-semibold">Total Beli</div>
             <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(subtotal)}</div>
           </div>
           <div className="bg-indigo-50 rounded p-4">
-            <div className="text-[11px] text-indigo-600 uppercase font-semibold">Estimasi Jual</div>
+            <div className="text-caleo-11 text-indigo-600 uppercase font-semibold">Estimasi Jual</div>
             <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(projectedRevenue)}</div>
           </div>
           <div className="bg-green-50 rounded p-4">
-            <div className="text-[11px] text-green-700 uppercase font-semibold">Estimasi Profit ({margin.toFixed(1)}%)</div>
+            <div className="text-caleo-11 text-green-700 uppercase font-semibold">Estimasi Profit ({margin.toFixed(1)}%)</div>
             <div className="text-xl font-extrabold mt-1 text-green-700">{formatIDR(profit)}</div>
           </div>
         </div>

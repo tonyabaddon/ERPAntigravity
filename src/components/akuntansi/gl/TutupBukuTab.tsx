@@ -101,7 +101,7 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
         {/* Left: label + status chip */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0">
-            <span className="text-[13px] font-medium text-[#1a1a1a]">
+            <span className="text-caleo-13 font-medium text-[#1a1a1a]">
               {periodMonthLabel(p)}
               {isCurrentMonth && (
                 <span className="ml-1.5 text-xs font-normal text-gray-500">(berjalan)</span>
@@ -111,27 +111,27 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
 
           {/* Status chip */}
           {isCurrentMonth ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
               OPEN
             </span>
           ) : p.status === 'CLOSED' ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-600 whitespace-nowrap">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-gray-200 text-gray-600 whitespace-nowrap">
               <Lock className="w-2.5 h-2.5" />
               CLOSED
               {p.closed_at && ` · ${formatClosedAt(p.closed_at)}`}
             </span>
           ) : p.status === 'REOPENED' ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 whitespace-nowrap">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-blue-100 text-blue-700 whitespace-nowrap">
               <RotateCcw className="w-2.5 h-2.5" />
               REOPENED
               {p.closed_at && ` · ${formatClosedAt(p.closed_at)}`}
             </span>
           ) : isCloseable ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 whitespace-nowrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-amber-100 text-amber-800 whitespace-nowrap">
               OPEN
             </span>
           ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
               OPEN
             </span>
           )}
@@ -183,9 +183,9 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
 
         {/* Period list */}
         {loading ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">Memuat...</div>
+          <div className="py-16 text-center text-caleo-13 text-gray-500">Memuat...</div>
         ) : periods.length === 0 ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">
+          <div className="py-16 text-center text-caleo-13 text-gray-500">
             Belum ada periode akuntansi
           </div>
         ) : (

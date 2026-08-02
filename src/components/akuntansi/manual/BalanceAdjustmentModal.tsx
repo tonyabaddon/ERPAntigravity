@@ -314,11 +314,11 @@ export default function BalanceAdjustmentModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4 text-[13px]">
+        <div className="p-6 space-y-4 text-caleo-13">
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-[12px] text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-rose-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -328,13 +328,13 @@ export default function BalanceAdjustmentModal({
             className="rounded border p-3"
             style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
           >
-            <p className="text-[12px] text-amber-900">
+            <p className="text-xs text-amber-900">
               ⚠ <strong>Owner PIN dibutuhkan.</strong> Audit log + timestamp + reason permanent.
             </p>
           </div>
 
           {/* 2. Account info sub-card */}
-          <div className="border border-slate-200 rounded bg-[#fafbff] p-3 text-[12px]">
+          <div className="border border-slate-200 rounded bg-[#fafbff] p-3 text-xs">
             <strong>Akun:</strong>{' '}
             {cashAccount.account_code && (
               <span className="font-mono">{cashAccount.account_code}</span>
@@ -356,7 +356,7 @@ export default function BalanceAdjustmentModal({
                   type="button"
                   onClick={() => handleDirectionChange('UP')}
                   disabled={saving}
-                  className={`flex-1 py-2 rounded border font-bold text-[12px] transition-colors disabled:opacity-60 ${
+                  className={`flex-1 py-2 rounded border font-bold text-xs transition-colors disabled:opacity-60 ${
                     direction === 'UP'
                       ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -368,7 +368,7 @@ export default function BalanceAdjustmentModal({
                   type="button"
                   onClick={() => handleDirectionChange('DOWN')}
                   disabled={saving}
-                  className={`flex-1 py-2 rounded border font-bold text-[12px] transition-colors disabled:opacity-60 ${
+                  className={`flex-1 py-2 rounded border font-bold text-xs transition-colors disabled:opacity-60 ${
                     direction === 'DOWN'
                       ? 'bg-rose-100 border-rose-300 text-rose-800'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -424,7 +424,7 @@ export default function BalanceAdjustmentModal({
           <div>
             <label className="block font-bold mb-1" style={{ color: '#1e3d60' }}>
               Alasan *{' '}
-              <span className="text-[10px] font-normal text-gray-500">(min 10 char)</span>
+              <span className="text-caleo-10 font-normal text-gray-500">(min 10 char)</span>
             </label>
             <textarea
               value={reason}
@@ -434,7 +434,7 @@ export default function BalanceAdjustmentModal({
               placeholder="Mis. cek m-banking saldo BCA Rp 12.550.000, koreksi +50rb (bunga deposito)"
               className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-60 resize-none"
             />
-            <p className={`text-[10px] mt-0.5 ${reasonOk ? 'text-gray-500' : 'text-red-500'}`}>
+            <p className={`text-caleo-10 mt-0.5 ${reasonOk ? 'text-gray-500' : 'text-red-500'}`}>
               {reason.length} / 10 min
             </p>
           </div>
@@ -443,14 +443,14 @@ export default function BalanceAdjustmentModal({
           {previewLines.length > 0 ? (
             <JournalEntryPreview lines={previewLines} />
           ) : (
-            <div className="je-preview p-4 text-[12px] text-amber-800 text-center">
+            <div className="je-preview p-4 text-xs text-amber-800 text-center">
               Isi jumlah dan pilih akun lawan untuk melihat preview journal entry
             </div>
           )}
 
           {/* 7. Owner PIN block — uses shared PinPad for cross-flow consistency */}
           <div className="rounded p-4 bg-[var(--color-caleo-primary)]">
-            <div className="text-[11px] uppercase tracking-widest text-blue-200 font-extrabold mb-3 flex items-center gap-2">
+            <div className="text-caleo-11 uppercase tracking-widest text-blue-200 font-extrabold mb-3 flex items-center gap-2">
               <KeyRound className="w-3.5 h-3.5" />
               Owner PIN
             </div>
@@ -463,7 +463,7 @@ export default function BalanceAdjustmentModal({
                 disabled={saving}
               />
             </div>
-            <p className="text-[10px] text-blue-200 mt-2">3 salah → akun terkunci 10 menit</p>
+            <p className="text-caleo-10 text-blue-200 mt-2">3 salah → akun terkunci 10 menit</p>
           </div>
 
         </div>

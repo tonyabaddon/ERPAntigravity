@@ -329,7 +329,7 @@ export default function TukarFakturFormPage({
               <div className="border-2 border-gray-300 rounded p-3 flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-sm">{supplier.name}</div>
-                  <div className="text-[11px] text-gray-500">
+                  <div className="text-caleo-11 text-gray-500">
                     Net {supplier.payment_term_days ?? 0} hari
                   </div>
                 </div>
@@ -363,7 +363,7 @@ export default function TukarFakturFormPage({
                         className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0"
                       >
                         <div className="font-semibold text-sm">{s.name}</div>
-                        <div className="text-[11px] text-gray-500">
+                        <div className="text-caleo-11 text-gray-500">
                           Net {s.payment_term_days} hari
                         </div>
                       </button>
@@ -384,7 +384,7 @@ export default function TukarFakturFormPage({
               onChange={e => setTukarDate(e.target.value)}
               className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
             />
-            <div className="text-[11px] text-gray-500 mt-1">
+            <div className="text-caleo-11 text-gray-500 mt-1">
               Tanggal sales rep datang & serahkan faktur fisik.
             </div>
           </div>
@@ -399,7 +399,7 @@ export default function TukarFakturFormPage({
               onChange={e => setPaymentDueAt(e.target.value)}
               className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
             />
-            <div className="text-[11px] text-gray-500 mt-1">
+            <div className="text-caleo-11 text-gray-500 mt-1">
               {supplier
                 ? `Auto-fill Net ${supplier.payment_term_days ?? 0} hari dari tanggal hari ini. JT TF meng-override JT asli per-Faktur.`
                 : 'Pilih supplier dulu untuk auto-fill.'}
@@ -424,7 +424,7 @@ export default function TukarFakturFormPage({
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
             2. Daftar Faktur Pembelian
           </div>
-          <div className="text-[11px] text-gray-500">
+          <div className="text-caleo-11 text-gray-500">
             {selected.length} Faktur ter-pilih
           </div>
         </div>
@@ -445,7 +445,7 @@ export default function TukarFakturFormPage({
                   className="flex-1 text-sm outline-none"
                 />
                 {outstandingLoading && (
-                  <span className="text-[10px] text-gray-400">Memuat...</span>
+                  <span className="text-caleo-10 text-gray-400">Memuat...</span>
                 )}
               </div>
               {(searchQuery.length > 0 || searchMatches.length > 0) && (
@@ -472,7 +472,7 @@ export default function TukarFakturFormPage({
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-gray-500">
+                            <div className="text-caleo-11 text-gray-500">
                               Tgl {fmtDate(t.purchase_date)} · JT {fmtDate(t.payment_due_at)}
                             </div>
                           </div>
@@ -499,16 +499,16 @@ export default function TukarFakturFormPage({
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="text-left px-4 py-2 text-[11px] font-semibold text-gray-500 uppercase">
+                      <th className="text-left px-4 py-2 text-caleo-11 font-semibold text-gray-500 uppercase">
                         Faktur
                       </th>
-                      <th className="text-center px-4 py-2 text-[11px] font-semibold text-gray-500 uppercase">
+                      <th className="text-center px-4 py-2 text-caleo-11 font-semibold text-gray-500 uppercase">
                         Tgl
                       </th>
-                      <th className="text-center px-4 py-2 text-[11px] font-semibold text-gray-500 uppercase">
+                      <th className="text-center px-4 py-2 text-caleo-11 font-semibold text-gray-500 uppercase">
                         JT Asli
                       </th>
-                      <th className="text-right px-4 py-2 text-[11px] font-semibold text-gray-500 uppercase">
+                      <th className="text-right px-4 py-2 text-caleo-11 font-semibold text-gray-500 uppercase">
                         Nominal
                       </th>
                       <th className="w-8"></th>
@@ -523,12 +523,12 @@ export default function TukarFakturFormPage({
                               {s.isQuickAdd ? s.supplier_invoice_number : s.pi_number}
                             </div>
                             {!s.isQuickAdd && s.supplier_invoice_number && (
-                              <span className="text-[11px] text-gray-500">
+                              <span className="text-caleo-11 text-gray-500">
                                 · {s.supplier_invoice_number}
                               </span>
                             )}
                             {s.isQuickAdd && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 inline-flex items-center gap-1">
+                              <span className="text-caleo-10 font-bold px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 inline-flex items-center gap-1">
                                 <Sparkles className="w-3 h-3" /> Baru
                               </span>
                             )}
@@ -568,20 +568,20 @@ export default function TukarFakturFormPage({
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Ringkasan</div>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-amber-50 rounded p-4 border border-amber-100">
-            <div className="text-[11px] text-amber-700 uppercase font-semibold flex items-center gap-1.5">
+            <div className="text-caleo-11 text-amber-700 uppercase font-semibold flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5" /> JT Bayar Bundle
             </div>
             <div className="text-xl font-extrabold mt-1 text-amber-700">
               {paymentDueAt ? fmtDate(paymentDueAt) : '—'}
             </div>
-            <div className="text-[11px] text-amber-700/80 mt-1">
+            <div className="text-caleo-11 text-amber-700/80 mt-1">
               Override JT asli semua Faktur dalam bundle.
             </div>
           </div>
           <div className="bg-indigo-50 rounded p-4 border border-indigo-100">
-            <div className="text-[11px] text-indigo-600 uppercase font-semibold">Total Bundle</div>
+            <div className="text-caleo-11 text-indigo-600 uppercase font-semibold">Total Bundle</div>
             <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(totalBundle)}</div>
-            <div className="text-[11px] text-indigo-700/80 mt-1">
+            <div className="text-caleo-11 text-indigo-700/80 mt-1">
               {selected.length} Faktur
               {selected.some(s => s.isQuickAdd)
                 ? ` (${selected.filter(s => s.isQuickAdd).length} quick-add)`

@@ -141,9 +141,9 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
         <div className="px-4 py-3 border-b border-gray-200 bg-gray-50/80 flex items-center justify-between">
           <div>
             <div className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Outstanding per Supplier</div>
-            <div className="text-[11px] text-gray-500">Diurutkan berdasarkan total outstanding terbesar</div>
+            <div className="text-caleo-11 text-gray-500">Diurutkan berdasarkan total outstanding terbesar</div>
           </div>
-          <div className="text-[11px] text-gray-500">{per_supplier.length} supplier</div>
+          <div className="text-caleo-11 text-gray-500">{per_supplier.length} supplier</div>
         </div>
         {per_supplier.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500">Tidak ada outstanding — semua sudah lunas! ✨</div>
@@ -151,11 +151,11 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
           <table className="w-full">
             <thead className="border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
-                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT Terdekat</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Outstanding</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Supplier</th>
+                <th className="text-center px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Tagihan</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">JT Terdekat</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Outstanding</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -172,10 +172,10 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                     <td className="px-4 py-4">
                       <div className="text-xs text-gray-600">{fmtDate(s.due_soonest)}</div>
                       {overdueRow && (
-                        <div className="text-[11px] font-bold text-rose-700 mt-0.5">⚠ Terlambat {Math.abs(days!)} hari</div>
+                        <div className="text-caleo-11 font-bold text-rose-700 mt-0.5">⚠ Terlambat {Math.abs(days!)} hari</div>
                       )}
                       {dueSoonRow && (
-                        <div className="text-[11px] font-bold text-amber-700 mt-0.5">⏰ {days === 0 ? 'Jatuh tempo hari ini' : `${days} hari lagi`}</div>
+                        <div className="text-caleo-11 font-bold text-amber-700 mt-0.5">⏰ {days === 0 ? 'Jatuh tempo hari ini' : `${days} hari lagi`}</div>
                       )}
                     </td>
                     <td className="px-4 py-4 text-right text-sm font-extrabold" style={{ color: overdueRow ? '#b91c1c' : 'var(--color-caleo-primary)' }}>
@@ -183,7 +183,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button onClick={() => onOpenPembayaran(s.supplier_id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold rounded text-white hover:opacity-90"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-caleo-11 font-bold rounded text-white hover:opacity-90"
                         style={{ background: 'var(--color-caleo-primary)' }}>
                         Bayar <ChevronRight className="w-3 h-3" />
                       </button>

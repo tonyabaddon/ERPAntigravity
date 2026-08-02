@@ -150,13 +150,13 @@ interface StatusChipProps {
 function StatusChip({ variant }: StatusChipProps) {
   if (variant === 'recon') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-violet-100 text-violet-800">
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide bg-violet-100 text-violet-800">
         Recon
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800">
       Cleared
     </span>
   );
@@ -374,7 +374,7 @@ export default function AccountDetailScreen({
 
   if (loadingMeta) {
     return (
-      <div className="p-8 text-[13px] text-[#43474e]">
+      <div className="p-8 text-caleo-13 text-[#43474e]">
         Memuat data akun...
       </div>
     );
@@ -385,12 +385,12 @@ export default function AccountDetailScreen({
       <div className="p-8">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[13px] text-[var(--color-caleo-primary)] font-bold hover:underline mb-4"
+          className="inline-flex items-center gap-1.5 text-caleo-13 text-[var(--color-caleo-primary)] font-bold hover:underline mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Kas &amp; Bank
         </button>
-        <p className="text-[13px] text-gray-500">Akun tidak ditemukan.</p>
+        <p className="text-caleo-13 text-gray-500">Akun tidak ditemukan.</p>
       </div>
     );
   }
@@ -410,7 +410,7 @@ export default function AccountDetailScreen({
         <div className="flex items-start justify-between gap-3 mb-2">
           <button
             onClick={onBack}
-            className="text-[11px] text-blue-100 hover:underline inline-flex items-center gap-1"
+            className="text-caleo-11 text-blue-100 hover:underline inline-flex items-center gap-1"
           >
             <ArrowLeft className="w-3 h-3" />
             Kas &amp; Bank
@@ -426,14 +426,14 @@ export default function AccountDetailScreen({
         <h3 className="text-2xl font-extrabold mt-1">
           {balance.internal_label}{' '}
           {balance.account_code && (
-            <span className="text-[14px] font-bold text-blue-200 font-mono ml-2">
+            <span className="text-sm font-bold text-blue-200 font-mono ml-2">
               {balance.account_code}
             </span>
           )}
         </h3>
 
         {/* Subtitle */}
-        <p className="text-[12px] text-blue-100 mt-1">
+        <p className="text-xs text-blue-100 mt-1">
           {[
             typeLabel && subtypeLabel ? `${typeLabel} / ${subtypeLabel}` : typeLabel || subtypeLabel,
             balance.bank_code,
@@ -446,25 +446,25 @@ export default function AccountDetailScreen({
         </p>
 
         {/* 4-card stat row */}
-        <div className="mt-4 grid grid-cols-4 gap-3 text-[12px]">
+        <div className="mt-4 grid grid-cols-4 gap-3 text-xs">
           <div className="bg-white/10 rounded p-3">
-            <div className="text-[10px] uppercase text-blue-100 mb-0.5">Saldo Awal</div>
+            <div className="text-caleo-10 uppercase text-blue-100 mb-0.5">Saldo Awal</div>
             <div className="font-extrabold text-base">{formatRp(balance.opening_balance)}</div>
           </div>
           <div className="bg-white/10 rounded p-3">
-            <div className="text-[10px] uppercase text-blue-100 mb-0.5">Total Debit (in)</div>
+            <div className="text-caleo-10 uppercase text-blue-100 mb-0.5">Total Debit (in)</div>
             <div className="font-extrabold text-base text-emerald-200">
               + {formatRp(balance.total_debit)}
             </div>
           </div>
           <div className="bg-white/10 rounded p-3">
-            <div className="text-[10px] uppercase text-blue-100 mb-0.5">Total Kredit (out)</div>
+            <div className="text-caleo-10 uppercase text-blue-100 mb-0.5">Total Kredit (out)</div>
             <div className="font-extrabold text-base text-rose-200">
               − {formatRp(balance.total_credit)}
             </div>
           </div>
           <div className="bg-white/15 rounded p-3 ring-2 ring-emerald-300">
-            <div className="text-[10px] uppercase text-emerald-100 mb-0.5">Saldo Akhir</div>
+            <div className="text-caleo-10 uppercase text-emerald-100 mb-0.5">Saldo Akhir</div>
             <div className="font-extrabold text-base text-emerald-200">
               {formatRp(balance.current_balance)}
             </div>
@@ -476,7 +476,7 @@ export default function AccountDetailScreen({
       <div className="border-b border-gray-200 px-6 flex gap-1 overflow-x-auto bg-white">
         <button
           onClick={() => setActiveTab('riwayat')}
-          className={`px-4 py-3 text-[13px] font-extrabold whitespace-nowrap transition-colors ${
+          className={`px-4 py-3 text-caleo-13 font-extrabold whitespace-nowrap transition-colors ${
             activeTab === 'riwayat'
               ? 'border-b-2 border-emerald-600 text-[var(--color-caleo-primary)]'
               : 'text-gray-500 hover:text-gray-700'
@@ -485,7 +485,7 @@ export default function AccountDetailScreen({
           <List className="inline w-3.5 h-3.5 mr-1" />
           Riwayat
           {rows.length > 0 && (
-            <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-700">
+            <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold bg-emerald-100 text-emerald-700">
               {rows.length}
             </span>
           )}
@@ -493,7 +493,7 @@ export default function AccountDetailScreen({
         {coaMeta?.account_type === 'BANK' && (
           <button
             onClick={() => setActiveTab('belum-cocok')}
-            className={`px-4 py-3 text-[13px] font-extrabold whitespace-nowrap transition-colors ${
+            className={`px-4 py-3 text-caleo-13 font-extrabold whitespace-nowrap transition-colors ${
               activeTab === 'belum-cocok'
                 ? 'border-b-2 border-emerald-600 text-[var(--color-caleo-primary)]'
                 : 'text-gray-500 hover:text-gray-700'
@@ -502,7 +502,7 @@ export default function AccountDetailScreen({
             <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />
             Belum Cocok
             {unmatchedLines.length > 0 && (
-              <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">
+              <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold bg-amber-100 text-amber-800">
                 {unmatchedLines.length}
               </span>
             )}
@@ -510,19 +510,19 @@ export default function AccountDetailScreen({
         )}
         <button
           disabled
-          className="px-4 py-3 text-[13px] font-bold text-gray-300 cursor-not-allowed whitespace-nowrap"
+          className="px-4 py-3 text-caleo-13 font-bold text-gray-300 cursor-not-allowed whitespace-nowrap"
         >
           <Hourglass className="inline w-3.5 h-3.5 mr-1" />
           Belum Cair
           {balance.pending_in > 0 && (
-            <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">
+            <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold bg-amber-100 text-amber-800">
               Phase 2
             </span>
           )}
         </button>
         <button
           disabled
-          className="px-4 py-3 text-[13px] font-bold text-gray-300 cursor-not-allowed whitespace-nowrap"
+          className="px-4 py-3 text-caleo-13 font-bold text-gray-300 cursor-not-allowed whitespace-nowrap"
         >
           <Info className="inline w-3.5 h-3.5 mr-1" />
           Info Akun
@@ -636,7 +636,7 @@ export default function AccountDetailScreen({
               style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
             >
               <AlertTriangle className="w-5 h-5 text-amber-700 flex-shrink-0" />
-              <p className="text-[12px] text-amber-900">
+              <p className="text-xs text-amber-900">
                 <strong>Saldo termasuk {formatRp(balance.pending_in)} marketplace PENDING.</strong>{' '}
                 Transaksi PENDING belum dihitung di saldo cleared.
               </p>
@@ -644,7 +644,7 @@ export default function AccountDetailScreen({
           )}
 
           {/* Filter bar */}
-          <div className="px-6 py-4 flex items-center gap-3 text-[12px] flex-wrap">
+          <div className="px-6 py-4 flex items-center gap-3 text-xs flex-wrap">
             <span className="font-bold text-gray-600 text-xs">Periode:</span>
 
             {(
@@ -657,7 +657,7 @@ export default function AccountDetailScreen({
               <button
                 key={key}
                 onClick={() => handlePreset(key)}
-                className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
+                className={`text-caleo-11 font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                   activePreset === key
                     ? 'bg-[var(--color-caleo-primary)] text-white'
                     : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
@@ -669,7 +669,7 @@ export default function AccountDetailScreen({
 
             <button
               onClick={() => showToast('Custom date picker hadir di Phase 2', 'info')}
-              className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+              className="text-caleo-11 font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
             >
               Custom...
             </button>
@@ -678,14 +678,14 @@ export default function AccountDetailScreen({
             <div className="ml-auto flex gap-2">
               <button
                 onClick={() => showToast('Export PDF hadir di Phase 2', 'info')}
-                className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors inline-flex items-center gap-1.5"
+                className="text-caleo-11 font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors inline-flex items-center gap-1.5"
               >
                 <FileDown className="w-3 h-3" />
                 PDF
               </button>
               <button
                 onClick={() => showToast('Export Excel hadir di Phase 2', 'info')}
-                className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors inline-flex items-center gap-1.5"
+                className="text-caleo-11 font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors inline-flex items-center gap-1.5"
               >
                 <Grid className="w-3 h-3" />
                 Excel
@@ -696,19 +696,19 @@ export default function AccountDetailScreen({
           {/* Ledger table */}
           <div className="border-t border-gray-200">
             {loadingRows ? (
-              <div className="p-8 text-center text-[13px] text-gray-500">
+              <div className="p-8 text-center text-caleo-13 text-gray-500">
                 Memuat riwayat...
               </div>
             ) : rows.length === 0 ? (
-              <div className="p-12 text-center text-[13px] text-gray-500">
+              <div className="p-12 text-center text-caleo-13 text-gray-500">
                 <List className="w-8 h-8 mx-auto mb-3 text-gray-300" />
                 <p>Belum ada transaksi dalam periode ini.</p>
               </div>
             ) : (
               <>
-                <table className="w-full text-[12px]">
+                <table className="w-full text-xs">
                   <thead style={{ background: 'var(--color-caleo-cloud)' }}>
-                    <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+                    <tr className="text-caleo-10 uppercase font-extrabold text-gray-600">
                       <th className="text-left py-2 px-3">Tanggal</th>
                       <th className="text-left py-2 px-3">No. Entry</th>
                       <th className="text-left py-2 px-3">Keterangan</th>
@@ -764,7 +764,7 @@ export default function AccountDetailScreen({
                     style={{ background: 'var(--color-caleo-cloud)', borderColor: '#1e40af' }}
                   >
                     <tr className="font-extrabold" style={{ color: 'var(--color-primary)' }}>
-                      <td colSpan={3} className="py-3 px-3 text-right text-[11px] uppercase tracking-wide">
+                      <td colSpan={3} className="py-3 px-3 text-right text-caleo-11 uppercase tracking-wide">
                         {footerLabel}
                       </td>
                       <td className="py-3 px-3 text-right text-emerald-700">
@@ -782,7 +782,7 @@ export default function AccountDetailScreen({
                 </table>
 
                 {/* Pagination */}
-                <div className="px-6 py-3 text-[11px] text-center text-gray-500">
+                <div className="px-6 py-3 text-caleo-11 text-center text-gray-500">
                   Menampilkan {Math.min(visibleCount, rows.length)} dari {rows.length}{' '}
                   {hasMore && (
                     <>
@@ -806,7 +806,7 @@ export default function AccountDetailScreen({
       {activeTab === 'belum-cocok' && coaMeta?.account_type === 'BANK' && (
         <div className="bg-white">
           {/* Filter bar */}
-          <div className="px-6 py-4 flex items-center gap-3 text-[12px] flex-wrap">
+          <div className="px-6 py-4 flex items-center gap-3 text-xs flex-wrap">
             <span className="font-bold text-gray-600 text-xs">Periode:</span>
 
             {(
@@ -819,7 +819,7 @@ export default function AccountDetailScreen({
               <button
                 key={key}
                 onClick={() => handlePreset(key)}
-                className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
+                className={`text-caleo-11 font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                   activePreset === key
                     ? 'bg-[var(--color-caleo-primary)] text-white'
                     : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
@@ -833,11 +833,11 @@ export default function AccountDetailScreen({
           {/* Content */}
           <div className="border-t border-gray-200">
             {loadingUnmatched ? (
-              <div className="p-8 text-center text-[13px] text-gray-500">
+              <div className="p-8 text-center text-caleo-13 text-gray-500">
                 Memuat jurnal belum cocok...
               </div>
             ) : unmatchedLines.length === 0 ? (
-              <div className="p-12 text-center text-[13px] text-gray-500">
+              <div className="p-12 text-center text-caleo-13 text-gray-500">
                 <CheckCircle2 className="w-8 h-8 mx-auto mb-3 text-emerald-400" />
                 <p className="font-bold text-emerald-700">Semua sudah cocok ✓</p>
               </div>
@@ -845,18 +845,18 @@ export default function AccountDetailScreen({
               <>
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <p className="text-[13px] font-bold text-gray-900">
+                  <p className="text-caleo-13 font-bold text-gray-900">
                     Journal Entries Belum Cocok dengan Bank Statement
                   </p>
-                  <p className="text-[11px] text-gray-600 mt-1">
+                  <p className="text-caleo-11 text-gray-600 mt-1">
                     Buka Modul Rekonsiliasi untuk match
                   </p>
                 </div>
 
                 {/* Table */}
-                <table className="w-full text-[12px]">
+                <table className="w-full text-xs">
                   <thead style={{ background: 'var(--color-caleo-cloud)' }}>
-                    <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+                    <tr className="text-caleo-10 uppercase font-extrabold text-gray-600">
                       <th className="text-left py-2 px-3">Tanggal</th>
                       <th className="text-left py-2 px-3">No. Entry</th>
                       <th className="text-left py-2 px-3">Keterangan</th>
@@ -885,7 +885,7 @@ export default function AccountDetailScreen({
                         </td>
                         <td className="py-2 px-3 text-center">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide ${
                               line.side === 'DEBIT'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : 'bg-rose-100 text-rose-800'
@@ -894,7 +894,7 @@ export default function AccountDetailScreen({
                             {line.side === 'DEBIT' ? 'Debit' : 'Kredit'}
                           </span>
                         </td>
-                        <td className="py-2 px-3 text-center text-[11px] text-gray-600">
+                        <td className="py-2 px-3 text-center text-caleo-11 text-gray-600">
                           {daysUnmatched(line.entry_date)}
                         </td>
                       </tr>
@@ -908,7 +908,7 @@ export default function AccountDetailScreen({
                     onClick={() => {
                       showToast('Modul Rekonsiliasi hadir di Phase 2', 'info');
                     }}
-                    className="text-[12px] font-bold px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                    className="text-xs font-bold px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
                   >
                     Buka Modul Rekonsiliasi
                   </button>

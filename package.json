@@ -25,6 +25,7 @@
     "audit:radius-non-canonical": "tsx scripts/audit-radius-non-canonical.ts",
     "audit:hardcoded-empty-state": "tsx scripts/audit-hardcoded-empty-state.ts",
     "audit:focus-ring-drift": "tsx scripts/audit-focus-ring-drift.ts",
+    "audit:typography-arbitrary-px": "tsx scripts/audit-typography-arbitrary-px.ts",
     "audit:slog-any-error": "tsx scripts/audit-slog-any-error.ts",
     "visual-diff:build": "tsx scripts/build-visual-diff-html.tsx",
     "build:design-system": "tsx scripts/build-design-system.tsx"

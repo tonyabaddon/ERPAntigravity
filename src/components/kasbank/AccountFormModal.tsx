@@ -272,7 +272,7 @@ export default function AccountFormModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4 text-[13px]">
+        <div className="p-6 space-y-4 text-caleo-13">
           <div>
             <label className="block font-bold mb-1" style={{ color: 'var(--color-primary)' }}>
               Jenis akun *
@@ -288,7 +288,7 @@ export default function AccountFormModal({
               <option value="E_WALLET">👛 E-Wallet</option>
             </select>
             {isEdit && (
-              <p className="text-[10px] text-gray-500 mt-1">
+              <p className="text-caleo-10 text-gray-500 mt-1">
                 Account type tidak bisa diubah setelah create.
               </p>
             )}
@@ -338,7 +338,7 @@ export default function AccountFormModal({
                   placeholder="Nama sesuai buku rekening"
                   className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 />
-                <p className="text-[11px] text-gray-500 mt-1">Untuk tampil di Invoice PDF customer (kalau Show in Invoice di-aktifkan)</p>
+                <p className="text-caleo-11 text-gray-500 mt-1">Untuk tampil di Invoice PDF customer (kalau Show in Invoice di-aktifkan)</p>
               </div>
             </>
           )}
@@ -379,7 +379,7 @@ export default function AccountFormModal({
               }
               className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             />
-            <p className="text-[11px] text-gray-500 mt-1">Untuk memudahkan identifikasi di UI internal</p>
+            <p className="text-caleo-11 text-gray-500 mt-1">Untuk memudahkan identifikasi di UI internal</p>
           </div>
 
           <div>
@@ -397,7 +397,7 @@ export default function AccountFormModal({
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-gray-500 mt-1">
+            <p className="text-caleo-11 text-gray-500 mt-1">
               "Pribadi owner" otomatis di-tag chip Pribadi + di-exclude dari laporan bisnis
             </p>
           </div>
@@ -414,7 +414,7 @@ export default function AccountFormModal({
                   placeholder="0"
                   className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                 />
-                <p className="text-[10px] text-gray-500 mt-1">Default 0 — adjust via Penyesuaian (Phase 2)</p>
+                <p className="text-caleo-10 text-gray-500 mt-1">Default 0 — adjust via Penyesuaian (Phase 2)</p>
               </div>
               <div>
                 <label className="block font-bold mb-1" style={{ color: 'var(--color-primary)' }}>
@@ -439,14 +439,14 @@ export default function AccountFormModal({
                 onChange={(e) => updateField('show_in_invoice', e.target.checked)}
                 className="w-4 h-4"
               />
-              <label htmlFor="show_in_invoice" className="text-[12px]">
+              <label htmlFor="show_in_invoice" className="text-xs">
                 <strong>Tampilkan di Invoice PDF</strong> ke customer (default ON untuk akun bisnis)
               </label>
             </div>
           )}
 
           {!isEdit && (
-            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-3 text-[11px] text-gray-600">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-3 text-caleo-11 text-gray-600">
               💡 Saat Simpan: sistem otomatis create sub-COA{' '}
               <span className="font-mono font-bold">
                 {form.account_type === 'BANK' ? '1-12NN' : form.account_type === 'E_WALLET' ? '1-13NN' : '1-1110 (existing)'}

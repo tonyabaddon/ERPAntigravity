@@ -7,7 +7,7 @@ export function InTransitChip({ warehouseId, sku }: { warehouseId: string; sku: 
   if (qty <= 0) return null;
   return (
     <span title={`+${qty} pcs sedang dalam perjalanan ke gudang ini`}
-      className="ml-2 inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+      className="ml-2 inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-caleo-10 font-semibold text-amber-700">
       +{qty} in-transit
     </span>
   );

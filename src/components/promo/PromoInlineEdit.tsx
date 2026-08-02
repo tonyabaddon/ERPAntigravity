@@ -121,7 +121,7 @@ export default function PromoInlineEdit({
         <span className="text-xs font-bold text-slate-700">Set Promo — {sku}</span>
         <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700 text-lg leading-none">×</button>
       </div>
-      <p className="text-[11px] text-slate-500">{skuName} · {formatIDR(price)}/unit</p>
+      <p className="text-caleo-11 text-slate-500">{skuName} · {formatIDR(price)}/unit</p>
 
       {/* Type toggle */}
       <div className="flex gap-2">

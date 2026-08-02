@@ -29,7 +29,7 @@ export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarPro
 
   return (
     <div className="bg-white rounded border border-gray-200 overflow-hidden">
-      <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+      <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-caleo-11 font-bold text-slate-500 uppercase tracking-wide">
         <div className="col-span-1">#</div>
         <div className="col-span-5">Kanal</div>
         <div className="col-span-3 text-right">Total</div>
@@ -54,7 +54,7 @@ export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarPro
                 <div className="font-semibold text-sm text-slate-800 flex items-center gap-1.5">
                   {def.label}
                   {isHidden && (
-                    <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">DINONAKTIFKAN</span>
+                    <span className="text-caleo-9 bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">DINONAKTIFKAN</span>
                   )}
                 </div>
               </div>

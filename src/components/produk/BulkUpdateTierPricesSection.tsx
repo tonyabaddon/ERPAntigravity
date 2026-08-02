@@ -275,7 +275,7 @@ function statusBadge(s: RowStatus) {
     NO_CHANGE:            { label: 'Tidak berubah',  cls: 'text-slate-600 bg-slate-50' },
   };
   const { label, cls } = map[s];
-  return <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${cls}`}>{label}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-caleo-11 font-bold ${cls}`}>{label}</span>;
 }
 
 // Minimal CSV line parser handling quoted strings.

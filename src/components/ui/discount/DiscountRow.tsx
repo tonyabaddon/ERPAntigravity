@@ -29,7 +29,7 @@ export const DiscountRow: React.FC<DiscountRowProps> = ({
           disabled={disabled}
         />
       </div>
-      <div className="flex justify-between text-[11px] text-orange-700">
+      <div className="flex justify-between text-caleo-11 text-orange-700">
         <span></span>
         <span className="font-mono">= − {formatIDR(amount)}</span>
       </div>

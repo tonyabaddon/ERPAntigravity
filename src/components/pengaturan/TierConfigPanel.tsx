@@ -82,7 +82,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
     <div className="bg-white rounded border border-gray-200 p-6 space-y-4">
       <div>
         <h2 className="text-base font-extrabold text-[var(--color-caleo-primary)]">Tingkat Harga</h2>
-        <p className="text-[11px] text-slate-500 mt-1">
+        <p className="text-caleo-11 text-slate-500 mt-1">
           Owner bisa set 2-4 tingkat harga per SKU. Tier 1 &amp; 2 wajib; Tier 3 &amp; 4 opsional (kosongkan = off).
         </p>
       </div>

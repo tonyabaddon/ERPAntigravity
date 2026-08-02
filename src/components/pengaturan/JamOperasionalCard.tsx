@@ -152,7 +152,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                     <ToggleLeft size={28} className="text-slate-300" />
                   )}
                   <span
-                    className={`text-[11px] font-bold uppercase tracking-wide ${
+                    className={`text-caleo-11 font-bold uppercase tracking-wide ${
                       row.is_open ? 'text-emerald-700' : 'text-slate-400'
                     }`}
                   >

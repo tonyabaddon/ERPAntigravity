@@ -18,7 +18,7 @@ export function KPICard({ title, value, subtitle, alert, placeholder }: KPICardP
       }`}
     >
       <div
-        className="text-[11px] font-bold uppercase tracking-widest mb-1"
+        className="text-caleo-11 font-bold uppercase tracking-widest mb-1"
         style={{
           fontFamily: 'JetBrains Mono, monospace',
           color: alert ? '#92400e' : '#9DB2CE',
@@ -27,7 +27,7 @@ export function KPICard({ title, value, subtitle, alert, placeholder }: KPICardP
         {title}
       </div>
       <div
-        className="text-[26px] font-bold leading-none"
+        className="text-2xl font-bold leading-none"
         style={{
           fontFamily: 'JetBrains Mono, monospace',
           color: value === null ? '#9DB2CE' : alert ? '#92400e' : '#0B2545',
@@ -36,12 +36,12 @@ export function KPICard({ title, value, subtitle, alert, placeholder }: KPICardP
         {value === null ? '—' : value.toString()}
       </div>
       {subtitle && (
-        <div className="text-[11px] mt-1" style={{ color: '#9DB2CE' }}>
+        <div className="text-caleo-11 mt-1" style={{ color: '#9DB2CE' }}>
           {subtitle}
         </div>
       )}
       {value === null && placeholder && (
-        <div className="text-[11px] mt-1" style={{ color: '#9DB2CE' }}>
+        <div className="text-caleo-11 mt-1" style={{ color: '#9DB2CE' }}>
           {placeholder}
         </div>
       )}

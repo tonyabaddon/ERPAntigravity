@@ -100,7 +100,7 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   }, []);
 
   if (state === 'checking') {
-    return <div className="p-6 text-[13px] text-slate-500">Memeriksa akses...</div>;
+    return <div className="p-6 text-caleo-13 text-slate-500">Memeriksa akses...</div>;
   }
 
   if (state === 'deny-impersonating') {

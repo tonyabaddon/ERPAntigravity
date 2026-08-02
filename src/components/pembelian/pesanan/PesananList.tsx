@@ -70,12 +70,12 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Pesanan</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
-                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Items</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Total</th>
-                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Pesanan</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Supplier</th>
+                <th className="text-center px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Items</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Total</th>
+                <th className="text-center px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Status</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -92,7 +92,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[p.status]}`}>{p.status}</span>
                   </td>
                   <td className="px-4 py-4 text-right">
-                    <button onClick={() => onOpenDetail(p.pesanan_number)} className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">Detail</button>
+                    <button onClick={() => onOpenDetail(p.pesanan_number)} className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">Detail</button>
                   </td>
                 </tr>
               ))}

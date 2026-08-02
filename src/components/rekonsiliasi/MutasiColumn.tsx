@@ -32,16 +32,16 @@ export default function MutasiColumn({ lines, accounts, onFindPair, onClassify, 
     <div className="bg-white/92 backdrop-blur-xl rounded-[1.75rem] border border-[var(--color-caleo-mist)] shadow-sm flex flex-col overflow-hidden">
       <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="flex items-center justify-between">
-          <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🏦 Mutasi Bank</div>
-          <span className="text-[10px] text-slate-500 font-bold">{matched}/{lines.length} · {pct}%</span>
+          <div className="text-caleo-11 font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🏦 Mutasi Bank</div>
+          <span className="text-caleo-10 text-slate-500 font-bold">{matched}/{lines.length} · {pct}%</span>
         </div>
         <div className="h-1.5 mt-2 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: pct + '%' }} />
         </div>
         <div className="flex gap-1.5 mt-2 flex-wrap">
-          <span onClick={() => setAcct('all')} className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full cursor-pointer ${acct === 'all' ? 'bg-[var(--color-caleo-primary)] text-white' : 'bg-slate-100 text-slate-500'}`}>Semua · {lines.length}</span>
+          <span onClick={() => setAcct('all')} className={`text-caleo-10 font-extrabold uppercase px-2 py-0.5 rounded-full cursor-pointer ${acct === 'all' ? 'bg-[var(--color-caleo-primary)] text-white' : 'bg-slate-100 text-slate-500'}`}>Semua · {lines.length}</span>
           {accounts.map(a => (
-            <span key={a.id} onClick={() => setAcct(a.id)} className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full cursor-pointer ${acct === a.id ? 'bg-[var(--color-caleo-primary)] text-white' : 'bg-slate-100 text-slate-500'}`}>{a.bank_code} {a.account_number.slice(-4)}</span>
+            <span key={a.id} onClick={() => setAcct(a.id)} className={`text-caleo-10 font-extrabold uppercase px-2 py-0.5 rounded-full cursor-pointer ${acct === a.id ? 'bg-[var(--color-caleo-primary)] text-white' : 'bg-slate-100 text-slate-500'}`}>{a.bank_code} {a.account_number.slice(-4)}</span>
           ))}
         </div>
       </div>
@@ -67,19 +67,19 @@ export default function MutasiColumn({ lines, accounts, onFindPair, onClassify, 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-[var(--color-caleo-primary)]">{l.counterparty || l.description.slice(0, 22)}</span>
-                    {a && <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{a.bank_code} {a.account_number.slice(-4)}</span>}
+                    {a && <span className="text-caleo-10 font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{a.bank_code} {a.account_number.slice(-4)}</span>}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{fmtDate(l.txn_date)} · skor {l.match_confidence?.toFixed(2) ?? '—'}</div>
+                  <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{fmtDate(l.txn_date)} · skor {l.match_confidence?.toFixed(2) ?? '—'}</div>
                 </div>
                 <div className={`text-xs font-black ${l.direction === 'IN' ? 'text-emerald-600' : 'text-red-600'}`}>{l.direction === 'IN' ? '+' : '−'}{fmt(l.amount)}</div>
               </div>
               <div className="flex gap-1.5 mt-2 items-center justify-between">
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: pill.bg, color: pill.color }}>{pill.label}</span>
+                <span className="text-caleo-10 font-extrabold px-2 py-0.5 rounded-full" style={{ background: pill.bg, color: pill.color }}>{pill.label}</span>
                 {(l.lane === 'YELLOW' || l.lane === 'ORANGE' || l.lane === 'RED') && (
                   <div className="flex gap-1">
-                    <button onClick={() => onSplit(l)} className="text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Split</button>
-                    <button onClick={() => onClassify(l)} className="text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Klasifikasi</button>
-                    <button onClick={() => onFindPair(l)} className="text-[10px] font-extrabold px-2 py-1 rounded bg-red-600 text-white">Cari →</button>
+                    <button onClick={() => onSplit(l)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Split</button>
+                    <button onClick={() => onClassify(l)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Klasifikasi</button>
+                    <button onClick={() => onFindPair(l)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-red-600 text-white">Cari →</button>
                   </div>
                 )}
               </div>

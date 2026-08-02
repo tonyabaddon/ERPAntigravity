@@ -124,7 +124,7 @@ export default function CoAPicker({
           onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full border border-slate-200 rounded px-3 py-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:bg-slate-50 disabled:cursor-not-allowed"
+          className="w-full border border-slate-200 rounded px-3 py-1.5 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:bg-slate-50 disabled:cursor-not-allowed"
         />
         {value && !disabled && (
           <button
@@ -140,16 +140,16 @@ export default function CoAPicker({
       {open && (
         <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-52 overflow-y-auto">
           {loading ? (
-            <div className="px-3 py-2 text-[12px] text-slate-400">Mencari…</div>
+            <div className="px-3 py-2 text-xs text-slate-400">Mencari…</div>
           ) : results.length === 0 ? (
-            <div className="px-3 py-2 text-[12px] text-slate-400">
+            <div className="px-3 py-2 text-xs text-slate-400">
               {query ? 'Tidak ada hasil.' : 'Ketik untuk cari…'}
             </div>
           ) : (
             results.map((row) => (
               <div
                 key={row.account_code}
-                className="px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2 text-[13px]"
+                className="px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2 text-caleo-13"
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(row); }}
               >
                 <span className="font-mono text-slate-500 shrink-0">{row.account_code}</span>

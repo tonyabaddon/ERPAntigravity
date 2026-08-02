@@ -215,7 +215,7 @@ export default function COAManagementTab({
 
       {/* ── Non-owner banner ── */}
       {!isOwner && (
-        <div className="mx-6 mt-4 rounded border border-gray-300 bg-gray-50 p-3 text-[12px] text-gray-700">
+        <div className="mx-6 mt-4 rounded border border-gray-300 bg-gray-50 p-3 text-xs text-gray-700">
           <strong>Tampilan Read-only</strong> · hanya Owner bisa mengedit Chart of Accounts
         </div>
       )}
@@ -223,9 +223,9 @@ export default function COAManagementTab({
       {/* ── Account list ── */}
       <div className="px-6 pb-6 mt-6">
         {loading ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">Memuat...</div>
+          <div className="py-16 text-center text-caleo-13 text-gray-500">Memuat...</div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">
+          <div className="py-16 text-center text-caleo-13 text-gray-500">
             Tidak ada akun yang cocok
           </div>
         ) : (
@@ -262,7 +262,7 @@ export default function COAManagementTab({
                         >
                           {/* Left: code + indent */}
                           <div
-                            className={`font-mono text-[13px] font-bold text-[var(--color-caleo-primary)] whitespace-nowrap ${
+                            className={`font-mono text-caleo-13 font-bold text-[var(--color-caleo-primary)] whitespace-nowrap ${
                               isInactive ? 'text-gray-500' : ''
                             }`}
                             style={{ paddingLeft: `${depth * 16}px` }}
@@ -273,7 +273,7 @@ export default function COAManagementTab({
                           {/* Middle: name + lock icon */}
                           <div className="flex-1 min-w-0">
                             <div
-                              className={`text-[13px] flex items-center gap-2 ${
+                              className={`text-caleo-13 flex items-center gap-2 ${
                                 isInactive
                                   ? 'text-gray-500'
                                   : 'text-[#43474e]'
@@ -289,7 +289,7 @@ export default function COAManagementTab({
                           {/* Right: active chip + edit button */}
                           <div className="flex items-center gap-2 shrink-0">
                             <div
-                              className={`px-2 py-1 rounded-full text-[11px] font-medium ${
+                              className={`px-2 py-1 rounded-full text-caleo-11 font-medium ${
                                 account.is_active
                                   ? 'bg-emerald-100 text-emerald-700'
                                   : 'bg-gray-200 text-gray-700'

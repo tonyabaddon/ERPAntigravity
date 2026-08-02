@@ -77,13 +77,13 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Pembayaran</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Tanggal</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Metode</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Total</th>
-                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Pembayaran</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Supplier</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Tanggal</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Metode</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Total</th>
+                <th className="text-center px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Status</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -92,14 +92,14 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
                   <td className="px-4 py-4">
                     <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{p.pembayaran_number}</div>
                     {(p.items?.length ?? 0) > 1 && (
-                      <div className="text-[11px] text-indigo-600 mt-0.5">⚡ {p.items?.length} Tagihan</div>
+                      <div className="text-caleo-11 text-indigo-600 mt-0.5">⚡ {p.items?.length} Tagihan</div>
                     )}
                   </td>
                   <td className="px-4 py-4 text-sm font-semibold">{p.supplier?.name ?? '—'}</td>
                   <td className="px-4 py-4 text-sm text-gray-600">{fmtDate(p.paid_at)}</td>
                   <td className="px-4 py-4 text-sm">
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">{p.payment_method}</span>
-                    {p.account_label && <div className="text-[11px] text-gray-500 mt-1">{p.account_label}</div>}
+                    {p.account_label && <div className="text-caleo-11 text-gray-500 mt-1">{p.account_label}</div>}
                   </td>
                   <td className="px-4 py-4 text-right text-sm font-bold">{formatIDR(p.amount_total)}</td>
                   <td className="px-4 py-4 text-center">
@@ -109,7 +109,7 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
                   </td>
                   <td className="px-4 py-4 text-right">
                     <button onClick={() => onOpenDetail(p.pembayaran_number)}
-                      className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                      className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                       Detail
                     </button>
                   </td>

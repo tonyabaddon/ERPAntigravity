@@ -87,34 +87,34 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[var(--color-caleo-primary)]">
                     <div>
                       <div className="text-xl font-black text-[var(--color-caleo-primary)] tracking-tight">{store?.nama_toko ?? 'Toko Anda'}</div>
-                      <div className="text-[11px] text-gray-500 font-sans mt-1 flex items-center gap-1.5 flex-wrap">
+                      <div className="text-caleo-11 text-gray-500 font-sans mt-1 flex items-center gap-1.5 flex-wrap">
                         {store?.alamat_lengkap || 'Alamat belum diisi'}
-                        <span className="print:hidden text-[9px] bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
+                        <span className="print:hidden text-caleo-9 bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
                       </div>
-                      <div className="text-[11px] text-gray-500 font-sans">
+                      <div className="text-caleo-11 text-gray-500 font-sans">
                         {store?.telp_wa && `${store.telp_wa} · `}{store?.email ?? ''}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-black text-[var(--color-caleo-primary)] tracking-widest uppercase">Invoice</div>
                       <div className="text-xs font-mono font-bold text-gray-700 mt-1">{orderId}</div>
-                      <div className="text-[10px] text-gray-400 font-sans mt-0.5">Tanggal: {formatDate(order.created_at)}</div>
+                      <div className="text-caleo-10 text-gray-400 font-sans mt-0.5">Tanggal: {formatDate(order.created_at)}</div>
                     </div>
                   </div>
 
                   {/* Bill To */}
                   <div className="grid grid-cols-2 gap-5 mb-5">
                     <div>
-                      <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">Kepada Yth.</div>
+                      <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">Kepada Yth.</div>
                       <div className="font-bold text-gray-800">{order.customer_name}</div>
                       {order.customer_address && <div className="text-xs text-gray-500 font-sans">{order.customer_address}</div>}
                       <div className="text-xs text-gray-500 font-sans">WA: {order.customer_phone}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">Pengiriman</div>
+                      <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">Pengiriman</div>
                       <div className="text-xs text-gray-600 font-sans mb-3">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div>
-                      <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1 font-sans">Status Pembayaran</div>
-                      <span className="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded font-sans">✓ LUNAS</span>
+                      <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-1 font-sans">Status Pembayaran</div>
+                      <span className="bg-green-100 text-green-800 text-caleo-10 font-bold px-2 py-0.5 rounded font-sans">✓ LUNAS</span>
                     </div>
                   </div>
 
@@ -122,11 +122,11 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   <table className="w-full text-xs font-sans border-collapse mb-4">
                     <thead>
                       <tr className="bg-[var(--color-caleo-primary)] text-white">
-                        <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">No.</th>
-                        <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">Produk / SKU</th>
-                        <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Qty</th>
-                        <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Harga Satuan</th>
-                        <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Subtotal</th>
+                        <th className="px-3 py-2 text-left text-caleo-10 uppercase tracking-wide font-bold">No.</th>
+                        <th className="px-3 py-2 text-left text-caleo-10 uppercase tracking-wide font-bold">Produk / SKU</th>
+                        <th className="px-3 py-2 text-right text-caleo-10 uppercase tracking-wide font-bold">Qty</th>
+                        <th className="px-3 py-2 text-right text-caleo-10 uppercase tracking-wide font-bold">Harga Satuan</th>
+                        <th className="px-3 py-2 text-right text-caleo-10 uppercase tracking-wide font-bold">Subtotal</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -135,7 +135,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                           <td className="px-3 py-2 text-gray-400">{i + 1}</td>
                           <td className="px-3 py-2">
                             <div className="font-semibold text-gray-800">{item.name}</div>
-                            <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>
+                            <div className="font-mono text-caleo-9 text-gray-400">{item.sku}</div>
                           </td>
                           <td className="px-3 py-2 text-right font-semibold">{item.qty}</td>
                           <td className="px-3 py-2 text-right text-gray-500">{formatIDR(item.unit_price)}</td>
@@ -163,8 +163,8 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   {/* Bank info */}
                   <div className="bg-blue-50 border border-blue-100 rounded px-4 py-3 mb-3 font-sans">
                     <div className="flex items-center justify-between mb-1.5">
-                      <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Informasi Pembayaran</div>
-                      <span className="print:hidden text-[9px] bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
+                      <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400">Informasi Pembayaran</div>
+                      <span className="print:hidden text-caleo-9 bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
                     </div>
                     <div className="text-xs text-gray-700">
                       {bank ? (
@@ -186,7 +186,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   </div>
 
                   {/* Footer */}
-                  <div className="text-center text-[10px] text-gray-400 font-sans border-t border-gray-100 pt-3">
+                  <div className="text-center text-caleo-10 text-gray-400 font-sans border-t border-gray-100 pt-3">
                     Terima kasih atas kepercayaan Anda kepada {store?.nama_toko ?? 'Toko Anda'} 🙏<br />
                     Dokumen ini diterbitkan secara otomatis oleh sistem ERP {store?.nama_toko ?? 'Toko Anda'}.
                   </div>

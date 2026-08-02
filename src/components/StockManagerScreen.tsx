@@ -204,7 +204,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-lg">
         <div>
-          <span className="text-[10px] font-black tracking-widest text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3.5 py-1 rounded-full">
+          <span className="text-caleo-10 font-black tracking-widest text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3.5 py-1 rounded-full">
             Infrastruktur Backend
           </span>
           <h2 className="text-xl font-black text-[var(--color-caleo-primary)] tracking-tight mt-2.5">
@@ -221,7 +221,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
             </span>
             <div>
-              <span className="text-[9px] font-black text-emerald-600 block uppercase tracking-wider">STATUS KONEKSI</span>
+              <span className="text-caleo-9 font-black text-emerald-600 block uppercase tracking-wider">STATUS KONEKSI</span>
               <span className="text-xs font-black text-emerald-950">Terhubung ke Supabase Cloud DB</span>
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
               <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
             </span>
             <div>
-              <span className="text-[9px] font-black text-amber-600 block uppercase tracking-wider">DATABASE SINKRONISASI</span>
+              <span className="text-caleo-9 font-black text-amber-600 block uppercase tracking-wider">DATABASE SINKRONISASI</span>
               <span className="text-xs font-bold text-amber-950">Mode Demo (Penyimpanan Lokal Aktif)</span>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
             >
               {t.label}
               {t.count !== null && (
-                <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                <span className={`text-caleo-9 px-1.5 py-0.5 rounded-full ${
                   activeTab === t.id && t.color !== 'amber' ? 'bg-white/20' : 'bg-amber-600 text-white'
                 }`}>{t.count}</span>
               )}

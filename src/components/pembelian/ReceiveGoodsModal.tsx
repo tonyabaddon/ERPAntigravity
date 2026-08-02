@@ -133,7 +133,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Jatuh Tempo Pembayaran <span className="text-rose-500">*</span></label>
               <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2" />
-              <p className="text-[10px] text-gray-400 mt-1">
+              <p className="text-caleo-10 text-gray-400 mt-1">
                 Pre-filled {supplierTermDays > 0 ? `Net ${supplierTermDays}` : 'Cash'}. Sesuaikan dengan invoice supplier.
               </p>
             </div>
@@ -151,7 +151,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-2">Kondisi Barang per Item</label>
             <div className="border border-gray-200 rounded overflow-hidden">
-              <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+              <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 border-b border-gray-200 text-caleo-10 font-bold uppercase tracking-wide text-gray-500">
                 <span className="col-span-4">Produk</span>
                 <span className="col-span-1 text-center">Dipesan</span>
                 <span className="col-span-2 text-center text-emerald-600">Qty Baik</span>
@@ -166,7 +166,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
                     <div className="grid grid-cols-12 px-3 py-2.5 items-center border-b border-gray-100">
                       <div className="col-span-4">
                         <div className="text-xs font-semibold text-gray-800">{item.product_name}</div>
-                        <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>
+                        <div className="font-mono text-caleo-9 text-gray-400">{item.sku}</div>
                       </div>
                       <span className="col-span-1 text-center text-xs text-gray-500">{item.qty}</span>
                       <div className="col-span-2 flex justify-center">
@@ -204,12 +204,12 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
                             placeholder="Jelaskan kerusakan..."
                           />
                         ) : (
-                          <span className="text-[10px] text-gray-300 italic">—</span>
+                          <span className="text-caleo-10 text-gray-300 italic">—</span>
                         )}
                       </div>
                     </div>
                     {hasDamage && (
-                      <p className="px-3 pb-2 text-[10px] text-rose-500">⚠ {cond.qty_damaged} item rusak tidak masuk stok — akan ditrack untuk retur.</p>
+                      <p className="px-3 pb-2 text-caleo-10 text-rose-500">⚠ {cond.qty_damaged} item rusak tidak masuk stok — akan ditrack untuk retur.</p>
                     )}
                   </div>
                 );

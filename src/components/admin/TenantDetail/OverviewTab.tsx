@@ -49,7 +49,7 @@ function Chip({
 }) {
   return (
     <span
-      className="inline-block rounded-full text-[11px] font-semibold px-2 py-0.5"
+      className="inline-block rounded-full text-caleo-11 font-semibold px-2 py-0.5"
       style={
         gold
           ? { background: C.gold, color: C.navy, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '0.05em' }
@@ -65,12 +65,12 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <tr>
       <td
-        className="py-1 pr-3 align-top whitespace-nowrap text-[12px]"
+        className="py-1 pr-3 align-top whitespace-nowrap text-xs"
         style={{ color: C.muted, width: '130px' }}
       >
         {label}
       </td>
-      <td className="py-1 text-[13px]" style={{ color: C.ink }}>
+      <td className="py-1 text-caleo-13" style={{ color: C.ink }}>
         {children}
       </td>
     </tr>
@@ -93,7 +93,7 @@ function Panel({
     >
       <div className="flex items-center justify-between mb-3">
         <div
-          className="text-[11px] font-bold tracking-widest uppercase"
+          className="text-caleo-11 font-bold tracking-widest uppercase"
           style={{
             color: C.muted,
             fontFamily: 'JetBrains Mono, monospace',
@@ -240,7 +240,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
         <Row label="Nama toko">{tenant.name}</Row>
         <Row label="Slug">
           <code
-            className="text-[12px]"
+            className="text-xs"
             style={{ fontFamily: 'JetBrains Mono, monospace', color: C.slate }}
           >
             {tenant.slug}
@@ -273,7 +273,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
           <button
             type="button"
             onClick={() => setIsRenewOpen(true)}
-            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-3 py-1 text-[11px] hover:opacity-90 transition-opacity"
+            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-3 py-1 text-caleo-11 hover:opacity-90 transition-opacity"
             data-testid="perpanjang-cta"
           >
             Perpanjang
@@ -302,7 +302,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
               {tenant.expires_at}
               {expiring && tenant.days_until_expiry !== null && (
                 <span
-                  className="ml-1.5 text-[11px]"
+                  className="ml-1.5 text-caleo-11"
                   style={{ color: C.danger }}
                 >
                   ({tenant.days_until_expiry}d)
@@ -360,7 +360,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
           <tr>
             <td
               colSpan={2}
-              className="py-2 text-[12px]"
+              className="py-2 text-xs"
               style={{ color: C.muted }}
             >
               Memuat fitur…
@@ -370,7 +370,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
           <tr>
             <td
               colSpan={2}
-              className="py-2 text-[12px]"
+              className="py-2 text-xs"
               style={{ color: C.muted }}
             >
               Data fitur tidak tersedia.
@@ -381,7 +381,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
             <tr key={key}>
               <td
                 colSpan={2}
-                className="py-0.5 text-[12px]"
+                className="py-0.5 text-xs"
               >
                 <div className="flex items-center gap-2">
                   <span
@@ -394,7 +394,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
                   </span>
                   {!enabled && (
                     <span
-                      className="text-[11px] ml-auto"
+                      className="text-caleo-11 ml-auto"
                       style={{ color: C.muted }}
                     >
                       nonaktif

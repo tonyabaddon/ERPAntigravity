@@ -27,7 +27,7 @@ export default function ClassificationModal({ open, bankLineSummary, onApply, on
     <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(1,39,73,0.4)' }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} className="bg-white rounded p-6 w-full max-w-md">
         <h3 className="text-base font-black text-[var(--color-caleo-primary)] mb-1">Klasifikasi Bank Line</h3>
-        <p className="text-[11px] text-slate-500 font-semibold mb-4">{bankLineSummary}</p>
+        <p className="text-caleo-11 text-slate-500 font-semibold mb-4">{bankLineSummary}</p>
         <div className="space-y-2 mb-4">
           {OPTIONS.map(o => (
             <div
@@ -39,7 +39,7 @@ export default function ClassificationModal({ open, bankLineSummary, onApply, on
                 <input type="radio" checked={picked === o.kind} readOnly />
                 <div>
                   <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{o.label}</div>
-                  <div className="text-[10px] text-slate-500 font-semibold">{o.desc}</div>
+                  <div className="text-caleo-10 text-slate-500 font-semibold">{o.desc}</div>
                 </div>
               </div>
             </div>

@@ -225,11 +225,11 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-caleo-primary)] text-white print:hidden">
-            <div className="flex items-center gap-2 font-bold text-[13px]">
+            <div className="flex items-center gap-2 font-bold text-caleo-13">
               Invoice {transaction.invoice_number}
             </div>
             <div className="flex gap-2">
-              <button onClick={() => window.print()} className="flex items-center gap-1 px-3 py-1 bg-[#2d8a4e] rounded text-[12px] font-bold">
+              <button onClick={() => window.print()} className="flex items-center gap-1 px-3 py-1 bg-[#2d8a4e] rounded text-xs font-bold">
                 <Printer className="w-3.5 h-3.5" /> Cetak Ulang
               </button>
               <button onClick={onClose}><X className="w-4 h-4" /></button>
@@ -293,8 +293,8 @@ function InvoiceBody({
   // strip the rotated DP/LUNAS watermark (it doesn't render meaningfully in
   // monochrome impact print and would only chew ribbon).
   const containerCls = printMode === 'dot_matrix'
-    ? 'bg-white p-3 font-mono text-[11px] leading-[1.35] text-slate-900 relative'
-    : 'bg-white p-8 font-mono text-[12px] leading-[1.45] text-slate-800 relative';
+    ? 'bg-white p-3 font-mono text-caleo-11 leading-[1.35] text-slate-900 relative'
+    : 'bg-white p-8 font-mono text-xs leading-[1.45] text-slate-800 relative';
 
   return (
     <div className={containerCls}>
@@ -303,48 +303,48 @@ function InvoiceBody({
 
       {/* Header */}
       <div className="grid grid-cols-[auto_1fr] gap-4 pb-3 border-b-2 border-slate-900 mb-3">
-        <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-sans font-extrabold text-[10px] text-center">
+        <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-sans font-extrabold text-caleo-10 text-center">
           {store?.logo_url
             ? <img src={store.logo_url} alt="Logo" className="w-full h-full object-contain" />
             : (store?.nama_toko ?? 'GARINDO').split(' ').slice(0,3).join(' ')}
         </div>
         <div>
-          <div className="font-extrabold font-sans text-[15px]">{store?.nama_toko ?? 'TOKO ANDA'}</div>
-          <div className="text-[11px] mt-0.5">{store?.alamat_lengkap ?? '—'}</div>
-          <div className="text-[11px]">{store?.telp_wa && `Telp ${store.telp_wa}`} {store?.email && `· ${store.email}`}</div>
-          {store?.npwp && <div className="text-[11px]">NPWP {store.npwp}</div>}
+          <div className="font-extrabold font-sans text-caleo-15">{store?.nama_toko ?? 'TOKO ANDA'}</div>
+          <div className="text-caleo-11 mt-0.5">{store?.alamat_lengkap ?? '—'}</div>
+          <div className="text-caleo-11">{store?.telp_wa && `Telp ${store.telp_wa}`} {store?.email && `· ${store.email}`}</div>
+          {store?.npwp && <div className="text-caleo-11">NPWP {store.npwp}</div>}
         </div>
       </div>
 
       {/* Title */}
       <div className="grid grid-cols-[1fr_auto] gap-3 mb-3">
         <div>
-          <div className="font-sans font-extrabold text-[17px] tracking-wider">
+          <div className="font-sans font-extrabold text-lg tracking-wider">
             {isQuotation ? 'SALES ORDER' : 'SALES INVOICE'}
           </div>
           {!isQuotation && (
-            <div className={`text-[11px] font-bold uppercase tracking-wide mt-0.5 ${variant === 'lunas' ? 'text-emerald-700' : 'text-amber-700'}`}>
+            <div className={`text-caleo-11 font-bold uppercase tracking-wide mt-0.5 ${variant === 'lunas' ? 'text-emerald-700' : 'text-amber-700'}`}>
               {variant === 'lunas' ? 'Pelunasan / Lunas' : 'Tanda Terima Uang Muka (DP)'}
             </div>
           )}
         </div>
-        <div className="text-right text-[11px]">
-          <div className="font-extrabold text-[13px]">{t.invoice_number}</div>
+        <div className="text-right text-caleo-11">
+          <div className="font-extrabold text-caleo-13">{t.invoice_number}</div>
           <div>{formatDateTime(!isQuotation && variant === 'lunas' && t.lunas_at ? t.lunas_at : t.created_at)}</div>
           <div>Channel: {channelLabel.toUpperCase()}</div>
         </div>
       </div>
 
       {/* Bill-to */}
-      <div className={`grid ${isQuotation ? 'grid-cols-1' : 'grid-cols-2'} gap-4 py-2 border-b border-dashed border-slate-400 mb-2 text-[11px]`}>
+      <div className={`grid ${isQuotation ? 'grid-cols-1' : 'grid-cols-2'} gap-4 py-2 border-b border-dashed border-slate-400 mb-2 text-caleo-11`}>
         <div>
-          <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Pelanggan</div>
+          <div className="font-extrabold text-caleo-10 uppercase tracking-widest text-slate-600 mb-1">Pelanggan</div>
           <div><strong>{t.customer_name ?? '—'}</strong></div>
           {t.customer_company && <div>{t.customer_company}</div>}
           <div>{t.customer_phone ?? '—'}</div>
           {!isQuotation && t.delivery_address && (
             <div className="mt-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600">📍 Kirim ke: </span>
+              <span className="text-caleo-10 font-extrabold uppercase tracking-widest text-slate-600">📍 Kirim ke: </span>
               <span className="whitespace-pre-wrap">{t.delivery_address}</span>
             </div>
           )}
@@ -356,11 +356,11 @@ function InvoiceBody({
         </div>
         {!isQuotation && (
           <div>
-            <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Metode Bayar</div>
+            <div className="font-extrabold text-caleo-10 uppercase tracking-widest text-slate-600 mb-1">Metode Bayar</div>
             <div><strong>{paymentLabel}</strong></div>
             {adminName && (
               <div className="mt-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600">Admin: </span>
+                <span className="text-caleo-10 font-extrabold uppercase tracking-widest text-slate-600">Admin: </span>
                 <span>{adminName}</span>
               </div>
             )}
@@ -369,14 +369,14 @@ function InvoiceBody({
       </div>
 
       {/* Items table */}
-      <table className="w-full text-[11px] my-2 border-collapse">
+      <table className="w-full text-caleo-11 my-2 border-collapse">
         <thead>
           <tr>
-            <th className="border-t border-b border-slate-900 px-1 py-1 text-center font-extrabold text-[10px] uppercase tracking-wide">No</th>
-            <th className="border-t border-b border-slate-900 px-1 py-1 text-left font-extrabold text-[10px] uppercase tracking-wide">Deskripsi Barang</th>
-            <th className="border-t border-b border-slate-900 px-1 py-1 text-center font-extrabold text-[10px] uppercase tracking-wide">Qty</th>
-            <th className="border-t border-b border-slate-900 px-1 py-1 text-right font-extrabold text-[10px] uppercase tracking-wide">Harga</th>
-            <th className="border-t border-b border-slate-900 px-1 py-1 text-right font-extrabold text-[10px] uppercase tracking-wide">Subtotal</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-center font-extrabold text-caleo-10 uppercase tracking-wide">No</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-left font-extrabold text-caleo-10 uppercase tracking-wide">Deskripsi Barang</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-center font-extrabold text-caleo-10 uppercase tracking-wide">Qty</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-right font-extrabold text-caleo-10 uppercase tracking-wide">Harga</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-right font-extrabold text-caleo-10 uppercase tracking-wide">Subtotal</th>
           </tr>
         </thead>
         <tbody>
@@ -385,7 +385,7 @@ function InvoiceBody({
               <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{idx + 1}</td>
               <td className="px-1 py-1 border-b border-dotted border-slate-300">
                 <div className="font-bold">{item.name}</div>
-                {item.sku && <div className="text-[10px] text-slate-500">{item.sku}</div>}
+                {item.sku && <div className="text-caleo-10 text-slate-500">{item.sku}</div>}
                 {/*
                  * Pre-order footnote — surfaces when the wizard tagged a row
                  * during save (qty > stock at the picked warehouse). Today the
@@ -396,7 +396,7 @@ function InvoiceBody({
                  * this footnote will start rendering automatically.
                  */}
                 {item.is_pre_order && (
-                  <div className="text-[10px] italic text-slate-500">*Pre-order, akan dikirim setelah barang tiba</div>
+                  <div className="text-caleo-10 italic text-slate-500">*Pre-order, akan dikirim setelah barang tiba</div>
                 )}
               </td>
               <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{item.qty}</td>
@@ -409,10 +409,10 @@ function InvoiceBody({
 
       {/* Service lines (Item #2: Layanan / Wiring / Custom Panel) */}
       {serviceLines.length > 0 && (
-        <table className="w-full text-[11px] my-2 border-collapse">
+        <table className="w-full text-caleo-11 my-2 border-collapse">
           <thead>
             <tr>
-              <th colSpan={5} className="border-t border-b border-slate-900 px-1 py-1 text-left font-extrabold text-[10px] uppercase tracking-wide bg-slate-50">
+              <th colSpan={5} className="border-t border-b border-slate-900 px-1 py-1 text-left font-extrabold text-caleo-10 uppercase tracking-wide bg-slate-50">
                 🛠 Layanan
               </th>
             </tr>
@@ -432,18 +432,18 @@ function InvoiceBody({
                     {line.bom.map((c, cIdx) => (
                       <tr key={`${line.id}-c${cIdx}`} className="align-top text-slate-600">
                         <td className="px-1 py-0.5"></td>
-                        <td className="px-1 py-0.5 pl-4 text-[10px] italic">↳ {c.name}</td>
-                        <td className="px-1 py-0.5 text-center text-[10px]">{c.qty}</td>
+                        <td className="px-1 py-0.5 pl-4 text-caleo-10 italic">↳ {c.name}</td>
+                        <td className="px-1 py-0.5 text-center text-caleo-10">{c.qty}</td>
                         <td className="px-1 py-0.5"></td>
                         <td className="px-1 py-0.5"></td>
                       </tr>
                     ))}
                     <tr className="align-top text-slate-600">
                       <td className="px-1 py-0.5"></td>
-                      <td className="px-1 py-0.5 pl-4 text-[10px] italic">↳ Jasa / Labor</td>
+                      <td className="px-1 py-0.5 pl-4 text-caleo-10 italic">↳ Jasa / Labor</td>
                       <td className="px-1 py-0.5"></td>
                       <td className="px-1 py-0.5"></td>
-                      <td className="px-1 py-0.5 text-right text-[10px]">{formatRp(line.labor_cost).replace('Rp', '').trim()}</td>
+                      <td className="px-1 py-0.5 text-right text-caleo-10">{formatRp(line.labor_cost).replace('Rp', '').trim()}</td>
                     </tr>
                   </React.Fragment>
                 );
@@ -465,29 +465,29 @@ function InvoiceBody({
 
       {/* Notes */}
       {t.notes && (
-        <div className="border border-dashed border-slate-400 px-2 py-1.5 my-2 text-[11px]">
-          <div className="font-extrabold text-[10px] uppercase tracking-widest mb-1">📝 Catatan</div>
+        <div className="border border-dashed border-slate-400 px-2 py-1.5 my-2 text-caleo-11">
+          <div className="font-extrabold text-caleo-10 uppercase tracking-widest mb-1">📝 Catatan</div>
           <div className="whitespace-pre-wrap">{t.notes}</div>
         </div>
       )}
 
       {/* Totals */}
-      <div className="ml-auto w-3/5 text-[12px] mt-2">
+      <div className="ml-auto w-3/5 text-xs mt-2">
         {/* I-1 fix: show gross subtotal so Gross − Diskon = Total is transparent to customer */}
         <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal Barang</span><span>{formatRp(grossSubtotal)}</span></div>
         {serviceSubtotal > 0 && <div className="flex justify-between py-0.5"><span>Layanan</span><span>{formatRp(serviceSubtotal)}</span></div>}
         {!isQuotation && ongkir > 0 && <div className="flex justify-between py-0.5"><span>Biaya Ongkir</span><span>{formatRp(ongkir)}</span></div>}
         {totalDiscount > 0 && (
-          <div className="flex justify-between py-0.5 text-[11px] text-slate-700">
+          <div className="flex justify-between py-0.5 text-caleo-11 text-slate-700">
             <span>{discountLabel}</span><span>− {formatRp(totalDiscount)}</span>
           </div>
         )}
-        <div className="flex justify-between py-1 border-t border-slate-900 border-b-[3px] border-double border-b-slate-900 font-extrabold text-[13px]">
+        <div className="flex justify-between py-1 border-t border-slate-900 border-b-[3px] border-double border-b-slate-900 font-extrabold text-caleo-13">
           <span>{isQuotation ? 'TOTAL PENAWARAN' : 'TOTAL TAGIHAN'}</span>
           <span>{formatRp(isQuotation ? subtotal : total)}</span>
         </div>
         {isQuotation && (
-          <div className="py-0.5 text-[10px] italic text-slate-500">
+          <div className="py-0.5 text-caleo-10 italic text-slate-500">
             * Belum termasuk ongkir. Final total saat Sales Invoice.
           </div>
         )}
@@ -503,12 +503,12 @@ function InvoiceBody({
 
       {/* Payment block */}
       {!isQuotation && (
-        <div className="mt-4 pt-2 border-t border-dashed border-slate-400 text-[11px]">
-          <div className="font-extrabold text-[10px] uppercase tracking-widest mb-1">Rekening Pembayaran</div>
+        <div className="mt-4 pt-2 border-t border-dashed border-slate-400 text-caleo-11">
+          <div className="font-extrabold text-caleo-10 uppercase tracking-widest mb-1">Rekening Pembayaran</div>
           <div>
             <strong>{bank?.bank_name ?? '—'}</strong> · {bank?.account_number ?? '—'} a/n <strong>{bank?.account_holder ?? '—'}</strong>
           </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">
+          <div className="text-caleo-10 text-slate-500 mt-0.5">
             {variant === 'lunas' ? 'Terima kasih atas pembayaran Anda.' : 'Sisa pelunasan ditransfer sebelum pengambilan/pengiriman barang.'}
           </div>
         </div>
@@ -516,35 +516,35 @@ function InvoiceBody({
 
       {/* Disclaimer */}
       {!isQuotation && (
-        <div className="mt-3 border border-slate-900 px-2 py-1.5 text-center text-[10px] font-extrabold tracking-wide">
+        <div className="mt-3 border border-slate-900 px-2 py-1.5 text-center text-caleo-10 font-extrabold tracking-wide">
           ⚠ BARANG YANG SUDAH DIBELI TIDAK DAPAT DIKEMBALIKAN
         </div>
       )}
 
       {/* Quotation footer disclaimer */}
       {isQuotation && (
-        <div className="mt-4 pt-3 border-t border-slate-300 text-[10px] text-slate-500 italic">
+        <div className="mt-4 pt-3 border-t border-slate-300 text-caleo-10 text-slate-500 italic">
           Dokumen ini bukan invoice resmi. Untuk pemesanan, konfirmasi ke admin untuk diteruskan menjadi Sales Invoice.
         </div>
       )}
 
       {/* Footer signatures */}
-      <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-dashed border-slate-400 text-[11px]">
+      <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-dashed border-slate-400 text-caleo-11">
         <div className="text-center">
           <div className="border-b border-slate-900 h-10 mx-4 mb-1"></div>
-          <div className="font-bold text-[10px]">Penerima Barang</div>
-          <div className="text-[9px] text-slate-500 italic mt-0.5">(tanda tangan + nama jelas)</div>
+          <div className="font-bold text-caleo-10">Penerima Barang</div>
+          <div className="text-caleo-9 text-slate-500 italic mt-0.5">(tanda tangan + nama jelas)</div>
         </div>
         <div className="text-center">
           <div className="relative h-10 mx-4 mb-1 border-b border-slate-900">
             {adminName && (
-              <div className="absolute inset-0 flex items-end justify-center pb-0.5 text-[11px] font-sans">
+              <div className="absolute inset-0 flex items-end justify-center pb-0.5 text-caleo-11 font-sans">
                 {adminName}
               </div>
             )}
           </div>
-          <div className="font-bold text-[10px]">Hormat Kami</div>
-          <div className="text-[9px] text-slate-500 italic mt-0.5">{store?.nama_toko ?? 'Toko Anda'}</div>
+          <div className="font-bold text-caleo-10">Hormat Kami</div>
+          <div className="text-caleo-9 text-slate-500 italic mt-0.5">{store?.nama_toko ?? 'Toko Anda'}</div>
         </div>
       </div>
     </div>

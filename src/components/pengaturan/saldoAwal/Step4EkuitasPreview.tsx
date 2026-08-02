@@ -117,42 +117,42 @@ export default function Step4EkuitasPreview({
       {/* ── Ekuitas inputs ────────────────────────────────────────────────────── */}
       <section className="space-y-4">
         <div>
-          <h4 className="text-[13px] font-bold text-slate-800">Ekuitas</h4>
-          <p className="text-[12px] text-slate-500 mt-0.5">Modal awal + Laba Ditahan (dihitung otomatis sebagai angka penyeimbang)</p>
+          <h4 className="text-caleo-13 font-bold text-slate-800">Ekuitas</h4>
+          <p className="text-xs text-slate-500 mt-0.5">Modal awal + Laba Ditahan (dihitung otomatis sebagai angka penyeimbang)</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Modal Owner */}
           <div className="space-y-1.5">
-            <label className="block text-[12px] font-semibold text-slate-700">Modal Owner (Rp)</label>
-            <p className="text-[11px] text-slate-500">Investasi awal owner ke bisnis</p>
+            <label className="block text-xs font-semibold text-slate-700">Modal Owner (Rp)</label>
+            <p className="text-caleo-11 text-slate-500">Investasi awal owner ke bisnis</p>
             <NumberInput
               value={data.modal_owner.amount}
               onChange={(n) => onChange({ ...data, modal_owner: { amount: n } })}
               allowDecimal={false}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
-            <div className="text-[11px] text-slate-400">{formatIDR(data.modal_owner.amount)}</div>
+            <div className="text-caleo-11 text-slate-400">{formatIDR(data.modal_owner.amount)}</div>
           </div>
 
           {/* Prive */}
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
-              <label className="block text-[12px] font-semibold text-slate-700">Prive (Contra-Equity)</label>
-              <span className="text-amber-500 text-[13px]" title="Prive mengurangi ekuitas (contra-equity)">⚠</span>
+              <label className="block text-xs font-semibold text-slate-700">Prive (Contra-Equity)</label>
+              <span className="text-amber-500 text-caleo-13" title="Prive mengurangi ekuitas (contra-equity)">⚠</span>
             </div>
-            <p className="text-[11px] text-slate-500">Penarikan owner dari modal. Opsional.</p>
+            <p className="text-caleo-11 text-slate-500">Penarikan owner dari modal. Opsional.</p>
             <NumberInput
               value={data.prive.amount}
               onChange={(n) => onChange({ ...data, prive: { amount: n } })}
               allowDecimal={false}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
-            <div className="text-[11px] text-slate-400">{formatIDR(data.prive.amount)}</div>
+            <div className="text-caleo-11 text-slate-400">{formatIDR(data.prive.amount)}</div>
             {priveIsLarge && (
-              <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              <div className="text-caleo-11 text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                 Prive lebih besar dari Modal Owner — apakah benar?
               </div>
             )}
@@ -163,19 +163,19 @@ export default function Step4EkuitasPreview({
         <div className="border border-slate-200 rounded p-4 bg-slate-50/50">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[12px] font-semibold text-slate-700">Laba Ditahan (dihitung otomatis)</div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs font-semibold text-slate-700">Laba Ditahan (dihitung otomatis)</div>
+              <div className="text-caleo-11 text-slate-500 mt-0.5">
                 = Aktiva − Kewajiban − (Modal − Prive)
               </div>
             </div>
             {previewLoading ? (
-              <div className="text-[13px] text-slate-400">Menghitung…</div>
+              <div className="text-caleo-13 text-slate-400">Menghitung…</div>
             ) : labaDitahan !== null ? (
-              <div className={`text-[15px] font-bold ${labaDitahan >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              <div className={`text-caleo-15 font-bold ${labaDitahan >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                 {formatIDR(labaDitahan)}
               </div>
             ) : (
-              <div className="text-[13px] text-slate-400">—</div>
+              <div className="text-caleo-13 text-slate-400">—</div>
             )}
           </div>
         </div>
@@ -184,24 +184,24 @@ export default function Step4EkuitasPreview({
       {/* ── Neraca Preview ────────────────────────────────────────────────────── */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-[13px] font-bold text-slate-800">Preview Neraca</h4>
+          <h4 className="text-caleo-13 font-bold text-slate-800">Preview Neraca</h4>
           {previewLoading ? (
-            <span className="text-[12px] text-slate-400">Memuat…</span>
+            <span className="text-xs text-slate-400">Memuat…</span>
           ) : isBalanced ? (
-            <span className="text-[12px] font-bold text-emerald-700 flex items-center gap-1">
+            <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
               ✓ Balanced
             </span>
           ) : (
-            <span className="text-[12px] font-bold text-rose-600 flex items-center gap-1">
+            <span className="text-xs font-bold text-rose-600 flex items-center gap-1">
               ✗ Tidak seimbang
             </span>
           )}
         </div>
 
-        <div className="border border-slate-200 rounded overflow-hidden text-[12px]">
+        <div className="border border-slate-200 rounded overflow-hidden text-xs">
           {/* Aktiva */}
           <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-            <div className="font-extrabold text-[10.5px] text-emerald-700 uppercase tracking-wider">Aktiva</div>
+            <div className="font-extrabold text-caleo-10 text-emerald-700 uppercase tracking-wider">Aktiva</div>
           </div>
           <div className="divide-y divide-slate-100">
             <NeracaRow label="Kas & Bank" amount={kasTotal} />
@@ -213,15 +213,15 @@ export default function Step4EkuitasPreview({
             ))}
           </div>
           <div className="bg-emerald-50 px-4 py-2 border-y border-emerald-100 flex items-center justify-between font-bold">
-            <span className="text-[11px] text-emerald-800 uppercase tracking-wider">Total Aktiva</span>
-            <span className="text-[13px] text-emerald-800">
+            <span className="text-caleo-11 text-emerald-800 uppercase tracking-wider">Total Aktiva</span>
+            <span className="text-caleo-13 text-emerald-800">
               {previewLoading ? '…' : formatIDR(preview?.total_assets ?? kasTotal + piutangAmount + persediaanAmount + aktivaTetapAmount + aktivaLainTotal)}
             </span>
           </div>
 
           {/* Kewajiban */}
           <div className="bg-rose-50 px-4 py-2 border-b border-rose-100">
-            <div className="font-extrabold text-[10.5px] text-rose-700 uppercase tracking-wider">Kewajiban</div>
+            <div className="font-extrabold text-caleo-10 text-rose-700 uppercase tracking-wider">Kewajiban</div>
           </div>
           <div className="divide-y divide-slate-100">
             <NeracaRow label="Hutang Usaha" amount={hutangAmount} />
@@ -230,15 +230,15 @@ export default function Step4EkuitasPreview({
             ))}
           </div>
           <div className="bg-rose-50 px-4 py-2 border-y border-rose-100 flex items-center justify-between font-bold">
-            <span className="text-[11px] text-rose-800 uppercase tracking-wider">Total Kewajiban</span>
-            <span className="text-[13px] text-rose-800">
+            <span className="text-caleo-11 text-rose-800 uppercase tracking-wider">Total Kewajiban</span>
+            <span className="text-caleo-13 text-rose-800">
               {previewLoading ? '…' : formatIDR(preview?.total_liab ?? hutangAmount + kewajibanLainTotal)}
             </span>
           </div>
 
           {/* Ekuitas */}
           <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
-            <div className="font-extrabold text-[10.5px] text-slate-600 uppercase tracking-wider">Ekuitas</div>
+            <div className="font-extrabold text-caleo-10 text-slate-600 uppercase tracking-wider">Ekuitas</div>
           </div>
           <div className="divide-y divide-slate-100">
             <NeracaRow label="Modal Owner" amount={data.modal_owner.amount} />
@@ -252,8 +252,8 @@ export default function Step4EkuitasPreview({
             />
           </div>
           <div className="bg-slate-100 px-4 py-2 border-t border-slate-200 flex items-center justify-between font-bold">
-            <span className="text-[11px] text-slate-700 uppercase tracking-wider">Total Kewajiban + Ekuitas</span>
-            <span className="text-[13px] text-slate-700">
+            <span className="text-caleo-11 text-slate-700 uppercase tracking-wider">Total Kewajiban + Ekuitas</span>
+            <span className="text-caleo-13 text-slate-700">
               {previewLoading ? '…' : formatIDR((preview?.total_liab ?? 0) + (preview?.total_equity ?? 0))}
             </span>
           </div>
@@ -262,7 +262,7 @@ export default function Step4EkuitasPreview({
 
       {/* ── Confirmation checkboxes ────────────────────────────────────────────── */}
       <section className="space-y-3 border border-amber-200 bg-amber-50 rounded p-4">
-        <div className="text-[12px] font-semibold text-amber-800 mb-2">Konfirmasi sebelum post</div>
+        <div className="text-xs font-semibold text-amber-800 mb-2">Konfirmasi sebelum post</div>
         <label className="flex items-start gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -270,7 +270,7 @@ export default function Step4EkuitasPreview({
             onChange={(e) => setCheck1(e.target.checked)}
             className="mt-0.5 shrink-0"
           />
-          <span className="text-[12px] text-slate-700">
+          <span className="text-xs text-slate-700">
             Saya sudah memverifikasi semua angka di atas benar sesuai kondisi bisnis per tanggal cutover.
           </span>
         </label>
@@ -281,7 +281,7 @@ export default function Step4EkuitasPreview({
             onChange={(e) => setCheck2(e.target.checked)}
             className="mt-0.5 shrink-0"
           />
-          <span className="text-[12px] text-slate-700">
+          <span className="text-xs text-slate-700">
             Saya mengerti bahwa setelah di-post, data masuk ke Jurnal Umum sebagai jurnal Saldo Awal dan tidak bisa diedit langsung (harus melalui Reverse & Edit).
           </span>
         </label>
@@ -293,7 +293,7 @@ export default function Step4EkuitasPreview({
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="px-6 py-2.5 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[var(--color-caleo-primary)] text-white text-caleo-13 font-bold rounded hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? 'Menyimpan & Post…' : 'Simpan & Post Saldo Awal'}
         </button>
@@ -301,15 +301,15 @@ export default function Step4EkuitasPreview({
           type="button"
           onClick={handlePrint}
           disabled={printing || previewLoading || preview === null}
-          className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 text-[13px] font-semibold rounded hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 text-caleo-13 font-semibold rounded hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {printing ? 'Mencetak…' : '📄 Cetak Ringkasan (PDF)'}
         </button>
         {!isBalanced && !previewLoading && (
-          <p className="text-[12px] text-rose-600">Neraca belum seimbang. Periksa angka Aktiva dan Kewajiban + Ekuitas.</p>
+          <p className="text-xs text-rose-600">Neraca belum seimbang. Periksa angka Aktiva dan Kewajiban + Ekuitas.</p>
         )}
         {(!check1 || !check2) && isBalanced && (
-          <p className="text-[12px] text-slate-500">Centang kedua konfirmasi untuk mengaktifkan tombol Submit.</p>
+          <p className="text-xs text-slate-500">Centang kedua konfirmasi untuk mengaktifkan tombol Submit.</p>
         )}
       </div>
     </div>
