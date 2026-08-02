@@ -1,6 +1,7 @@
 // src/components/rekonsiliasi/MutasiColumn.tsx
 import React, { useState } from 'react';
 import type { BankAccount, BankStatementLine } from '../../types';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   lines: BankStatementLine[];
@@ -86,7 +87,7 @@ export default function MutasiColumn({ lines, accounts, onFindPair, onClassify, 
             </div>
           );
         })}
-        {filtered.length === 0 && <div className="text-center text-xs text-slate-400 font-semibold py-4">Belum ada mutasi. Upload PDF.</div>}
+        {filtered.length === 0 && <EmptyState message="Belum ada mutasi. Upload PDF." inline />}
       </div>
     </div>
   );

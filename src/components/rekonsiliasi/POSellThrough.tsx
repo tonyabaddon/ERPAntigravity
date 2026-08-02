@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
+import EmptyState from '../ui/EmptyState';
 
 interface POSummary {
   id: string;
@@ -130,7 +131,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
             </div>
           );
         })}
-        {pos.length === 0 && <div className="text-center text-xs text-slate-400 font-semibold py-4">Tidak ada PO diterima bulan ini.</div>}
+        {pos.length === 0 && <EmptyState message="Tidak ada PO diterima bulan ini." inline />}
       </div>
     </div>
   );

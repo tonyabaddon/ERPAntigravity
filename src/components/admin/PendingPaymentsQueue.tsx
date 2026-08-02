@@ -6,6 +6,7 @@ import { paymentVerificationApi, PendingPayment } from '../../lib/paymentVerific
 import { adminToast } from '../../lib/adminToast';
 import { PendingPaymentRow } from './PendingPaymentRow';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import EmptyState from '../ui/EmptyState';
 
 export function PendingPaymentsQueue() {
   const [rows, setRows] = useState<PendingPayment[] | null>(null);
@@ -80,11 +81,11 @@ export function PendingPaymentsQueue() {
       {/* Empty state */}
       {rows !== null && rows.length === 0 && (
         <div
-          className="border rounded px-4 py-4 text-caleo-13"
-          style={{ background: '#F0FDF4', borderColor: '#86EFAC', color: '#166534' }}
+          className="border rounded px-4 py-4"
+          style={{ background: '#F0FDF4', borderColor: '#86EFAC' }}
           data-testid="pending-payments-empty"
         >
-          Tidak ada pembayaran menunggu verifikasi.
+          <EmptyState message="Tidak ada pembayaran menunggu verifikasi." inline />
         </div>
       )}
 

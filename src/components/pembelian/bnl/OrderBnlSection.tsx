@@ -8,6 +8,7 @@ import type { DbPurchaseInvoice } from '../../../types';
 import PiStatusBadge from './PiStatusBadge';
 import { formatIDR } from '../../../lib/formatIDR';
 import { captureError } from '../../../lib/captureError';
+import EmptyState from '../../ui/EmptyState';
 
 interface Props {
   orderId: string;
@@ -49,8 +50,9 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
   if (pis.length === 0) {
     return (
       <div className="mt-3 flex items-center justify-between bg-violet-50/40 border border-violet-200 rounded px-3 py-2">
-        <div className="text-caleo-11 text-violet-700 flex items-center gap-1.5">
-          <Zap className="w-3 h-3" /> Belum ada Purchase Invoice (pass-through) untuk Order ini
+        <div className="flex items-center gap-1.5 text-violet-700">
+          <Zap className="w-3 h-3 shrink-0" />
+          <EmptyState message="Belum ada Purchase Invoice (pass-through) untuk Order ini." inline className="text-violet-700" />
         </div>
         <button onClick={openCreate} className="inline-flex items-center gap-1 text-caleo-11 font-bold text-violet-700 px-2 py-1 rounded bg-white border border-violet-200 hover:bg-violet-50">
           <Plus className="w-3 h-3" /> Buat PI

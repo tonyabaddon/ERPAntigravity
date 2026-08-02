@@ -3,6 +3,8 @@ import { Plus, Search } from 'lucide-react';
 import { pesananService } from '../../../lib/pesananService';
 import type { DbPesanan, PesananStatus } from '../../../types';
 import { formatIDR } from '../../../lib/formatIDR';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 
 const fmtDate = (s?: string|null) => s ? new Date(s).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '—';
 
@@ -64,8 +66,8 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
       </div>
 
       <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
-        {loading ? <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
-         : filtered.length === 0 ? <div className="p-8 text-center text-sm text-gray-500">Belum ada Pesanan.</div>
+        {loading ? <LoadingState label="Memuat..." />
+         : filtered.length === 0 ? <EmptyState message="Belum ada Pesanan." />
          : (
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">

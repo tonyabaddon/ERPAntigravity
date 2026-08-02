@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 
 interface StockOption {
   sku: string;
@@ -63,13 +65,9 @@ export default function ComponentPicker({ onPick, onClose }: Props) {
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-2">
           {loading ? (
-            <div className="text-center py-8 text-caleo-13 text-slate-500">
-              Memuat…
-            </div>
+            <LoadingState label="Memuat…" />
           ) : filtered.length === 0 ? (
-            <div className="text-center py-8 text-caleo-13 text-slate-500">
-              Tidak ada komponen match.
-            </div>
+            <EmptyState message="Tidak ada komponen match." />
           ) : (
             filtered.map((item) => (
               <button
