@@ -1,3 +1,4 @@
+import EmptyState from '../ui/EmptyState';
 import type { ProofSource } from '../../lib/sales/types';
 
 interface Props {
@@ -14,11 +15,7 @@ const SOURCE_LABEL: Record<ProofSource, string> = {
 
 export function PaymentProofThumbnail({ proofUrl, source, onClick }: Props) {
   if (!proofUrl) {
-    return (
-      <div style={{ padding: 16, textAlign: 'center', color: '#6b7280', fontSize: 12, background: '#f9fafb', borderRadius: 12 }}>
-        Belum ada bukti
-      </div>
-    );
+    return <EmptyState message="Belum ada bukti" inline />;
   }
   return (
     <div onClick={onClick} style={{ cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 12 }}>

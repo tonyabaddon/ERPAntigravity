@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase, tenantContextService } from '../lib/supabaseClient';
 import { Building2 } from 'lucide-react';
 import { captureError } from '../lib/captureError';
+import LoadingState from './ui/LoadingState';
+import ErrorState from './ui/ErrorState';
 
 interface TenantRow { tenant_id: string; slug: string; name: string; }
 
@@ -36,9 +38,9 @@ export const SelectTenantScreen: React.FC = () => {
     }
   }, [tenants]);
 
-  if (!tenants) return <div className="p-6 text-slate-500">Memuat…</div>;
-  if (loadError) return <div className="p-6 text-rose-600">Gagal memuat data tenant. Coba refresh halaman.</div>;
-  if (tenants.length === 0) return <div className="p-6 text-rose-600">Tidak ada tenant terdaftar untuk akun Anda.</div>;
+  if (!tenants) return <div className="p-6"><LoadingState label="Memuat…" /></div>;
+  if (loadError) return <div className="p-6"><ErrorState message="Gagal memuat data tenant. Coba refresh halaman." /></div>;
+  if (tenants.length === 0) return <div className="p-6"><ErrorState message="Tidak ada tenant terdaftar untuk akun Anda." /></div>;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">

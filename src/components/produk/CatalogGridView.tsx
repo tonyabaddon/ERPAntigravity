@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { StockItem } from '../../types';
 import { formatIDR } from '../../lib/formatIDR';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   stockList: StockItem[];
@@ -67,7 +68,7 @@ export default function CatalogGridView({ stockList, onAdd, onEdit, hideToolbar 
       </div>
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-slate-400 text-xs">Tidak ada produk yang cocok</div>
+        <EmptyState message="Tidak ada produk yang cocok" />
       )}
     </section>
   );

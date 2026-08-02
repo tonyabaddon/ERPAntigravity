@@ -1,6 +1,7 @@
 // src/components/rekonsiliasi/TallyBar.tsx
 import React from 'react';
 import type { SalesChannel } from '../../types';
+import EmptyState from '../ui/EmptyState';
 import { getChannelDef } from '../../lib/salesChannels';
 import { useSalesChannels } from '../../contexts/SalesChannelsContext';
 import ChannelIcon from '../icons/ChannelIcon';
@@ -21,8 +22,8 @@ export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarPro
 
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-slate-200 rounded p-8 text-center text-sm text-slate-400">
-        Belum ada transaksi di periode ini.
+      <div className="bg-white border border-slate-200 rounded">
+        <EmptyState message="Belum ada transaksi di periode ini." />
       </div>
     );
   }

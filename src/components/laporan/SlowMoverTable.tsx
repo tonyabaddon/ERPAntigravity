@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getSlowMovingStock } from '../../lib/dashboardReports/api';
 import type { SlowMovingRow, PeriodDays } from '../../lib/dashboardReports/types';
 import { captureError } from '../../lib/captureError';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 interface Props { days: PeriodDays; }
 
@@ -17,10 +19,10 @@ export default function SlowMoverTable({ days }: Props) {
   }, [days]);
 
   if (rows === null) {
-    return <p className="text-sm text-slate-400 italic">Memuat data slow-moving...</p>;
+    return <LoadingState label="Memuat data slow-moving..." inline />;
   }
   if (rows.length === 0) {
-    return <p className="text-sm text-slate-400 italic">Tidak ada SKU slow-moving dalam periode ini.</p>;
+    return <EmptyState message="Tidak ada SKU slow-moving dalam periode ini." inline />;
   }
 
   return (
