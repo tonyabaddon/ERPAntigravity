@@ -386,12 +386,82 @@ function SpacingLayoutSection() {
   );
 }
 
+// ── Section: State templates (Empty / Loading / Error) ─────────────────────
+
+function StateTemplatesSection() {
+  return (
+    <section id="states">
+      <h2>6. State Templates (Empty / Loading / Error)</h2>
+      <p>Three shared components at <code>src/components/ui/</code> for the three universal "not-content" states. Consistent visual + Bahasa copy across app. Never inline your own "Belum ada" / "Memuat…" / "Gagal" text.</p>
+
+      <table>
+        <thead><tr><th>State</th><th>Component</th><th>Default label</th><th>Variants</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Empty</strong> (no data yet)</td>
+            <td><code>&lt;EmptyState /&gt;</code></td>
+            <td>required — Bahasa; e.g. "Belum ada transaksi."</td>
+            <td><code>default</code> (centered), <code>inline</code> (dropdown/row)</td>
+          </tr>
+          <tr>
+            <td><strong>Loading</strong> (waiting query)</td>
+            <td><code>&lt;LoadingState /&gt;</code></td>
+            <td>"Memuat…"</td>
+            <td><code>default</code>, <code>inline</code> (button/header), <code>overlay</code> (modal mutation)</td>
+          </tr>
+          <tr>
+            <td><strong>Error</strong> (fetch/render failed)</td>
+            <td><code>&lt;ErrorState /&gt;</code></td>
+            <td>"Gagal memuat data." + <code>Coba lagi</code> button</td>
+            <td><code>default</code>, <code>inline</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>MSME copy rules</h3>
+      <ul style={{ paddingLeft: 20, lineHeight: 1.7 }}>
+        <li><strong>Bahasa Indonesia always.</strong> Never "No data" or "Loading" — always "Belum ada" / "Memuat…"</li>
+        <li><strong>Empty state MUST include hint or CTA.</strong> Never dead-end. Example: "Belum ada kategori. Tambah kategori pertama di Pengaturan → 💵 Kategori Kasir." Or button [+ Tambah].</li>
+        <li><strong>Error state MUST offer next action.</strong> Retry button or clear step. Never just say "Gagal" and stop.</li>
+        <li><strong>Loading state overlay ONLY for mutations.</strong> Never for initial fetch (blocks whole screen). Use default variant instead.</li>
+      </ul>
+
+      <h3>Anti-patterns (what NOT to do)</h3>
+      <table>
+        <thead><tr><th>❌ Don&#x27;t</th><th>✅ Do</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span className="ds-anti-bad">&lt;p className="text-xs text-gray-400"&gt;Belum ada transaksi.&lt;/p&gt;</span></td>
+            <td><span className="ds-anti-good">&lt;EmptyState message="Belum ada transaksi." /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">&lt;p&gt;Loading...&lt;/p&gt;</span></td>
+            <td><span className="ds-anti-good">&lt;LoadingState /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">&lt;div className="text-red-600"&gt;&#123;err.message&#125;&lt;/div&gt;</span></td>
+            <td><span className="ds-anti-good">&lt;ErrorState message=&#123;extractErrorMessage(err)&#125; onRetry=&#123;refetch&#125; /&gt;</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">Empty state without next-step CTA (dead-end)</span></td>
+            <td><span className="ds-anti-good">Empty state with hint OR action button telling MSME how to add first item</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="ds-note">
+        <strong>Follow-up:</strong> <code>audit:hardcoded-empty-state</code> script scans JSX for inline "Belum ada" / "Tidak ada" text outside these components. Currently ~30 sites flagged as inherited debt.
+      </div>
+    </section>
+  );
+}
+
 // ── Section: Shared components catalog ──────────────────────────────────────
 
 function SharedComponentsSection() {
   return (
     <section id="components">
-      <h2>6. Shared Components (src/components/ui/)</h2>
+      <h2>7. Shared Components (src/components/ui/)</h2>
       <p>Reusable primitives. Prefer these over rolling one-off implementations. Adding a new primitive requires founder approval + entry in this catalog.</p>
       <table>
         <thead><tr><th>Component</th><th>Purpose</th><th>Key props</th><th>Where to use</th></tr></thead>
@@ -538,7 +608,7 @@ function IconRenderer({ name, size = 24, color = '#012749' }: { name: string; si
 function IconsSection() {
   return (
     <section id="icons">
-      <h2>7. Icons (MSME-friendly vocabulary)</h2>
+      <h2>8. Icons (MSME-friendly vocabulary)</h2>
       <p>Dari <code>lucide-react</code>. Every action has ONE canonical icon — MSME users learn once, recognize everywhere. Mixing icons for the same action = anti-pattern (confuses non-tech users).</p>
       <div className="ds-note">
         <strong>MSME rules:</strong> (1) Every button MUST have icon + label — never icon-only. (2) Prefer literal-meaning icons (Truck for kirim, not Send). (3) When multiple lucide icons exist for same concept, pick the boldest/clearest variant (Trash2 not Trash, CheckCircle not CheckCircle2).
@@ -568,7 +638,7 @@ function IconsSection() {
 function AntiPatternsSection() {
   return (
     <section id="anti-patterns">
-      <h2>8. Anti-patterns</h2>
+      <h2>9. Anti-patterns</h2>
       <p>Common drift patterns to reject during code review. Each has a shorter, better form.</p>
       <table>
         <thead><tr><th>❌ Don't</th><th>✅ Do</th><th>Why</th></tr></thead>
@@ -614,7 +684,7 @@ function AntiPatternsSection() {
 function ExtendSection() {
   return (
     <section id="extend">
-      <h2>9. How to Extend</h2>
+      <h2>10. How to Extend</h2>
       <ol style={{ paddingLeft: 20, lineHeight: 1.7 }}>
         <li><strong>Propose in a design brief</strong> — describe the need + why existing token/component doesn't cover it. Show a mockup or reference (per CLAUDE.md FE UI/UX approval protocol).</li>
         <li><strong>Founder approves</strong> — "go", "approved", "lock it", or iteration comment. Assumptions of approval = violation per CLAUDE.md.</li>
@@ -652,6 +722,7 @@ export function DesignSystemPage({ tokens }: Props) {
         <a href="#typography">Typography</a>
         <a href="#radius-shadow">Radius & Shadow</a>
         <a href="#spacing-layout">Spacing & Layout</a>
+        <a href="#states">States</a>
         <a href="#components">Components</a>
         <a href="#icons">Icons</a>
         <a href="#anti-patterns">Anti-patterns</a>
@@ -663,6 +734,7 @@ export function DesignSystemPage({ tokens }: Props) {
       <TypographySection tokens={tokens} />
       <RadiusShadowSection tokens={tokens} />
       <SpacingLayoutSection />
+      <StateTemplatesSection />
       <SharedComponentsSection />
       <IconsSection />
       <AntiPatternsSection />
