@@ -10,6 +10,8 @@ import type { AccountingPeriod } from '../../../lib/akuntansi/types';
 import PeriodCloseModal from './PeriodCloseModal';
 import YearEndCloseModal from './YearEndCloseModal';
 import { captureError } from '../../../lib/captureError';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -183,11 +185,9 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
 
         {/* Period list */}
         {loading ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">Memuat...</div>
+          <LoadingState label="Memuat..." />
         ) : periods.length === 0 ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">
-            Belum ada periode akuntansi
-          </div>
+          <EmptyState message="Belum ada periode akuntansi." />
         ) : (
           <div className="divide-y divide-gray-100">
             {periods.map(p => renderPeriodRow(p))}

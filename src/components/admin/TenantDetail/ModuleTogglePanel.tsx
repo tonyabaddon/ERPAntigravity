@@ -9,6 +9,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { adminToast } from '../../../lib/adminToast';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
+import ErrorState from '../../ui/ErrorState';
 
 // ─── VOSI color constants ─────────────────────────────────────────────────────
 
@@ -184,35 +187,23 @@ export function ModuleTogglePanel({ tenantId }: Props) {
 
       {/* Load error */}
       {loadError && (
-        <p
-          className="text-xs px-3 py-2 rounded mb-3"
-          style={{ background: '#fff7ed', color: '#92400e' }}
-          data-testid="module-toggle-error"
-        >
-          {loadError}
-        </p>
+        <div data-testid="module-toggle-error">
+          <ErrorState message={loadError} inline />
+        </div>
       )}
 
       {/* Loading skeleton */}
       {features === null && !loadError && (
-        <p
-          className="text-xs animate-pulse"
-          style={{ color: C.muted }}
-          data-testid="module-toggle-loading"
-        >
-          Memuat modul…
-        </p>
+        <div data-testid="module-toggle-loading">
+          <LoadingState label="Memuat modul…" inline />
+        </div>
       )}
 
       {/* Empty state */}
       {features !== null && moduleEntries.length === 0 && (
-        <p
-          className="text-xs"
-          style={{ color: C.muted }}
-          data-testid="module-toggle-empty"
-        >
-          Tidak ada modul terdaftar.
-        </p>
+        <div data-testid="module-toggle-empty">
+          <EmptyState message="Tidak ada modul terdaftar." inline />
+        </div>
       )}
 
       {/* Module rows */}

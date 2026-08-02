@@ -7,6 +7,9 @@ import { useEffect, useState } from 'react';
 import { listTenantUsersAdmin } from '../../../lib/adminApi';
 import type { TenantUserRow } from '../../../lib/adminTypes';
 import { adminToast } from '../../../lib/adminToast';
+import LoadingState from '../../ui/LoadingState';
+import ErrorState from '../../ui/ErrorState';
+import EmptyState from '../../ui/EmptyState';
 
 // ─── VOSI color constants (matches OverviewTab + TenantsTable) ────────────────
 
@@ -133,12 +136,8 @@ export function UsersTab({ tenantId }: Props) {
 
   if (loading) {
     return (
-      <div
-        className="text-caleo-13 animate-pulse py-4"
-        style={{ color: C.muted }}
-        data-testid="users-tab-loading"
-      >
-        Memuat pengguna…
+      <div data-testid="users-tab-loading">
+        <LoadingState label="Memuat pengguna…" />
       </div>
     );
   }
@@ -147,17 +146,11 @@ export function UsersTab({ tenantId }: Props) {
 
   if (error !== null) {
     return (
-      <div
-        className="border rounded p-6 text-center"
-        style={{ background: '#fff5f5', borderColor: '#fecaca' }}
-        data-testid="users-tab-error"
-      >
-        <p className="text-caleo-13 font-semibold mb-1" style={{ color: C.danger }}>
-          Gagal memuat daftar pengguna
-        </p>
-        <p className="text-xs" style={{ color: C.slate }}>
-          {error}
-        </p>
+      <div data-testid="users-tab-error">
+        <ErrorState
+          message="Gagal memuat daftar pengguna."
+          hint={error}
+        />
       </div>
     );
   }
@@ -166,17 +159,11 @@ export function UsersTab({ tenantId }: Props) {
 
   if (users.length === 0) {
     return (
-      <div
-        className="border rounded p-8 text-center text-caleo-13"
-        style={{ borderColor: C.surface, color: C.muted }}
-        data-testid="users-tab-empty"
-      >
-        <p className="font-medium" style={{ color: C.slate }}>
-          Belum ada pengguna terdaftar
-        </p>
-        <p className="mt-1 text-xs">
-          Tenant ini belum memiliki staf yang terdaftar di sistem.
-        </p>
+      <div data-testid="users-tab-empty">
+        <EmptyState
+          message="Belum ada pengguna terdaftar."
+          hint="Tenant ini belum memiliki staf yang terdaftar di sistem."
+        />
       </div>
     );
   }

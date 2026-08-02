@@ -4,6 +4,7 @@
 // cream zebra rows, cream hover. VOSI Design System inline styles.
 import { useState } from 'react';
 import type { AuditEventRow } from '../../lib/adminTypes';
+import EmptyState from '../ui/EmptyState';
 
 // ─── VOSI color constants ─────────────────────────────────────────────────────
 
@@ -137,17 +138,11 @@ interface AuditTableProps {
 export function AuditTable({ events, hideTenant = false }: AuditTableProps) {
   if (events.length === 0) {
     return (
-      <div
-        className="border rounded p-8 text-center"
-        style={{ borderColor: C.surface, color: C.muted }}
-        data-testid="audit-table-empty"
-      >
-        <p className="text-caleo-13 font-medium" style={{ color: C.slate }}>
-          Belum ada aktivitas
-        </p>
-        <p className="mt-1 text-xs">
-          Riwayat audit akan muncul di sini setelah ada aksi admin.
-        </p>
+      <div data-testid="audit-table-empty">
+        <EmptyState
+          message="Belum ada aktivitas."
+          hint="Riwayat audit akan muncul di sini setelah ada aksi admin."
+        />
       </div>
     );
   }
