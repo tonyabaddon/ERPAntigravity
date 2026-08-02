@@ -1,6 +1,46 @@
 # ERP Antigravity — Implementation Progress
 
 
+## 2026-08-02 — slog observability class-fix + HEARTBEAT root cause diagnosed (SHIPPED)
+
+**Result:** BE prod now shows real error messages instead of `error={}`. HEARTBEAT broadcast root cause identified — WA session unpaired, not a code bug.
+
+**PRs shipped this session:**
+- **PR #90** (`2d23d66`): Wired 4 audit scripts (color/spacing/radius/empty-state) to Stop hook
+- **PR #91** (`7765fcc`, promoted to prod): `slog.Any("error", err)` → `slog.String("error", err.Error())` class-fix across 195 files in backend-go. 22 packages. `slog.Any` renders via reflection and produced `error={}` in prod logs — Go equivalent of the FE `[object Object]` class-error (miss-log Entry #5, this is Entry #11)
+
+**Audit script added:** `scripts/audit-slog-any-error.ts` — baseline zero, absolute. Wired to Stop hook (11th audit in chain).
+
+**HEARTBEAT broadcast root cause (Task #9):**
+
+Before PR #91, prod logs showed:
+```
+error={};feature=broadcast_staff;message=broadcast send failed for recipient
+```
+
+After PR #91 promoted, the actual error surfaced immediately:
+```
+error=sender: send text to 6285264787775: the store doesn't contain a device JID
+feature=broadcast_staff role=owner phone_hash=6285...75
+```
+
+**Diagnosis:** whatsmeow's Postgres store has no paired device (`c.WA.Store.ID == nil`). Cloud Run BE logs show QR codes cycling continuously (`[WA] QR Code ready for scanning` every ~20s since revision start). The single-tenant Calista/Garindo backend's WhatsApp session is unpaired.
+
+**Fix (manual, ops action — not a code change):**
+1. Access the WA setup / QR endpoint on the BE (likely `admin.caleo.id/wa/setup` or `/api/wa/qr`)
+2. Scan the QR from the founder's WhatsApp on `6285264787775`
+3. Once paired, `Store.ID` populates in Postgres `whatsmeow_device` table
+4. Heartbeat + all broadcasts resume next tick
+
+**Prevention (potential follow-up — not this session):**
+- Add health-check that flags "WA unpaired for >N minutes" so ops gets alerted instead of discovering via broken heartbeats
+- Consider persisting pairing across revisions more robustly (already using Postgres store — check whether the store row is being retained across restarts, or if something is wiping it)
+
+**Files touched:** 195 backend-go files (codemod), `scripts/audit-slog-any-error.ts`, `package.json`, `.claude/settings.json`, `docs/superpowers/miss-log.md` (Entry #11).
+
+---
+
+
 ## 2026-08-02 — 8-Hour Autonomous Design System Session (COMPLETE)
 
 **Result:** design system doc finalized to 12 sections + 4 conformance audits shipped + 3 drift-reduction codemods applied. 7 PRs merged. Zero prod visual change (all codemods semantic-equivalent). Prod NOT promoted (founder gate as agreed).
