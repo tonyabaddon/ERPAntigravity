@@ -20,6 +20,10 @@
     "audit:secdef-auth-schema-owner": "tsx scripts/audit-secdef-auth-schema-owner.ts",
     "audit:tenant-invariants": "tsx scripts/audit-tenant-invariants.ts",
     "audit:miss-log-recurrences": "tsx scripts/audit-miss-log-recurrences.ts",
+    "audit:hardcoded-color-hex": "tsx scripts/audit-hardcoded-color-hex.ts",
+    "audit:spacing-off-scale": "tsx scripts/audit-spacing-off-scale.ts",
+    "audit:radius-non-canonical": "tsx scripts/audit-radius-non-canonical.ts",
+    "audit:hardcoded-empty-state": "tsx scripts/audit-hardcoded-empty-state.ts",
     "build:design-system": "tsx scripts/build-design-system.tsx"
   },
   "dependencies": {
