@@ -34,24 +34,23 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/KasirScreen.tsx', // batch 10 false-positive: line ~669 "Tidak ada kategori aktif" inside <option> tag — Rule 2 skip; real empty states swept in batch 10
   'src/components/ManajemenGudangScreen.tsx', // false-positive: showToast('Tidak ada perubahan', ...) at line 128 — toast string, not JSX empty-state node (Rule 2 skip); all real empty states swept in batch 6
   'src/components/OrderHistoryScreen.tsx', // batch 10 false-positive: EMPTY_MESSAGES object literal strings at lines ~111-116 match regex but are JS values not JSX text nodes — Rule 2 skip; real empty states swept
-  'src/components/PembelianScreen.tsx',
-  'src/components/RekonsiliasiScreen.tsx',
-  'src/components/admin/PendingPaymentRow.tsx',
+  'src/components/PembelianScreen.tsx', // batch 11 false-positives: 3× KpiCard sub={...? '...' : 'Belum ada PO...'} at lines ~405/412/431 — prop string literals inside ternary expressions, NOT JSX text nodes (Rule 2 skip); real empty states (4×) swept in batch 11
+  'src/components/RekonsiliasiScreen.tsx', // false-positives: showToast('Tidak ada akun bank') at line ~311 — toast string; "Memuat data…" at line ~361 is inside a stats <p> ternary (not a loading container) — Rule 2 skip
+  'src/components/admin/PendingPaymentRow.tsx', // false-positives: "Memuat..." is button-label toggle text; "Tidak ada bukti" is a micro-UI span with custom inline styles — Rule 2 skip
   'src/components/admin/PlansManagement.tsx', // false-positive: adminToast.success('Tidak ada perubahan.') at line ~233 — JS string in toast call, not JSX empty-state node (Rule 2 skip); real empty states swept in batch 8
   'src/components/admin/TenantDetail/PembayaranTab.tsx', // batch 9 Rule 2 skip: wrapper div has data-testid="pembayaran-tab-empty" with live test coverage; empty CTA uses bespoke gold bg-caleo-gold design EmptyState can't match
   'src/components/admin/TenantsList.tsx', // false-positive: 'Belum ada grant aktif...' at line 212 — JS string in toast branch, not JSX node (Rule 2 skip)
   'src/components/akuntansi/CashAccountPicker.tsx', // loading/error in <option> tags (can't embed components); empty-state is amber instructional div (visual change if replaced)
   'src/components/akuntansi/OpeningBalanceWizard.tsx', // all "Belum ada" are inside amber/emerald intentional callout panels — Rule 2 skip (batch 7)
-  'src/components/akuntansi/manual/ManualTransferModal.tsx',
-  'src/components/dashboard/PreOrderFulfillmentsCard.tsx',
-  'src/components/feedback/CustomerFeedbackScreen.tsx',
-  'src/components/kasir/HasilCariFotoModal.tsx',
+  'src/components/akuntansi/manual/ManualTransferModal.tsx', // false-positive: both hits are "— Tidak ada akun tersedia —" inside <option> tags — Rule 2 skip
+  'src/components/feedback/CustomerFeedbackScreen.tsx', // Rule 2 skip: cfs-loading (role="status"), cfs-error (role="alert"), cfs-empty-stats, cfs-empty all use bespoke CSS classes defined in inline <style> — custom design, not generic empty-state containers
+  'src/components/kasir/HasilCariFotoModal.tsx', // false-positive: "Tidak ada yang cocok?" is CTA button copy text — Rule 2 skip
   'src/components/pembelian/form/SupplierPicker.tsx', // CTA button sub-description 'Tidak ada di list?...' — button copy, not empty-state; main empty states swept
   'src/components/pembelian/tagihan/TagihanFormPage.tsx', // batch 9 Rule 2 skip: only hit is "Belum ada Pesanan?" in field-level hint caption under input — not a JSX empty-state node
   'src/components/produk/BulkUploadSection.tsx', // "Belum ada produk" is inside showToast() call — not a JSX empty-state node
   'src/components/produk/ProductForm.tsx', // batch 10 Rule 2 skip: only hit is <option value="">— Tidak ada —</option> in SubCategoryDropdown — option tag content, not JSX empty-state node
   'src/components/sales/DaftarPesananScreen.tsx', // batch 9: real hit (Memuat pesanan...) swept; remaining false-positives: 2× alert() JS strings at lines ~223/370 (Rule 2 skip), <h3> WhatsApp fallback modal heading at line ~604 (Rule 2: intentional custom callout)
-  'src/components/stok/PriceChangeRequestModal.tsx',
+  'src/components/stok/PriceChangeRequestModal.tsx', // false-positive: showToast('Tidak ada user aktif') at line ~33 — toast string, not JSX empty-state node (Rule 2 skip)
   'src/components/stok/StockAdjustmentModal.tsx', // false-positive: 'Tidak ada user aktif' is a toast string, not JSX
   'src/components/stok/StockOpnameScreen.tsx', // false-positive: showToast('Tidak ada user aktif', ...) at line ~165 — toast string, not JSX empty-state node (Rule 2 skip); real empty states swept in batch 8
   'src/components/stok/StockOpnameSessionView.tsx', // batch 9: real hits (Memuat sesi…, grouped empty) swept; remaining false-positive: showToast('Belum ada count...') at line ~277 — toast string, not JSX (Rule 2 skip)
