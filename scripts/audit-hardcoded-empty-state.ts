@@ -13,6 +13,10 @@ import { join } from 'node:path';
 const ROOT = 'src';
 // Match text nodes in JSX (loose approximation — full parse would be over-eager).
 const EMPTY_RE = /(?:>|['"`])(Belum ada|Tidak ada)[^<'"]*(?:<|['"`])/g;
+// Allow "Belum ada / Tidak ada" text inside design-system component prop values
+// (message=, hint=, label=, empty=) — the whole point of migrating to
+// <EmptyState /> is to keep the string in a prop.
+const PROP_ALLOWLIST_RE = /\b(message|hint|label|empty|fallback)\s*=/;
 
 function walk(dir: string, out: string[]): void {
   for (const entry of readdirSync(dir)) {
@@ -25,7 +29,6 @@ function walk(dir: string, out: string[]): void {
 }
 
 const BASELINE_ALLOWLIST = new Set<string>([
-  'src/components/DashboardScreen.tsx',
   'src/components/KasirScreen.tsx',
   'src/components/LaporanScreen.tsx',
   'src/components/ManajemenGudangScreen.tsx',
@@ -148,6 +151,10 @@ for (const f of files) {
   const body = readFileSync(f, 'utf8');
   const lines = body.split('\n');
   for (let i = 0; i < lines.length; i++) {
+    // Skip prop-value assignments (message="...", hint="...", label="...")
+    // — the whole point of migrating to <EmptyState /> is putting the
+    // string in a prop.
+    if (PROP_ALLOWLIST_RE.test(lines[i])) continue;
     EMPTY_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = EMPTY_RE.exec(lines[i])) !== null) {
