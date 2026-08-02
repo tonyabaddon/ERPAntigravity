@@ -60,7 +60,7 @@ export function PendingPaymentsQueue() {
       {/* Loading skeleton */}
       {rows === null && (
         <div
-          className="border rounded-xl overflow-hidden bg-white"
+          className="border rounded-sm overflow-hidden bg-white"
           style={{ borderColor: '#E2E8F0' }}
           data-testid="pending-payments-loading"
         >
@@ -80,7 +80,7 @@ export function PendingPaymentsQueue() {
       {/* Empty state */}
       {rows !== null && rows.length === 0 && (
         <div
-          className="border rounded-xl px-5 py-4 text-[13px]"
+          className="border rounded-sm px-5 py-4 text-[13px]"
           style={{ background: '#F0FDF4', borderColor: '#86EFAC', color: '#166534' }}
           data-testid="pending-payments-empty"
         >
@@ -91,7 +91,7 @@ export function PendingPaymentsQueue() {
       {/* List */}
       {rows !== null && rows.length > 0 && (
         <div
-          className="border rounded-xl overflow-hidden bg-white"
+          className="border rounded-sm overflow-hidden bg-white"
           style={{ borderColor: '#E2E8F0' }}
           data-testid="pending-payments-list"
         >

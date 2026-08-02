@@ -32,7 +32,7 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
           const cardBg = isDeposited && !hasVariance ? 'rgba(236,253,245,0.5)' : hasVariance ? 'rgba(254,242,242,0.55)' : 'rgba(255,251,235,0.55)';
           const cardBorder = isDeposited && !hasVariance ? '#a7f3d0' : hasVariance ? '#fecaca' : '#fde68a';
           return (
-            <div key={b.id} className="p-3 rounded-2xl border mb-2" style={{ background: cardBg, borderColor: cardBorder }}>
+            <div key={b.id} className="p-3 rounded-sm border mb-2" style={{ background: cardBg, borderColor: cardBorder }}>
               <div className="flex justify-between items-start">
                 <div>
                   <div className="text-xs font-bold text-[#012749]">

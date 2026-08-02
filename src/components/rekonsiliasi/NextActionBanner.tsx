@@ -42,7 +42,7 @@ export default function NextActionBanner({ reviewCount, cashPending, piutangCoun
 
   return (
     <div
-      className="flex items-center justify-between gap-5 p-5 rounded-3xl text-white shadow-lg"
+      className="flex items-center justify-between gap-5 p-5 rounded-sm text-white shadow-lg"
       style={{ background: bg }}
     >
       <div className="flex items-center gap-3">

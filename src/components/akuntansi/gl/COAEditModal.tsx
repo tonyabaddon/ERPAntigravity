@@ -84,7 +84,7 @@ export default function COAEditModal({
       {/* ── Modal ── */}
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <div
-          className="bg-white rounded-3xl shadow-lg max-w-md w-full mx-4 pointer-events-auto"
+          className="bg-white rounded-sm shadow-lg max-w-md w-full mx-4 pointer-events-auto"
           onClick={e => e.stopPropagation()}
         >
           {/* ── Header ── */}
@@ -98,7 +98,7 @@ export default function COAEditModal({
               </p>
             </div>
             <button
-              className="p-1 rounded-lg hover:bg-gray-100 transition-colors text-gray-600 shrink-0"
+              className="p-1 rounded-sm hover:bg-gray-100 transition-colors text-gray-600 shrink-0"
               onClick={onClose}
             >
               <X className="w-5 h-5" />
@@ -112,7 +112,7 @@ export default function COAEditModal({
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
                 Kode Akun
               </label>
-              <div className="px-3 py-2 rounded-lg border border-[#c7d7f5] bg-gray-50 font-mono text-[13px] text-gray-600">
+              <div className="px-3 py-2 rounded-sm border border-[#c7d7f5] bg-gray-50 font-mono text-[13px] text-gray-600">
                 {account.account_code}
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function COAEditModal({
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
                 Tipe Akun
               </label>
-              <div className="px-3 py-2 rounded-lg border border-[#c7d7f5] bg-gray-50 text-[13px] text-gray-600">
+              <div className="px-3 py-2 rounded-sm border border-[#c7d7f5] bg-gray-50 text-[13px] text-gray-600">
                 {account.account_type}
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function COAEditModal({
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
                   Akun Induk
                 </label>
-                <div className="px-3 py-2 rounded-lg border border-[#c7d7f5] bg-gray-50 text-[13px] text-gray-600">
+                <div className="px-3 py-2 rounded-sm border border-[#c7d7f5] bg-gray-50 text-[13px] text-gray-600">
                   {account.parent_id}
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function COAEditModal({
               </label>
               <input
                 type="text"
-                className="w-full px-3 py-2 rounded-lg border border-[#c7d7f5] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+                className="w-full px-3 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
                 placeholder="Nama akun"
@@ -162,7 +162,7 @@ export default function COAEditModal({
                 Deskripsi
               </label>
               <textarea
-                className="w-full px-3 py-2 rounded-lg border border-[#c7d7f5] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5] resize-none"
+                className="w-full px-3 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5] resize-none"
                 rows={3}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
@@ -193,14 +193,14 @@ export default function COAEditModal({
           {/* ── Footer ── */}
           <div className="px-6 py-4 border-t border-gray-200 flex items-center gap-2 justify-end">
             <button
-              className="px-4 py-2 rounded-lg border border-[#c7d7f5] bg-white text-[13px] font-bold text-[#012749] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] font-bold text-[#012749] hover:bg-gray-50 transition-colors"
               onClick={onClose}
               disabled={saving}
             >
               Batal
             </button>
             <button
-              className="px-4 py-2 rounded-lg bg-[#012749] text-white text-[13px] font-bold hover:bg-[#0a1a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-sm bg-[#012749] text-white text-[13px] font-bold hover:bg-[#0a1a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSave}
               disabled={saving || !isNameValid}
             >

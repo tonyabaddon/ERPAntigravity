@@ -93,7 +93,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
         if (visibleGates.length === 0) return null;
         const activeCount = visibleGates.filter(g => findSetting(g.type)?.approval_required).length;
         return (
-          <div key={group.heading} className={`border rounded-xl overflow-hidden ${group.bgClass || 'border-slate-200'}`}>
+          <div key={group.heading} className={`border rounded-sm overflow-hidden ${group.bgClass || 'border-slate-200'}`}>
             <div className="bg-slate-100 px-4 py-2 flex items-center justify-between">
               <div className="font-bold text-xs text-slate-700 uppercase tracking-wider">
                 {group.icon} {group.heading}
@@ -170,7 +170,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
         );
       })}
 
-      <details className="mt-6 border border-slate-200 rounded-xl">
+      <details className="mt-6 border border-slate-200 rounded-sm">
         <summary className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 cursor-pointer">
           <span className="font-bold text-xs text-slate-700">Pengaturan lanjutan</span>
           <span className="text-[11px] text-slate-400">Per-gate verification method · approver role · self-bypass · reason text</span>

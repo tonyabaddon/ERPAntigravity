@@ -112,9 +112,9 @@ export default function JamOperasionalCard({ showToast }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-[#e5eeff] p-6 shadow-sm">
+    <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-[#012749] flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-sm bg-[#012749] flex items-center justify-center shrink-0">
           <Clock className="w-5 h-5 text-emerald-400" />
         </div>
         <div>
@@ -133,7 +133,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
             {rows.map(row => (
               <div
                 key={row.day_of_week}
-                className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50"
+                className="flex items-center gap-3 p-3 rounded-sm border border-slate-200 hover:bg-slate-50"
               >
                 <div className="w-20 text-sm font-bold text-[#012749] shrink-0">
                   {DAY_LABELS[row.day_of_week]}
@@ -166,7 +166,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                     value={row.open_time}
                     disabled={!row.is_open || saving}
                     onChange={e => updateRow(row.day_of_week, { open_time: e.target.value })}
-                    className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                   />
                   <span className="text-xs text-slate-400">—</span>
                   <input
@@ -174,7 +174,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                     value={row.close_time}
                     disabled={!row.is_open || saving}
                     onChange={e => updateRow(row.day_of_week, { close_time: e.target.value })}
-                    className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                   />
                 </div>
               </div>

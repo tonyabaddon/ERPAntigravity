@@ -78,7 +78,7 @@ export default function CategoryRow({ row, isEditable, onLabelSubmit, onActiveTo
               else if (e.key === 'Escape') cancelEdit();
             }}
             onBlur={cancelEdit}
-            className="w-full bg-white rounded-md px-2 py-1 border border-slate-300 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#012749]"
+            className="w-full bg-white rounded-sm px-2 py-1 border border-slate-300 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#012749]"
           />
         ) : (
           <button

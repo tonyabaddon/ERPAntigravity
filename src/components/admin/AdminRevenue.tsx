@@ -51,16 +51,16 @@ function LoadingSkeleton() {
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-20 rounded-xl" style={{ background: '#F1F3F6' }} />
+          <div key={i} className="h-20 rounded-sm" style={{ background: '#F1F3F6' }} />
         ))}
       </div>
       {/* 2 chart placeholders */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="h-48 rounded-xl" style={{ background: '#F1F3F6' }} />
-        <div className="h-48 rounded-xl" style={{ background: '#F1F3F6' }} />
+        <div className="h-48 rounded-sm" style={{ background: '#F1F3F6' }} />
+        <div className="h-48 rounded-sm" style={{ background: '#F1F3F6' }} />
       </div>
       {/* Table placeholder */}
-      <div className="h-64 rounded-xl" style={{ background: '#F1F3F6' }} />
+      <div className="h-64 rounded-sm" style={{ background: '#F1F3F6' }} />
     </div>
   );
 }
@@ -188,7 +188,7 @@ export function AdminRevenue() {
           </h1>
         </div>
         <div
-          className="rounded-xl border p-6 flex flex-col items-center gap-3"
+          className="rounded-sm border p-6 flex flex-col items-center gap-3"
           style={{ borderColor: '#FCA5A5', background: '#FEF2F2' }}
         >
           <p className="text-[14px] font-medium" style={{ color: '#991B1B' }}>
@@ -242,7 +242,7 @@ export function AdminRevenue() {
         {/* Coverage gaps callout */}
         {gapTenants.length > 0 && (
           <section
-            className="rounded-xl border p-5"
+            className="rounded-sm border p-5"
             style={{ borderColor: '#FCA5A5', background: '#FEF2F2' }}
             aria-label="Kesenjangan pembayaran"
             data-testid="coverage-gaps-callout"
@@ -265,7 +265,7 @@ export function AdminRevenue() {
                 return (
                   <div
                     key={gap.tenant_id}
-                    className="flex items-center justify-between bg-white rounded-lg px-4 py-3"
+                    className="flex items-center justify-between bg-white rounded-sm px-4 py-3"
                     style={{ borderColor: '#FCA5A5', border: '1px solid #FCA5A5' }}
                   >
                     <div>

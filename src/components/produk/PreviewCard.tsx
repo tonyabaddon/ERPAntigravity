@@ -31,7 +31,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
   return (
     <div className="lg:sticky lg:top-6 space-y-4">
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center">
+        <div className="w-7 h-7 rounded-sm bg-violet-100 text-violet-700 flex items-center justify-center">
           <span className="material-symbols-outlined text-base">visibility</span>
         </div>
         <div>
@@ -41,10 +41,10 @@ export default function PreviewCard({ state, warehouses }: Props) {
       </div>
 
       {/* Preview 1: Daftar Stok */}
-      <div className="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm">
+      <div className="bg-white rounded-sm border border-[#e5eeff] p-4 shadow-sm">
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Di Daftar Stok</div>
-        <div className="bg-slate-50 rounded-2xl p-3 flex items-center gap-3 border border-slate-100">
-          <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-300 flex items-center justify-center shrink-0">
+        <div className="bg-slate-50 rounded-sm p-3 flex items-center gap-3 border border-slate-100">
+          <div className="w-14 h-14 rounded-sm overflow-hidden bg-slate-300 flex items-center justify-center shrink-0">
             {state.thumbnailDataUrl ? (
               <img src={state.thumbnailDataUrl} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -68,7 +68,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
       </div>
 
       {/* Preview 2: Stok per Gudang */}
-      <div className="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm">
+      <div className="bg-white rounded-sm border border-[#e5eeff] p-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Stok per Gudang</div>
           {state.isPendingApproval && (
@@ -82,7 +82,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
             const isTarget = state.gudangTujuanId === w.id;
             const qty = isTarget ? state.stokAwal : 0;
             return (
-              <div key={w.id} className={`flex items-center justify-between rounded-xl px-3 py-2 border ${
+              <div key={w.id} className={`flex items-center justify-between rounded-sm px-3 py-2 border ${
                 isTarget ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'
               }`}>
                 <div className="text-[11px] font-extrabold text-[#012749]">{w.name}</div>

@@ -123,13 +123,13 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
       <p className="text-xs text-gray-500">Step 1 dari alur Pembelian Stok: pesan ke supplier sebelum barang datang.</p>
 
       {/* 1. Header */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">1. Header</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Supplier <span className="text-red-500">*</span></label>
             {supplier ? (
-              <div className="border-2 border-gray-300 rounded-xl p-3 flex items-center justify-between">
+              <div className="border-2 border-gray-300 rounded-sm p-3 flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-sm">{supplier.name}</div>
                   <div className="text-[11px] text-gray-500">Net {supplier.payment_term_days ?? 0} hari</div>
@@ -140,9 +140,9 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
               <div className="relative">
                 <input value={supplierQuery} onChange={e => setSupplierQuery(e.target.value)}
                   placeholder="Cari supplier..."
-                  className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-500" />
+                  className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500" />
                 {supplierResults.length > 0 && (
-                  <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-xl border border-gray-200 shadow-lg">
+                  <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-sm border border-gray-200 shadow-lg">
                     {supplierResults.map(s => (
                       <button key={s.id} type="button" onClick={() => { setSupplier(s); setSupplierQuery(''); setSupplierResults([]); }}
                         className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
@@ -158,7 +158,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Estimasi Barang Datang</label>
             <input type="date" value={expectedReceiveAt} onChange={e => setExpectedReceiveAt(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
+              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
             <div className="text-[11px] text-gray-500 mt-1">Opsional — bantu monitor JT pesanan.</div>
           </div>
           <div>
@@ -168,7 +168,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
                 // Enforce 0 ≤ rate ≤ 1 so pasting `11` doesn't yield 1100% tax.
                 setTaxRate(Math.min(1, Math.max(0, n)));
               }}
-              className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
+              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
             <div className="text-[11px] text-gray-500 mt-1">Format decimal — 0.11 untuk 11%. Maks 1 (=100%).</div>
           </div>
           {/* "Status Awal" radios removed 2026-07-11 audit — the two buttons
@@ -180,13 +180,13 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Catatan (opsional)</label>
             <input value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="Misal: kirim ke gudang A, pesan via WA tanggal X"
-              className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
+              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
           </div>
         </div>
       </div>
 
       {/* 2. Items */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Barang yang Dipesan</div>
         </div>
@@ -211,10 +211,10 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
                 </td>
                 <td className="py-3 px-2"><NumberInput allowDecimal={false} value={it.qty}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: n } : p))}
-                  className="w-full text-sm text-center py-1 px-2 rounded-lg border border-gray-200" /></td>
+                  className="w-full text-sm text-center py-1 px-2 rounded-sm border border-gray-200" /></td>
                 <td className="py-3 px-2"><NumberInput value={it.unit_cost}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: n } : p))}
-                  className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" /></td>
+                  className="w-full text-sm text-right py-1 px-2 rounded-sm border border-gray-200" /></td>
                 <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{formatIDR(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">
                   <button type="button" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500">
@@ -230,7 +230,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
                     <SkuPickerWithInlineCreate value={draftSku} unitCostHint={0} onChange={(v) => setDraftSku(v)} />
                   </div>
                   <button type="button" onClick={addItemFromSku} disabled={!draftSku}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-white px-3 py-2 rounded-lg disabled:opacity-50"
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-white px-3 py-2 rounded-sm disabled:opacity-50"
                     style={{ background: '#012749' }}>
                     <Plus className="w-4 h-4" /> Tambah
                   </button>
@@ -242,18 +242,18 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
       </div>
 
       {/* 3. Summary */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Ringkasan</div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-2xl p-4">
+          <div className="bg-gray-50 rounded-sm p-4">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal</div>
             <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(subtotal)}</div>
           </div>
-          <div className="bg-amber-50 rounded-2xl p-4">
+          <div className="bg-amber-50 rounded-sm p-4">
             <div className="text-[11px] text-amber-700 uppercase font-semibold">Pajak ({(taxRate * 100).toFixed(1)}%)</div>
             <div className="text-xl font-extrabold mt-1 text-amber-700">{formatIDR(taxAmount)}</div>
           </div>
-          <div className="bg-indigo-50 rounded-2xl p-4">
+          <div className="bg-indigo-50 rounded-sm p-4">
             <div className="text-[11px] text-indigo-600 uppercase font-semibold">Total</div>
             <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(total)}</div>
           </div>
@@ -261,21 +261,21 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
       </div>
 
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Batal</button>
+        <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
         {editing ? (
           <button onClick={() => handleSubmit('DRAFT')} disabled={saving}
-            className="text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50"
+            className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
             style={{ background: '#012749' }}>
             {saving ? 'Menyimpan...' : 'Update Pesanan'}
           </button>
         ) : (
           <>
             <button onClick={() => handleSubmit('DRAFT')} disabled={saving}
-              className="text-sm font-semibold text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
+              className="text-sm font-semibold text-gray-700 px-4 py-2 rounded-sm border border-gray-300 hover:bg-gray-50 disabled:opacity-50">
               {saving ? 'Menyimpan...' : 'Simpan Draft'}
             </button>
             <button onClick={() => handleSubmit('ORDERED')} disabled={saving}
-              className="text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50"
+              className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
               style={{ background: '#012749' }}>
               {saving ? 'Menyimpan...' : 'Simpan & Kirim ke Supplier'}
             </button>

@@ -282,7 +282,7 @@ export default function BukuBesarTab({
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-3xl border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200">
         {/* Back link */}
@@ -333,7 +333,7 @@ export default function BukuBesarTab({
             Akun:
           </label>
           <select
-            className="border border-[#c7d7f5] rounded-lg px-3 py-1.5 text-xs text-[#43474e] bg-white flex-1 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white flex-1 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
             value={accountId ?? ''}
             onChange={e => handleAccountChange(e.target.value)}
             disabled={loadingCoa}
@@ -398,7 +398,7 @@ export default function BukuBesarTab({
             <div className="grid grid-cols-3 gap-3 mb-4">
               {/* Saldo Awal */}
               <div
-                className="p-3 rounded-xl"
+                className="p-3 rounded-sm"
                 style={{ border: '1px solid #c7d7f5', background: '#fafbff' }}
               >
                 <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">
@@ -411,7 +411,7 @@ export default function BukuBesarTab({
 
               {/* Movement */}
               <div
-                className="p-3 rounded-xl"
+                className="p-3 rounded-sm"
                 style={{ border: '1px solid #c7d7f5', background: '#fafbff' }}
               >
                 <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">
@@ -429,7 +429,7 @@ export default function BukuBesarTab({
 
               {/* Saldo Akhir — highlighted emerald */}
               <div
-                className="p-3 rounded-xl"
+                className="p-3 rounded-sm"
                 style={{ background: '#d1fae5', border: '1px solid #6ee7b7' }}
               >
                 <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-bold mb-1">
@@ -443,7 +443,7 @@ export default function BukuBesarTab({
 
             {/* ── Ledger table ── */}
             <div
-              className="rounded-xl overflow-hidden"
+              className="rounded-sm overflow-hidden"
               style={{ border: '1px solid #c7d7f5' }}
             >
               {loadingRows ? (

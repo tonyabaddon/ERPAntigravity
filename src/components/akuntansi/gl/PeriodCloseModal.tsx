@@ -228,7 +228,7 @@ export default function PeriodCloseModal({
       }}
     >
       <div
-        className="relative w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl bg-white"
+        className="relative w-full max-w-xl rounded-sm overflow-hidden shadow-2xl bg-white"
         onClick={e => e.stopPropagation()}
       >
         {/* ── Header ── */}
@@ -239,7 +239,7 @@ export default function PeriodCloseModal({
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                className="w-10 h-10 rounded-sm flex items-center justify-center shrink-0"
                 style={{ background: '#fee2e2' }}
               >
                 <Lock className="w-5 h-5 text-rose-700" />
@@ -267,7 +267,7 @@ export default function PeriodCloseModal({
         {/* ── Body ── */}
         <div className="px-6 py-5 space-y-4">
           {/* Snapshot sub-card */}
-          <div className="rounded-xl border border-[#c7d7f5] overflow-hidden">
+          <div className="rounded-sm border border-[#c7d7f5] overflow-hidden">
             <div className="px-4 py-2.5 border-b border-[#c7d7f5]" style={{ background: '#eff4ff' }}>
               <span className="text-[11px] font-bold text-[#012749] uppercase tracking-wide">
                 Snapshot Periode
@@ -326,7 +326,7 @@ export default function PeriodCloseModal({
           {/* Tax Accrual sub-card — only shown if pph_mode = UMKM_FINAL_0_5 */}
           {!loadingSnap && showTaxAccrual && snapshot && (
             <div
-              className="rounded-xl border overflow-hidden"
+              className="rounded-sm border overflow-hidden"
               style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
             >
               <div
@@ -352,7 +352,7 @@ export default function PeriodCloseModal({
 
                 {/* Journal preview */}
                 <div
-                  className="rounded-lg px-3 py-2 text-[11px] font-mono text-amber-800 leading-relaxed"
+                  className="rounded-sm px-3 py-2 text-[11px] font-mono text-amber-800 leading-relaxed"
                   style={{ background: 'rgba(255,255,255,0.7)' }}
                 >
                   <div>D 5-3300 Beban Pajak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{formatRp(taxAmount)}</div>
@@ -364,7 +364,7 @@ export default function PeriodCloseModal({
 
           {/* Warning if imbalanced */}
           {!loadingSnap && snapshot && !snapshot.isBalanced && (
-            <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 flex items-start gap-2">
+            <div className="rounded-sm border border-rose-300 bg-rose-50 px-4 py-3 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <p className="text-[12px] text-rose-700">
                 Trial Balance tidak seimbang. Perbaiki semua entry sebelum menutup periode.
@@ -382,7 +382,7 @@ export default function PeriodCloseModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 rounded-xl text-[13px] font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="px-4 py-2 rounded-sm text-[13px] font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
           >
             Batal
           </button>
@@ -395,7 +395,7 @@ export default function PeriodCloseModal({
               !snapshot ||
               !snapshot.isBalanced
             }
-            className="px-5 py-2 rounded-xl text-[13px] font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+            className="px-5 py-2 rounded-sm text-[13px] font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
             style={{ background: '#dc2626' }}
           >
             <Lock className="w-3.5 h-3.5" />

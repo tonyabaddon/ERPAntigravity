@@ -57,7 +57,7 @@ export function RevenueMonthlyTrend({ monthlyStats }: RevenueMonthlyTrendProps) 
 
   return (
     <section
-      className="bg-white border rounded-xl p-5"
+      className="bg-white border rounded-sm p-5"
       style={{ borderColor: '#ECEEF1' }}
       aria-label="Tren pendapatan 12 bulan"
     >

@@ -88,7 +88,7 @@ function Panel({
 }) {
   return (
     <div
-      className="rounded-xl p-4 border"
+      className="rounded-sm p-4 border"
       style={{ background: '#ffffff', borderColor: C.surface }}
     >
       <div className="flex items-center justify-between mb-3">

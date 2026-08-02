@@ -68,7 +68,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
   };
 
   return (
-    <div data-testid="new-customer-form" className="mt-3 border-2 border-[#012749]/30 rounded-lg p-4 bg-[#012749]/5">
+    <div data-testid="new-customer-form" className="mt-3 border-2 border-[#012749]/30 rounded-sm p-4 bg-[#012749]/5">
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-sm font-extrabold text-[#012749]">Customer Baru</div>
@@ -80,19 +80,19 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
           <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama <span className="text-red-500">*</span></label>
-          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
         </div>
         <div>
           <label className="block text-[11px] font-bold text-slate-600 mb-1">No HP / WhatsApp <span className="text-red-500">*</span></label>
-          <input value={wa} onChange={(e) => setWa(e.target.value)} placeholder="08xxx" className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+          <input value={wa} onChange={(e) => setWa(e.target.value)} placeholder="08xxx" className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
         </div>
         <div>
           <label className="block text-[11px] font-bold text-slate-600 mb-1">Perusahaan / PT</label>
-          <input value={company} onChange={(e) => setCompany(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+          <input value={company} onChange={(e) => setCompany(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
         </div>
         <div>
           <label className="block text-[11px] font-bold text-slate-600 mb-1">Alamat</label>
-          <input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+          <input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
         </div>
       </div>
 
@@ -139,16 +139,16 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Limit Kredit yang diminta (Rp)</label>
-                  <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Mis: 5.000.000" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                  <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Mis: 5.000.000" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-sm" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Term (hari)</label>
-                  <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Mis: 14" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                  <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Mis: 14" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-sm" />
                 </div>
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">Alasan / Justifikasi (optional)</label>
-                <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Mis: Customer regular, sudah belanja 3x via WA. Owner tetangga sebelah." className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Mis: Customer regular, sudah belanja 3x via WA. Owner tetangga sebelah." className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-sm" />
                 <p className="text-[10px] text-slate-500 mt-1 italic">Bantu Owner decide cepat. Tampil sebagai blockquote di Persetujuan inbox.</p>
               </div>
             </div>
@@ -160,8 +160,8 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
       </div>
 
       <div className="mt-3 flex justify-end gap-2">
-        <button type="button" onClick={onCancel} disabled={submitting} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
-        <button type="button" onClick={onSubmit} disabled={!canSubmit} className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90 disabled:opacity-50">
+        <button type="button" onClick={onCancel} disabled={submitting} className="px-3 py-1.5 text-xs font-semibold rounded-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
+        <button type="button" onClick={onSubmit} disabled={!canSubmit} className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50">
           {submitting ? 'Menyimpan…' : '✓ Simpan & Pilih'}
         </button>
       </div>

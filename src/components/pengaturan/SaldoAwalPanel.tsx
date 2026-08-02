@@ -97,7 +97,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
       <>
         <div className="space-y-4">
           {/* Status header */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-3">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold uppercase tracking-wide">
@@ -110,7 +110,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
               <button
                 type="button"
                 onClick={() => setReverseOpen(true)}
-                className="text-[12px] text-rose-600 border border-rose-200 bg-white rounded-lg px-3 py-1.5 hover:bg-rose-50 font-semibold"
+                className="text-[12px] text-rose-600 border border-rose-200 bg-white rounded-sm px-3 py-1.5 hover:bg-rose-50 font-semibold"
               >
                 Reverse & Edit
               </button>
@@ -131,7 +131,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           </div>
 
           {/* Detail */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden text-[12px]">
+          <div className="border border-slate-200 rounded-sm overflow-hidden text-[12px]">
             <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 font-extrabold text-[10.5px] text-slate-500 uppercase tracking-wider">
               Ringkasan Aktiva
             </div>
@@ -151,7 +151,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
             onClick={(e) => { if (e.target === e.currentTarget) setReverseOpen(false); }}
           >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-white rounded-sm shadow-2xl w-full max-w-md">
               <div className="px-5 py-4 border-b border-slate-200">
                 <h3 className="text-[14px] font-bold text-rose-700">Reverse Saldo Awal?</h3>
                 <p className="text-[12px] text-slate-600 mt-1">
@@ -166,7 +166,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
                     onChange={(e) => setReverseReason(e.target.value)}
                     rows={3}
                     placeholder="Misal: Angka modal awal salah, perlu koreksi piutang"
-                    className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="mt-1 w-full border border-slate-300 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-rose-300"
                   />
                 </label>
               </div>
@@ -175,7 +175,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
                   type="button"
                   onClick={() => { setReverseOpen(false); setReverseReason(''); }}
                   disabled={reversing}
-                  className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 disabled:opacity-50"
+                  className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded-sm hover:bg-slate-200 disabled:opacity-50"
                 >
                   Batal
                 </button>
@@ -183,7 +183,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
                   type="button"
                   onClick={handleReverse}
                   disabled={reversing || reverseReason.trim().length < 3}
-                  className="px-4 py-2 text-[13px] font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 disabled:opacity-50"
+                  className="px-4 py-2 text-[13px] font-semibold text-white bg-rose-600 rounded-sm hover:bg-rose-700 disabled:opacity-50"
                 >
                   {reversing ? 'Memproses…' : 'Reverse & Reset'}
                 </button>
@@ -205,7 +205,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
     });
     return (
       <>
-        <div className="border border-amber-200 bg-amber-50 rounded-xl p-5 space-y-3">
+        <div className="border border-amber-200 bg-amber-50 rounded-sm p-5 space-y-3">
           <div className="flex items-center gap-2">
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-bold uppercase tracking-wide">
               Draft
@@ -220,7 +220,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           <button
             type="button"
             onClick={() => setWizardOpen(true)}
-            className="px-4 py-2 bg-[#012749] text-white text-[13px] font-bold rounded-xl hover:opacity-90"
+            className="px-4 py-2 bg-[#012749] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
           >
             Lanjutkan Wizard
           </button>
@@ -242,8 +242,8 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
   // ── Empty / reversed state ─────────────────────────────────────────────────
   return (
     <>
-      <div className="border border-slate-200 rounded-xl p-8 text-center space-y-4">
-        <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+      <div className="border border-slate-200 rounded-sm p-8 text-center space-y-4">
+        <div className="w-14 h-14 bg-slate-100 rounded-sm flex items-center justify-center mx-auto text-2xl">
           📒
         </div>
         <div>
@@ -255,7 +255,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="px-5 py-2.5 bg-[#012749] text-white text-[13px] font-bold rounded-xl hover:opacity-90"
+          className="px-5 py-2.5 bg-[#012749] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
         >
           Buat Saldo Awal
         </button>
@@ -282,7 +282,7 @@ function SummaryCard({ label, value, color }: { label: string; value: number; co
       ? 'bg-rose-50 border-rose-200 text-rose-800'
       : 'bg-slate-50 border-slate-200 text-slate-700';
   return (
-    <div className={`border rounded-xl p-3 ${colorClass}`}>
+    <div className={`border rounded-sm p-3 ${colorClass}`}>
       <div className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{label}</div>
       <div className="text-[14px] font-bold mt-1">{formatIDR(value)}</div>
     </div>

@@ -219,7 +219,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-3xl border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200 flex items-baseline justify-between">
         <div>
@@ -264,7 +264,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Akun (multi-select)
           </label>
           <div
-            className="rounded-xl p-2 flex flex-wrap gap-1.5"
+            className="rounded-sm p-2 flex flex-wrap gap-1.5"
             style={{ border: '1px solid #c7d7f5', background: '#fafbff' }}
           >
             {selectedAccounts.map(acc => {
@@ -294,7 +294,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             {/* Account picker dropdown */}
             {showAccountPicker && (
               <div
-                className="col-span-4 fixed mt-8 bg-white border border-[#c7d7f5] rounded-lg shadow-lg p-3 z-50 max-h-64 overflow-y-auto"
+                className="col-span-4 fixed mt-8 bg-white border border-[#c7d7f5] rounded-sm shadow-lg p-3 z-50 max-h-64 overflow-y-auto"
                 style={{ width: '280px' }}
               >
                 {loadingAccounts ? (
@@ -337,7 +337,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Periode
           </label>
           <select
-            className="w-full border border-[#c7d7f5] rounded-lg px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="w-full border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
             value={periodPreset}
             onChange={e => handlePeriodPreset(e.target.value as PeriodPreset)}
           >
@@ -353,7 +353,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Arah
           </label>
           <select
-            className="w-full border border-[#c7d7f5] rounded-lg px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="w-full border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
             value={direction}
             onChange={e => setDirection(e.target.value as DirectionFilter)}
           >
@@ -369,7 +369,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Kategori
           </label>
           <select
-            className="w-full border border-[#c7d7f5] rounded-lg px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="w-full border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
             value={category}
             onChange={e => setCategory(e.target.value)}
           >

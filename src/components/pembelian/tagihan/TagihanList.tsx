@@ -103,7 +103,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
           <h2 className="text-base font-bold" style={{ color: '#012749' }}>Tagihan (Faktur Beli Stok)</h2>
           <div className="text-xs text-gray-500">Step 2: catat saat barang datang + faktur diterima. Otomatis nambah stok.</div>
         </div>
-        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-lg" style={{ background: '#012749' }}>
+        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background: '#012749' }}>
           <Plus className="w-4 h-4" /> Buat Tagihan
         </button>
       </div>
@@ -113,7 +113,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
           <Search className="w-3.5 h-3.5 text-gray-400" />
           <input className="text-xs outline-none w-44" placeholder="Cari TGH / supplier / PSN..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Parameters<typeof setStatusFilter>[0])}>
+        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Parameters<typeof setStatusFilter>[0])}>
           <option value="ALL">Semua status</option>
           <option value="BELUM_LUNAS">Belum Lunas</option>
           <option value="DIBAYAR_SEBAGIAN">Dibayar Sebagian</option>
@@ -122,7 +122,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
         </select>
       </div>
 
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
         {loading ? <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
          : filtered.length === 0 ? <div className="p-8 text-center text-sm text-gray-500">Belum ada Tagihan.</div>
          : (
@@ -177,12 +177,12 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                       <div className="inline-flex gap-1">
                         {eff !== 'LUNAS' && eff !== 'VOID' && onOpenPembayaran && (
                           <button onClick={() => onOpenPembayaran(t.supplier_id)}
-                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
                             Bayar
                           </button>
                         )}
                         <button onClick={() => onOpenDetail(t.pi_number)}
-                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                           Detail
                         </button>
                       </div>

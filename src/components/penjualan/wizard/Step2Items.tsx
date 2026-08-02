@@ -109,12 +109,12 @@ export default function Step2Items(props: Props) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Cari nama / SKU…"
-            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
           />
         </div>
 
         {filtered.length > 0 && (
-          <div className="border border-slate-200 rounded-lg divide-y divide-slate-100">
+          <div className="border border-slate-200 rounded-sm divide-y divide-slate-100">
             {filtered.map((s) => {
               const atas = s.stock_atas ?? 0;
               const bawah = s.stock_bawah ?? 0;
@@ -134,7 +134,7 @@ export default function Step2Items(props: Props) {
                     type="button"
                     onClick={() => props.onAddItem(s)}
                     disabled={!hasStock && false /* allow pre-order add */}
-                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90"
+                    className="px-3 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90"
                   >
                     + Tambah
                   </button>
@@ -155,7 +155,7 @@ export default function Step2Items(props: Props) {
             <button
               type="button"
               onClick={() => setShowNewProductForm(true)}
-              className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90"
+              className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90"
             >
               + Produk Baru
             </button>
@@ -269,7 +269,7 @@ export default function Step2Items(props: Props) {
         />
 
         {preOrderCount > 0 && (
-          <div className="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
+          <div className="mt-3 px-3 py-2 rounded-sm bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
             <span>⏳</span>
             <div>
               <strong>{preOrderCount} item pre-order</strong> di pesanan ini — stok minus akan dipenuhi setelah supplier kirim
@@ -279,7 +279,7 @@ export default function Step2Items(props: Props) {
         )}
 
         {(skuCount > 0 || jasaCount > 0) && (
-          <div className="mt-3 bg-slate-50 rounded-lg p-4 space-y-1.5">
+          <div className="mt-3 bg-slate-50 rounded-sm p-4 space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="text-slate-600">
                 Subtotal Produk ({skuCount} item{preOrderCount > 0 ? `, ${preOrderCount} pre-order` : ''})

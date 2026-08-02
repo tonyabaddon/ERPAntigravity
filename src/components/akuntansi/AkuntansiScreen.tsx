@@ -68,12 +68,12 @@ export default function AkuntansiScreen({ currentUser, showToast }: Props) {
       return (
         <div className="p-8 max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
               <BookOpenCheck className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-extrabold text-[#012749]">Akuntansi</h1>
           </div>
-          <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl p-6 text-[13px] text-[#43474e]">
+          <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6 text-[13px] text-[#43474e]">
             Setup saldo awal belum dilakukan. Owner perlu menyelesaikan wizard pertama kali.
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function AkuntansiScreen({ currentUser, showToast }: Props) {
       {/* Header */}
       <div className="p-8 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
             <BookOpenCheck className="w-5 h-5" />
           </div>
           <div>

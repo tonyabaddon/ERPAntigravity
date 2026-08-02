@@ -15,10 +15,10 @@ function FormSkeleton() {
       {[0, 1, 2, 3].map((i) => (
         <div key={i}>
           <div className="h-3 w-32 rounded mb-1.5" style={{ background: '#ECEEF1' }} />
-          <div className="h-10 rounded-xl" style={{ background: '#ECEEF1' }} />
+          <div className="h-10 rounded-sm" style={{ background: '#ECEEF1' }} />
         </div>
       ))}
-      <div className="h-10 w-28 rounded-xl" style={{ background: '#ECEEF1' }} />
+      <div className="h-10 w-28 rounded-sm" style={{ background: '#ECEEF1' }} />
     </div>
   );
 }
@@ -133,7 +133,7 @@ export function PlatformSettings() {
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
               placeholder="Contoh: BCA"
-              className="w-full px-3 py-2 rounded-xl border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded-sm border text-[13px] outline-none focus:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -158,7 +158,7 @@ export function PlatformSettings() {
               value={bankAccountNo}
               onChange={(e) => setBankAccountNo(e.target.value)}
               placeholder="1234567890"
-              className="w-full px-3 py-2 rounded-xl border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded-sm border text-[13px] outline-none focus:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -183,7 +183,7 @@ export function PlatformSettings() {
               value={bankAccountName}
               onChange={(e) => setBankAccountName(e.target.value)}
               placeholder="PT Caleo Digital"
-              className="w-full px-3 py-2 rounded-xl border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded-sm border text-[13px] outline-none focus:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -208,7 +208,7 @@ export function PlatformSettings() {
               value={adminWaNumber}
               onChange={(e) => setAdminWaNumber(e.target.value)}
               placeholder="+62812-3456-7890"
-              className="w-full px-3 py-2 rounded-xl border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded-sm border text-[13px] outline-none focus:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -223,7 +223,7 @@ export function PlatformSettings() {
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-xl text-[13px] font-semibold transition-opacity"
+              className="px-5 py-2 rounded-sm text-[13px] font-semibold transition-opacity"
               style={{
                 background: saving ? '#9DB2CE' : '#0B2545',
                 color: '#FFFFFF',

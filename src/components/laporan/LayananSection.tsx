@@ -121,7 +121,7 @@ export default function LayananSection({ days }: Props) {
   }, [days]);
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+    <section className="bg-white rounded-sm border border-slate-200 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-[15px] font-bold text-[#012749]">🛠 Layanan</h3>
@@ -137,11 +137,11 @@ export default function LayananSection({ days }: Props) {
           Memuat…
         </div>
       ) : error ? (
-        <div className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+        <div className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-sm px-4 py-3">
           Gagal memuat: {error}
         </div>
       ) : rows.length === 0 ? (
-        <div className="text-center py-8 text-[13px] text-slate-500 border border-dashed border-slate-300 rounded-lg">
+        <div className="text-center py-8 text-[13px] text-slate-500 border border-dashed border-slate-300 rounded-sm">
           Belum ada layanan yang terjual dalam periode ini. Setup service
           catalog di Pengaturan → 🛠 Layanan lalu attach ke pesanan.
         </div>

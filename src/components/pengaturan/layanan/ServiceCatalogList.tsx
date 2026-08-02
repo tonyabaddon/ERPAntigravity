@@ -70,7 +70,7 @@ export default function ServiceCatalogList({ showToast }: Props) {
         </div>
         <button
           onClick={() => setEditing('new')}
-          className="px-4 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-xl hover:opacity-90"
+          className="px-4 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-sm hover:opacity-90"
         >
           + Tambah Layanan
         </button>
@@ -81,7 +81,7 @@ export default function ServiceCatalogList({ showToast }: Props) {
           Memuat…
         </div>
       ) : activeItems.length === 0 ? (
-        <div className="border border-dashed border-slate-300 rounded-xl px-6 py-8 text-center">
+        <div className="border border-dashed border-slate-300 rounded-sm px-6 py-8 text-center">
           <div className="text-4xl mb-2">🛠</div>
           <div className="text-[14px] font-bold text-slate-700 mb-1">
             Belum ada layanan
@@ -100,7 +100,7 @@ export default function ServiceCatalogList({ showToast }: Props) {
               {catItems.map((item) => (
                 <div
                   key={item.id}
-                  className="border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between hover:border-[#012749]/30"
+                  className="border border-slate-200 rounded-sm px-4 py-3 flex items-center justify-between hover:border-[#012749]/30"
                 >
                   <div>
                     <div className="text-[14px] font-bold text-[#012749]">
@@ -117,13 +117,13 @@ export default function ServiceCatalogList({ showToast }: Props) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setEditing(item)}
-                      className="px-3 py-1.5 text-[12px] font-semibold text-[#012749] hover:bg-slate-50 rounded-lg"
+                      className="px-3 py-1.5 text-[12px] font-semibold text-[#012749] hover:bg-slate-50 rounded-sm"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeactivate(item)}
-                      className="px-3 py-1.5 text-[12px] font-semibold text-rose-600 hover:bg-rose-50 rounded-lg"
+                      className="px-3 py-1.5 text-[12px] font-semibold text-rose-600 hover:bg-rose-50 rounded-sm"
                     >
                       Nonaktif
                     </button>

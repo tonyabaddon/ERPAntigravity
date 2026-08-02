@@ -12,7 +12,7 @@ interface Props {
 export function EmptyHomeState({ existingSlug }: Props) {
   return (
     <div
-      className="border rounded-xl p-8 text-center"
+      className="border rounded-sm p-8 text-center"
       style={{ background: '#ffffff', borderColor: '#ECEEF1' }}
       data-testid="empty-home-state"
     >
@@ -41,7 +41,7 @@ export function EmptyHomeState({ existingSlug }: Props) {
       <a
         href="/admin/tenants/new"
         onClick={(e) => handleAdminSPAClick(e, '/admin/tenants/new')}
-        className="inline-block rounded-xl px-6 py-2.5 font-semibold text-[14px] transition-opacity hover:opacity-90"
+        className="inline-block rounded-sm px-6 py-2.5 font-semibold text-[14px] transition-opacity hover:opacity-90"
         style={{ background: '#F9B233', color: '#0B2545' }}
       >
         + Onboard tenant baru

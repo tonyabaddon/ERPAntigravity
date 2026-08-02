@@ -142,7 +142,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
     <div className="space-y-6 animate-fadeIn">
       <section>
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 bg-emerald-100 rounded-sm flex items-center justify-center shrink-0">
             <ShieldCheck className="w-5 h-5 text-emerald-700" />
           </div>
           <div className="flex-1">
@@ -166,7 +166,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
           <button
             type="button"
             onClick={load}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[13px] text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-slate-200 text-[13px] text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             disabled={loading}
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -175,7 +175,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
           <button
             type="button"
             onClick={() => setShowGrantForm(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#012749] text-white text-[13px] font-semibold hover:bg-[#0b1c30]"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[#012749] text-white text-[13px] font-semibold hover:bg-[#0b1c30]"
           >
             <PlusCircle className="w-4 h-4" />
             Beri akses baru
@@ -186,12 +186,12 @@ export default function SupportAccessPanel({ showToast }: Props) {
       <section>
         <h4 className="text-[13px] font-semibold text-slate-800 mb-2">Akses aktif</h4>
         {loading && (
-          <div className="rounded-lg border border-slate-200 p-4 text-[13px] text-slate-500">
+          <div className="rounded-sm border border-slate-200 p-4 text-[13px] text-slate-500">
             Memuat…
           </div>
         )}
         {!loading && active.length === 0 && (
-          <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-[13px] text-slate-500 space-y-1">
+          <div className="rounded-sm border border-dashed border-slate-300 p-6 text-center text-[13px] text-slate-500 space-y-1">
             <div className="text-slate-700 font-semibold">Belum ada akses support aktif.</div>
             <div>
               Klik <b>Beri akses baru</b> di atas kalau tim Caleo perlu bantu debug atau
@@ -204,7 +204,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
             {active.map((g) => (
               <div
                 key={g.id}
-                className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 flex items-start gap-3"
+                className="rounded-sm border border-emerald-200 bg-emerald-50/50 p-4 flex items-start gap-3"
               >
                 <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 <button
                   type="button"
                   onClick={() => setPendingRevoke(g)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-300 bg-white text-[13px] text-rose-700 font-semibold hover:bg-rose-50 shrink-0"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-sm border border-rose-300 bg-white text-[13px] text-rose-700 font-semibold hover:bg-rose-50 shrink-0"
                 >
                   <XCircle className="w-3.5 h-3.5" />
                   Cabut
@@ -242,7 +242,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
           <div className="text-[13px] text-slate-400 italic">Belum ada riwayat.</div>
         )}
         {historical.length > 0 && (
-          <div className="rounded-lg border border-slate-200 overflow-hidden">
+          <div className="rounded-sm border border-slate-200 overflow-hidden">
             <table className="w-full text-[12px]">
               <thead className="bg-slate-50 text-slate-700">
                 <tr>
@@ -283,11 +283,11 @@ export default function SupportAccessPanel({ showToast }: Props) {
           onClick={() => setShowGrantForm(false)}
         >
           <div
-            className="bg-white rounded-xl w-full max-w-md p-6 space-y-4"
+            className="bg-white rounded-sm w-full max-w-md p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-emerald-100 rounded-sm flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-5 h-5 text-emerald-700" />
               </div>
               <div>
@@ -310,7 +310,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                   setGrantForm((f) => ({ ...f, admin_email: e.target.value }))
                 }
                 placeholder="support@caleo.id"
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded-sm border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
@@ -324,7 +324,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                     key={c.hours}
                     type="button"
                     onClick={() => setGrantForm((f) => ({ ...f, hours: c.hours }))}
-                    className={`px-2 py-2 rounded-lg text-[12px] font-semibold border transition ${
+                    className={`px-2 py-2 rounded-sm text-[12px] font-semibold border transition ${
                       grantForm.hours === c.hours
                         ? 'bg-[#012749] text-white border-[#012749]'
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
@@ -347,11 +347,11 @@ export default function SupportAccessPanel({ showToast }: Props) {
                   setGrantForm((f) => ({ ...f, reason: e.target.value }))
                 }
                 placeholder="Mis: bantu setup akun bank, debug error laporan, dll."
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                className="w-full px-3 py-2 rounded-sm border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               />
             </div>
 
-            <div className="flex items-start gap-2 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="flex items-start gap-2 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-sm p-3">
               <Info className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
                 Grant ini masuk audit log. Setelah durasi habis atau dicabut, Caleo
@@ -363,7 +363,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
               <button
                 type="button"
                 onClick={() => setShowGrantForm(false)}
-                className="px-4 py-2 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-100"
+                className="px-4 py-2 rounded-sm text-[13px] font-semibold text-slate-600 hover:bg-slate-100"
                 disabled={saving}
               >
                 Batal
@@ -372,7 +372,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 type="button"
                 onClick={handleGrant}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg bg-[#012749] text-white text-[13px] font-semibold hover:bg-[#0b1c30] disabled:opacity-50"
+                className="px-4 py-2 rounded-sm bg-[#012749] text-white text-[13px] font-semibold hover:bg-[#0b1c30] disabled:opacity-50"
               >
                 {saving ? 'Menyimpan…' : 'Beri akses'}
               </button>
@@ -387,11 +387,11 @@ export default function SupportAccessPanel({ showToast }: Props) {
           onClick={() => setPendingRevoke(null)}
         >
           <div
-            className="bg-white rounded-xl w-full max-w-md p-6 space-y-4"
+            className="bg-white rounded-sm w-full max-w-md p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-rose-100 rounded-sm flex items-center justify-center shrink-0">
                 <XCircle className="w-5 h-5 text-rose-700" />
               </div>
               <div>
@@ -412,7 +412,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 value={revokeReason}
                 onChange={(e) => setRevokeReason(e.target.value)}
                 placeholder="Mis: masalah sudah selesai."
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+                className="w-full px-3 py-2 rounded-sm border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
               />
             </div>
 
@@ -420,7 +420,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
               <button
                 type="button"
                 onClick={() => setPendingRevoke(null)}
-                className="px-4 py-2 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-100"
+                className="px-4 py-2 rounded-sm text-[13px] font-semibold text-slate-600 hover:bg-slate-100"
                 disabled={revoking}
               >
                 Batal
@@ -429,7 +429,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 type="button"
                 onClick={handleRevoke}
                 disabled={revoking}
-                className="px-4 py-2 rounded-lg bg-rose-600 text-white text-[13px] font-semibold hover:bg-rose-700 disabled:opacity-50"
+                className="px-4 py-2 rounded-sm bg-rose-600 text-white text-[13px] font-semibold hover:bg-rose-700 disabled:opacity-50"
               >
                 {revoking ? 'Mencabut…' : 'Cabut akses'}
               </button>

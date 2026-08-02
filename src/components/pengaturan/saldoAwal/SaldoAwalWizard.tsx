@@ -146,7 +146,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-auto my-4">
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-3xl mx-auto my-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <div>
@@ -173,7 +173,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
             value={cutoverDate}
             max={wibDateString()}
             onChange={(e) => setCutoverDate(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
+            className="border border-slate-200 rounded-sm px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
           />
           <span className="text-[11px] text-slate-500">
             Jurnal Umum Saldo Awal akan diposting per tanggal ini (cutover − 1 hari di backend)
@@ -293,7 +293,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
+              className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded-sm hover:bg-slate-200"
             >
               Batal
             </button>
@@ -303,7 +303,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
               type="button"
               onClick={handleBack}
               disabled={step === 1}
-              className="px-4 py-2 text-[13px] font-semibold text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-[13px] font-semibold text-slate-700 border border-slate-300 rounded-sm hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               ← Sebelumnya
             </button>
@@ -312,7 +312,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                 type="button"
                 onClick={handleNext}
                 disabled={saving}
-                className="px-5 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-xl hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-5 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-sm hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {saving ? 'Menyimpan draft…' : 'Berikutnya →'}
               </button>

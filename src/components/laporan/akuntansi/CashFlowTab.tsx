@@ -103,7 +103,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-[#c7d7f5] bg-white p-8 text-center">
+      <div className="rounded-sm border border-[#c7d7f5] bg-white p-8 text-center">
         <Droplet className="w-8 h-8 mx-auto text-gray-400 mb-2 animate-pulse" />
         <p className="text-sm text-gray-600">Memuat Cash Flow Matrix...</p>
       </div>
@@ -114,7 +114,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
 
   if (!data || (data.uangMasuk.length === 0 && data.uangKeluar.length === 0)) {
     return (
-      <div className="rounded-3xl border border-[#c7d7f5] bg-white p-8 text-center">
+      <div className="rounded-sm border border-[#c7d7f5] bg-white p-8 text-center">
         <Droplet className="w-8 h-8 mx-auto text-gray-400 mb-2" />
         <p className="text-sm text-gray-600">Belum ada cash flow di 6 bulan terakhir</p>
       </div>
@@ -135,7 +135,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
   // ── Render main table ──────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-3xl border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200 flex items-baseline justify-between">
         <div>

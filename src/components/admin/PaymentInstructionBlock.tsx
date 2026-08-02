@@ -140,7 +140,7 @@ export function PaymentInstructionBlock({ tenant }: Props) {
   if (error) {
     return (
       <div
-        className="p-3 rounded-lg text-[13px]"
+        className="p-3 rounded-sm text-[13px]"
         style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5' }}
         data-testid="payment-instruction-error"
       >
@@ -152,7 +152,7 @@ export function PaymentInstructionBlock({ tenant }: Props) {
   if (!settings || !plan) {
     return (
       <div
-        className="p-4 rounded-lg text-[13px] animate-pulse"
+        className="p-4 rounded-sm text-[13px] animate-pulse"
         style={{ background: C.cream, color: C.muted }}
         data-testid="payment-instruction-loading"
       >
@@ -175,7 +175,7 @@ export function PaymentInstructionBlock({ tenant }: Props) {
 
   return (
     <div
-      className="space-y-3 p-4 rounded-xl"
+      className="space-y-3 p-4 rounded-sm"
       style={{ background: C.cream, border: `1px solid ${C.gold}`, fontFamily: FONT }}
       data-testid="payment-instruction-block"
     >
@@ -184,7 +184,7 @@ export function PaymentInstructionBlock({ tenant }: Props) {
       </h3>
 
       <pre
-        className="font-mono text-[12px] whitespace-pre-wrap rounded-lg p-3"
+        className="font-mono text-[12px] whitespace-pre-wrap rounded-sm p-3"
         style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.navy }}
         data-testid="payment-instruction-message"
       >
@@ -195,7 +195,7 @@ export function PaymentInstructionBlock({ tenant }: Props) {
         <button
           type="button"
           onClick={() => void handleCopy()}
-          className="flex-1 py-2 rounded-lg text-[13px] font-bold"
+          className="flex-1 py-2 rounded-sm text-[13px] font-bold"
           style={{ background: C.navy, color: C.gold }}
           data-testid="payment-instruction-copy"
         >
@@ -205,7 +205,7 @@ export function PaymentInstructionBlock({ tenant }: Props) {
           href={waLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 py-2 rounded-lg text-[13px] font-bold text-center"
+          className="flex-1 py-2 rounded-sm text-[13px] font-bold text-center"
           style={{ background: C.gold, color: C.navy }}
           data-testid="payment-instruction-wa"
         >

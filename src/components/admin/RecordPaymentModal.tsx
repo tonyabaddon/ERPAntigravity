@@ -298,7 +298,7 @@ export function RecordPaymentModal({
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-lg w-full font-caleo mx-4"
+        className="bg-white rounded-sm shadow-xl p-6 max-w-lg w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -338,7 +338,7 @@ export function RecordPaymentModal({
               placeholder={defaultAmount != null
                 ? `Contoh: ${defaultAmount}`
                 : 'Contoh: 3600000'}
-              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Nominal diterima"
             />
             {amount && !amountValid && (
@@ -363,7 +363,7 @@ export function RecordPaymentModal({
                 setEwallet('');
               }}
               disabled={submitting}
-              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Metode pembayaran"
             >
               {PAYMENT_METHODS.map((m) => (
@@ -386,7 +386,7 @@ export function RecordPaymentModal({
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value as BankName)}
                 disabled={submitting}
-                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Bank"
               >
                 <option value="">— Pilih bank —</option>
@@ -414,7 +414,7 @@ export function RecordPaymentModal({
                 value={ewalletProvider}
                 onChange={(e) => setEwallet(e.target.value as EwalletProvider)}
                 disabled={submitting}
-                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Penyedia e-wallet"
               >
                 <option value="">— Pilih e-wallet —</option>
@@ -443,7 +443,7 @@ export function RecordPaymentModal({
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
               disabled={submitting}
-              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Tanggal terima"
             />
           </div>
@@ -464,7 +464,7 @@ export function RecordPaymentModal({
                 value={periodFrom}
                 onChange={(e) => setPeriodFrom(e.target.value)}
                 disabled={submitting}
-                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Periode mulai"
               />
             </div>
@@ -482,7 +482,7 @@ export function RecordPaymentModal({
                 value={periodTo}
                 onChange={(e) => setPeriodTo(e.target.value)}
                 disabled={submitting}
-                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Periode selesai"
               />
             </div>
@@ -517,7 +517,7 @@ export function RecordPaymentModal({
               accept=".jpg,.jpeg,.png,.pdf"
               onChange={handleFileChange}
               disabled={submitting}
-              className="w-full text-[13px] text-caleo-navy border border-caleo-navy/30 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-caleo-gold file:text-caleo-navy hover:file:opacity-90 disabled:opacity-50"
+              className="w-full text-[13px] text-caleo-navy border border-caleo-navy/30 rounded-sm px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-caleo-gold file:text-caleo-navy hover:file:opacity-90 disabled:opacity-50"
               aria-label="Upload bukti transfer"
               data-testid="rp-proof-input"
             />
@@ -552,7 +552,7 @@ export function RecordPaymentModal({
               disabled={submitting}
               maxLength={100}
               placeholder="Contoh: TRF-0001-XYZ"
-              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Referensi bank"
             />
           </div>
@@ -573,7 +573,7 @@ export function RecordPaymentModal({
               maxLength={500}
               rows={3}
               placeholder="Catatan internal tentang pembayaran ini"
-              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Catatan"
             />
             <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>

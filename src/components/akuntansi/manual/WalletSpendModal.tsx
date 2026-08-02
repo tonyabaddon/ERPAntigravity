@@ -275,7 +275,7 @@ export default function WalletSpendModal({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
         <div
@@ -283,7 +283,7 @@ export default function WalletSpendModal({
           style={{ background: '#fee2e2' }}
         >
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-300 text-rose-700">
+            <div className="w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 bg-rose-300 text-rose-700">
               <ArrowDownCircle className="w-5 h-5" />
             </div>
             <div>
@@ -297,7 +297,7 @@ export default function WalletSpendModal({
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-white/60"
+            className="text-rose-500 hover:text-rose-700 p-1 rounded-sm hover:bg-white/60"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -310,7 +310,7 @@ export default function WalletSpendModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded-xl p-3 text-[12px] text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded-sm p-3 text-[12px] text-rose-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -320,7 +320,7 @@ export default function WalletSpendModal({
             <label className="block font-bold mb-1" style={{ color: '#be123c' }}>
               Wallet *
             </label>
-            <div className="border border-rose-200 bg-rose-50 rounded-xl px-3 py-2 text-[12px]">
+            <div className="border border-rose-200 bg-rose-50 rounded-sm px-3 py-2 text-[12px]">
               {accountLabel(walletAccount)}
               <span className="ml-2 font-mono text-gray-600 text-[11px]">
                 Rp {new Intl.NumberFormat('id-ID').format(walletAccount.current_balance)}
@@ -337,7 +337,7 @@ export default function WalletSpendModal({
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 bg-white disabled:opacity-60"
             >
               <option value="">— Pilih kategori —</option>
               {SPENDING_CATEGORIES.map((cat) => (
@@ -357,7 +357,7 @@ export default function WalletSpendModal({
               value={selectedOrderId}
               onChange={(e) => setSelectedOrderId(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 bg-white disabled:opacity-60"
             >
               <option value="">— None —</option>
               {orders.map((order) => (
@@ -386,7 +386,7 @@ export default function WalletSpendModal({
               onBlur={handleAmountBlur}
               placeholder="Rp 0"
               disabled={saving}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-rose-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-rose-300/50 disabled:opacity-60"
             />
           </div>
 
@@ -400,7 +400,7 @@ export default function WalletSpendModal({
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 disabled:opacity-60"
             />
             {isFuture && (
               <p className="text-[11px] text-amber-700 mt-1">
@@ -420,7 +420,7 @@ export default function WalletSpendModal({
               disabled={saving}
               rows={2}
               placeholder="Mis. topup wallet Shopee untuk promo bulan ini"
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 disabled:opacity-60 resize-none"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300/50 disabled:opacity-60 resize-none"
             />
           </div>
 

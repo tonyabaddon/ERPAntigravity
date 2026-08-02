@@ -198,7 +198,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="rounded-3xl border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
       {/* ── Hero header (violet) ── */}
       <div
         className="p-6 text-white text-center rounded-t-3xl"
@@ -220,7 +220,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
           type="date"
           value={asOfDate}
           onChange={e => setAsOfDate(e.target.value)}
-          className="text-[12px] border border-[#c7d7f5] rounded-lg px-3 py-1.5 text-[#1e3d60] font-bold focus:outline-none focus:ring-2 focus:ring-violet-300"
+          className="text-[12px] border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-[#1e3d60] font-bold focus:outline-none focus:ring-2 focus:ring-violet-300"
         />
         <span className="ml-auto text-[11px] text-gray-500 font-medium">{asOfLabel}</span>
       </div>
@@ -245,7 +245,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
             <div className="grid lg:grid-cols-2 gap-4">
 
               {/* ── LEFT: ASET ── */}
-              <div className="rounded-2xl border border-[#c7d7f5] overflow-hidden">
+              <div className="rounded-sm border border-[#c7d7f5] overflow-hidden">
                 {/* Sub-card header */}
                 <div className="py-2.5 px-4" style={{ background: '#dbeafe' }}>
                   <span className="font-extrabold text-[13px] text-blue-900 uppercase">ASET</span>
@@ -314,7 +314,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
               <div className="space-y-4">
 
                 {/* LIABILITAS sub-card */}
-                <div className="rounded-2xl border border-[#fca5a5] overflow-hidden">
+                <div className="rounded-sm border border-[#fca5a5] overflow-hidden">
                   <div className="py-2.5 px-4" style={{ background: '#fee2e2' }}>
                     <span className="font-extrabold text-[13px] text-red-900 uppercase">LIABILITAS</span>
                   </div>
@@ -374,7 +374,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                 </div>
 
                 {/* EKUITAS sub-card */}
-                <div className="rounded-2xl border border-[#c4b5fd] overflow-hidden">
+                <div className="rounded-sm border border-[#c4b5fd] overflow-hidden">
                   <div className="py-2.5 px-4" style={{ background: '#e9d5ff' }}>
                     <span className="font-extrabold text-[13px] text-violet-900 uppercase">EKUITAS</span>
                   </div>
@@ -418,7 +418,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
                 {/* Balance confirmation sub-card */}
                 <div
-                  className="rounded-2xl border-2 p-4 text-center"
+                  className="rounded-sm border-2 p-4 text-center"
                   style={{ background: '#d1fae5', borderColor: '#059669' }}
                 >
                   <p className="text-[10px] font-bold uppercase text-emerald-900 tracking-wide mb-1">
@@ -445,7 +445,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
             {/* ── Verification banner (full width) ── */}
             <div
-              className="mt-6 rounded-xl p-3 flex items-center gap-2 text-[11px] text-amber-900 border"
+              className="mt-6 rounded-sm p-3 flex items-center gap-2 text-[11px] text-amber-900 border"
               style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
             >
               {data.balanceCheck.isBalanced ? (

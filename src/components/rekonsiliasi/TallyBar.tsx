@@ -21,14 +21,14 @@ export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarPro
 
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">
+      <div className="bg-white border border-slate-200 rounded-sm p-8 text-center text-sm text-slate-400">
         Belum ada transaksi di periode ini.
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
       <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
         <div className="col-span-1">#</div>
         <div className="col-span-5">Kanal</div>
@@ -45,7 +45,7 @@ export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarPro
             <div className="col-span-1 text-sm font-bold text-slate-400">{idx + 1}</div>
             <div className="col-span-5 flex items-center gap-2">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                className="w-8 h-8 rounded-sm flex items-center justify-center text-white"
                 style={{ background: def.brandColor }}
               >
                 <ChannelIcon code={code} size={16} />

@@ -108,7 +108,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
   // ── Render: 3 states ───────────────────────────────────────────────────
   if (pendingRequestId !== null) {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-sm p-4">
         <div className="text-sm font-semibold text-amber-800 mb-1">⏳ Menunggu Persetujuan Owner</div>
         <div className="text-xs text-amber-700">Owner akan approve dengan PIN dari halaman Persetujuan.</div>
       </div>
@@ -118,7 +118,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
   if (!customer.allows_tempo) {
     // State A: not activated
     return (
-      <div className="bg-slate-50 rounded-lg p-4">
+      <div className="bg-slate-50 rounded-sm p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="text-sm font-semibold text-on-surface">Tempo & Limit Kredit</div>
           <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">BELUM AKTIF</span>
@@ -152,7 +152,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
             className="w-full px-3 py-2 border border-slate-300 rounded text-sm" />
         </div>
         <button onClick={handleRequestActivate} disabled={submitting}
-          className="w-full bg-channel-grosir text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">
+          className="w-full bg-channel-grosir text-white py-2.5 rounded-sm text-sm font-semibold disabled:opacity-50">
           🔐 Minta Persetujuan Owner
         </button>
       </div>
@@ -162,7 +162,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
   // State C: activated
   const usagePct = 0; // Phase 1A: outstanding tracking lands in Phase 1B; show 0% placeholder.
   return (
-    <div className="bg-secondary/5 rounded-lg p-4 border border-secondary/20">
+    <div className="bg-secondary/5 rounded-sm p-4 border border-secondary/20">
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-on-surface flex items-center gap-2">
           <span className="text-secondary">●</span> Tempo & Limit Kredit
@@ -206,11 +206,11 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
 
       <div className="grid grid-cols-2 gap-2">
         <button onClick={handleRequestChange} disabled={submitting}
-          className="bg-white border border-slate-300 text-slate-700 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
+          className="bg-white border border-slate-300 text-slate-700 py-2 rounded-sm text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
           ✏️ Ubah Limit
         </button>
         <button onClick={handleRequestDeactivate} disabled={submitting}
-          className="bg-white border border-red-300 text-red-600 py-2 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50">
+          className="bg-white border border-red-300 text-red-600 py-2 rounded-sm text-sm font-medium hover:bg-red-50 disabled:opacity-50">
           🚫 Nonaktifkan
         </button>
       </div>

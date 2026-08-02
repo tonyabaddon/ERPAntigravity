@@ -45,7 +45,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
           <h2 className="text-base font-bold" style={{ color: '#012749' }}>Pesanan (Purchase Order)</h2>
           <div className="text-xs text-gray-500">Step 1: pesan ke supplier sebelum barang datang</div>
         </div>
-        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-lg" style={{ background:'#012749' }}>
+        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background:'#012749' }}>
           <Plus className="w-4 h-4" /> Buat Pesanan
         </button>
       </div>
@@ -55,7 +55,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
           <Search className="w-3.5 h-3.5 text-gray-400" />
           <input className="text-xs outline-none w-44" placeholder="Cari PSN / supplier..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Parameters<typeof setStatusFilter>[0])}>
+        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Parameters<typeof setStatusFilter>[0])}>
           <option value="ALL">Semua status</option>
           <option value="DRAFT">Draft</option>
           <option value="ORDERED">Ordered</option>
@@ -63,7 +63,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
         </select>
       </div>
 
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
         {loading ? <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
          : filtered.length === 0 ? <div className="p-8 text-center text-sm text-gray-500">Belum ada Pesanan.</div>
          : (
@@ -92,7 +92,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[p.status]}`}>{p.status}</span>
                   </td>
                   <td className="px-5 py-4 text-right">
-                    <button onClick={() => onOpenDetail(p.pesanan_number)} className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">Detail</button>
+                    <button onClick={() => onOpenDetail(p.pesanan_number)} className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">Detail</button>
                   </td>
                 </tr>
               ))}

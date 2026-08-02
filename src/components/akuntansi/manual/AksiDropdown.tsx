@@ -278,7 +278,7 @@ export default function AksiDropdown({
       {isOpen && (
         <div
           role="menu"
-          className="absolute top-full right-0 mt-2 w-full rounded-xl py-2 shadow-lg z-10"
+          className="absolute top-full right-0 mt-2 w-full rounded-sm py-2 shadow-lg z-10"
           style={{
             background: '#fafbff',
             border: '1px solid #c7d7f5',

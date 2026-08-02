@@ -163,7 +163,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
           {tgh.status === 'BELUM_LUNAS' && !tgh.tukar_faktur_id && !isVoided && (
             <button
               onClick={() => navigate('pembelian', { tf: 'new', prefill_tagihan: tgh.id })}
-              className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 px-3 py-2 rounded-sm border border-amber-300 bg-amber-50 hover:bg-amber-100"
             >
               <Layers className="w-4 h-4" /> Tambah ke Tukar Faktur
             </button>
@@ -172,7 +172,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
           {tgh.tukar_faktur_id && tfNumber && (
             <button
               onClick={() => navigate('pembelian', { tf: tfNumber })}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 px-2.5 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 px-2.5 py-2 rounded-sm border border-amber-200 bg-amber-50 hover:bg-amber-100"
               title="Buka Tukar Faktur"
             >
               <Layers className="w-3.5 h-3.5" /> Bagian dari {tfNumber}
@@ -180,23 +180,23 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
           )}
           {canPay && onOpenPembayaran && (
             <button onClick={() => onOpenPembayaran(tgh.supplier_id)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-green-600 px-3 py-2 rounded-lg hover:bg-green-700">
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-green-600 px-3 py-2 rounded-sm hover:bg-green-700">
               <Wallet className="w-4 h-4" /> Bayar
             </button>
           )}
           {!isVoided && eff !== 'LUNAS' && (
-            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50">
+            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-sm border border-red-200 hover:bg-red-50">
               <XOctagon className="w-4 h-4" /> Void
             </button>
           )}
-          <button onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+          <button onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">
             <Printer className="w-4 h-4" /> Print
           </button>
         </div>
       </div>
 
       {isVoided && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-sm p-4 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
           <div>
             <div className="text-sm font-bold text-red-800">Tagihan ini sudah di-void</div>
@@ -207,7 +207,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       )}
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-indigo-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-indigo-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <LinkIcon className="w-3.5 h-3.5 text-indigo-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Pesanan Terkait</div>
@@ -219,7 +219,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
             <button onClick={() => onOpenPesanan(tgh.pesanan_id!)} className="text-[11px] text-indigo-600 font-semibold hover:underline mt-2">Lihat Pesanan →</button>
           )}
         </div>
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <Store className="w-3.5 h-3.5 text-violet-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Supplier</div>
@@ -228,7 +228,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
           <div className="text-xs text-gray-500 mt-1">Net {tgh.supplier?.payment_term_days ?? 0} hari</div>
           {tgh.supplier_invoice_number && <div className="text-[11px] text-gray-600 mt-1">Faktur: <strong>{tgh.supplier_invoice_number}</strong></div>}
         </div>
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-amber-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-amber-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock className="w-3.5 h-3.5 text-amber-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Jatuh Tempo</div>
@@ -239,18 +239,18 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       </div>
 
       {/* Paid amount progress */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Status Pembayaran</div>
         <div className="grid grid-cols-3 gap-4 mb-3">
-          <div className="bg-gray-50 rounded-lg p-3">
+          <div className="bg-gray-50 rounded-sm p-3">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Tagihan</div>
             <div className="text-lg font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(tgh.total)}</div>
           </div>
-          <div className="bg-green-50 rounded-lg p-3">
+          <div className="bg-green-50 rounded-sm p-3">
             <div className="text-[11px] text-green-700 uppercase font-semibold">Sudah Dibayar</div>
             <div className="text-lg font-extrabold mt-1 text-green-700">{formatIDR(paid)}</div>
           </div>
-          <div className="bg-amber-50 rounded-lg p-3">
+          <div className="bg-amber-50 rounded-sm p-3">
             <div className="text-[11px] text-amber-700 uppercase font-semibold">Sisa Bayar</div>
             <div className="text-lg font-extrabold mt-1 text-amber-700">{formatIDR(outstanding)}</div>
           </div>
@@ -262,7 +262,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       </div>
 
       {tgh.supplier_invoice_photo_url && (
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Lampiran Faktur</div>
           <div className="flex flex-col gap-1 w-40">
             <StorageImage
@@ -292,7 +292,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         const colCount = hasItemDiscount ? 5 : 4;
 
         return (
-          <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+          <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
             <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Barang yang Diterima</div>
             <table className="w-full">
               <thead className="border-b border-gray-200">
@@ -359,7 +359,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       })()}
 
       {tgh.notes && (
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
           <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Catatan</div>
           <div className="text-sm text-gray-700">{tgh.notes}</div>
         </div>
@@ -399,7 +399,7 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-lg border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-sm border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 bg-red-50">
           <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {tagihan.pi_number}
@@ -414,13 +414,13 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
             <label className="text-xs font-semibold text-gray-700 block mb-1">Alasan void (min. 10 karakter) *</label>
             <textarea value={reason} onChange={e => setReason(e.target.value)}
               rows={3} placeholder="Contoh: Faktur salah, barang return semua ke supplier"
-              className="w-full text-sm px-3 py-2 rounded-lg border border-gray-300 focus:border-red-400 focus:outline-none" />
+              className="w-full text-sm px-3 py-2 rounded-sm border border-gray-300 focus:border-red-400 focus:outline-none" />
             <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
         </div>
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
-          <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Batal</button>
-          <button onClick={handleConfirm} disabled={!valid || saving} className="text-sm font-semibold text-white bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50">
+          <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
+          <button onClick={handleConfirm} disabled={!valid || saving} className="text-sm font-semibold text-white bg-red-600 px-4 py-2 rounded-sm hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Memproses...' : 'Void'}
           </button>
         </div>

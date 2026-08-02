@@ -41,7 +41,7 @@ export default function OrderPicker({ value, onChange }: OrderPickerProps) {
 
   if (value) {
     return (
-      <div className="border-2 border-indigo-300 bg-indigo-50/40 rounded-xl p-3">
+      <div className="border-2 border-indigo-300 bg-indigo-50/40 rounded-sm p-3">
         <div className="flex items-center justify-between">
           <div>
             <div className="font-bold text-sm" style={{ color: '#012749' }}>{shortOrderRef(value.id)}</div>
@@ -63,12 +63,12 @@ export default function OrderPicker({ value, onChange }: OrderPickerProps) {
           value={query} onChange={e => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Cari Order (UUID atau nama customer)..."
-          className="w-full text-sm py-2 pl-9 pr-3 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-500"
+          className="w-full text-sm py-2 pl-9 pr-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
         />
         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
       </div>
       {open && results.length > 0 && (
-        <div className="absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-auto bg-white rounded-xl border border-gray-200 shadow-lg">
+        <div className="absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-auto bg-white rounded-sm border border-gray-200 shadow-lg">
           {results.map(r => (
             <button key={r.id} type="button"
               onMouseDown={() => onChange(r)}

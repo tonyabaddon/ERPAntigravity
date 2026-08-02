@@ -114,7 +114,7 @@ export default function PromoInlineEdit({
   return (
     <div
       ref={popoverRef}
-      className="absolute z-20 left-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl w-72 p-4 space-y-3"
+      className="absolute z-20 left-0 top-full mt-1 bg-white border border-slate-200 rounded-sm shadow-xl w-72 p-4 space-y-3"
       style={{ minWidth: '260px' }}
     >
       <div className="flex items-center justify-between">
@@ -188,7 +188,7 @@ export default function PromoInlineEdit({
           type="button"
           disabled={saving || !!validationError}
           onClick={handleSave}
-          className="flex-1 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="flex-1 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-sm hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? 'Menyimpan…' : 'Simpan'}
         </button>
@@ -197,7 +197,7 @@ export default function PromoInlineEdit({
             type="button"
             disabled={saving}
             onClick={handleClear}
-            className="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold rounded-lg hover:bg-rose-100 disabled:opacity-50"
+            className="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold rounded-sm hover:bg-rose-100 disabled:opacity-50"
           >
             Hapus
           </button>

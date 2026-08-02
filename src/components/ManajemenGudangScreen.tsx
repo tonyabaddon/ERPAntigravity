@@ -147,7 +147,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
       </div>
 
       {/* Daftar Gudang */}
-      <section className="bg-white border border-[#e5eeff] rounded-3xl p-6 shadow-sm">
+      <section className="bg-white border border-[#e5eeff] rounded-sm p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-extrabold text-sm text-[#012749]">Daftar Gudang</h2>
           <button
@@ -173,7 +173,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
           <div className="space-y-2">
             {warehouses.map((w: Warehouse) => (
               <div key={w.id}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-sm border ${
                   w.is_active ? 'bg-[#f8f9ff] border-[#abc9f3]/40' : 'bg-gray-50 border-gray-200 opacity-60'}`}
               >
                 <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[#012749] font-black text-[10px]">
@@ -223,7 +223,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
 
       {/* Tambah Gudang */}
       {showAdd && (
-        <section className="bg-white border border-[#e5eeff] rounded-3xl p-6 shadow-sm">
+        <section className="bg-white border border-[#e5eeff] rounded-sm p-6 shadow-sm">
           <h3 className="font-extrabold text-sm text-[#012749] mb-3">Tambah Gudang Baru</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
             <input
@@ -231,17 +231,17 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
               onChange={e => setNewCode(e.target.value.toUpperCase())}
               placeholder="Kode (cth: JKT)"
               maxLength={16}
-              className="bg-white border border-slate-200 rounded-2xl px-4 py-2.5 font-mono font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
+              className="bg-white border border-slate-200 rounded-sm px-4 py-2.5 font-mono font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
             />
             <input
               value={newName} onChange={e => setNewName(e.target.value)}
               placeholder="Nama Gudang"
-              className="bg-white border border-slate-200 rounded-2xl px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
+              className="bg-white border border-slate-200 rounded-sm px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
             />
             <input
               value={newAddress} onChange={e => setNewAddress(e.target.value)}
               placeholder="Alamat (opsional)"
-              className="bg-white border border-slate-200 rounded-2xl px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
+              className="bg-white border border-slate-200 rounded-sm px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
             />
           </div>
           <div className="flex gap-2">
@@ -258,7 +258,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
       )}
 
       {/* Riwayat Perubahan */}
-      <section className="bg-white border border-[#e5eeff] rounded-3xl p-6 shadow-sm">
+      <section className="bg-white border border-[#e5eeff] rounded-sm p-6 shadow-sm">
         <h2 className="font-extrabold text-sm text-[#012749] mb-3">Riwayat Perubahan</h2>
         {audit.length === 0 ? <p className="text-xs text-slate-400">Belum ada perubahan.</p> : (
           <ul className="space-y-2">
@@ -288,7 +288,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
       {editing && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
              onClick={() => !saving && setEditing(null)}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+          <div className="bg-white rounded-sm shadow-2xl w-full max-w-md overflow-hidden"
                onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="text-sm font-extrabold text-[#012749]">Edit Gudang — {editing.w.code}</h3>
@@ -304,7 +304,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                 <input
                   value={editing.name}
                   onChange={e => setEditing({ ...editing, name: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
+                  className="w-full bg-white border border-slate-200 rounded-sm px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
                 />
               </div>
               <div>
@@ -313,7 +313,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                   value={editing.address}
                   onChange={e => setEditing({ ...editing, address: e.target.value })}
                   placeholder="Kosongkan jika tidak ada"
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
+                  className="w-full bg-white border border-slate-200 rounded-sm px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
                 />
               </div>
               <div>
@@ -322,7 +322,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                   type="number"
                   value={editing.sortOrder}
                   onChange={e => setEditing({ ...editing, sortOrder: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
+                  className="w-full bg-white border border-slate-200 rounded-sm px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[#012749]"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">Urutan kecil = tampil duluan di daftar.</p>
               </div>

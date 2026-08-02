@@ -447,23 +447,23 @@ export default function AccountDetailScreen({
 
         {/* 4-card stat row */}
         <div className="mt-4 grid grid-cols-4 gap-3 text-[12px]">
-          <div className="bg-white/10 rounded-xl p-3">
+          <div className="bg-white/10 rounded-sm p-3">
             <div className="text-[10px] uppercase text-blue-100 mb-0.5">Saldo Awal</div>
             <div className="font-extrabold text-base">{formatRp(balance.opening_balance)}</div>
           </div>
-          <div className="bg-white/10 rounded-xl p-3">
+          <div className="bg-white/10 rounded-sm p-3">
             <div className="text-[10px] uppercase text-blue-100 mb-0.5">Total Debit (in)</div>
             <div className="font-extrabold text-base text-emerald-200">
               + {formatRp(balance.total_debit)}
             </div>
           </div>
-          <div className="bg-white/10 rounded-xl p-3">
+          <div className="bg-white/10 rounded-sm p-3">
             <div className="text-[10px] uppercase text-blue-100 mb-0.5">Total Kredit (out)</div>
             <div className="font-extrabold text-base text-rose-200">
               − {formatRp(balance.total_credit)}
             </div>
           </div>
-          <div className="bg-white/15 rounded-xl p-3 ring-2 ring-emerald-300">
+          <div className="bg-white/15 rounded-sm p-3 ring-2 ring-emerald-300">
             <div className="text-[10px] uppercase text-emerald-100 mb-0.5">Saldo Akhir</div>
             <div className="font-extrabold text-base text-emerald-200">
               {formatRp(balance.current_balance)}
@@ -632,7 +632,7 @@ export default function AccountDetailScreen({
           {/* Pending banner */}
           {balance.pending_in > 0 && (
             <div
-              className="mx-6 mt-6 rounded-xl p-3 flex items-center gap-3 border"
+              className="mx-6 mt-6 rounded-sm p-3 flex items-center gap-3 border"
               style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
             >
               <AlertTriangle className="w-5 h-5 text-amber-700 flex-shrink-0" />
@@ -908,7 +908,7 @@ export default function AccountDetailScreen({
                     onClick={() => {
                       showToast('Modul Rekonsiliasi hadir di Phase 2', 'info');
                     }}
-                    className="text-[12px] font-bold px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                    className="text-[12px] font-bold px-4 py-2 rounded-sm bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
                   >
                     Buka Modul Rekonsiliasi
                   </button>

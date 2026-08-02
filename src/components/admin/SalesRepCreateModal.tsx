@@ -96,7 +96,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full font-caleo mx-4"
+        className="bg-white rounded-sm shadow-xl p-6 max-w-md w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with gold focal accent */}
@@ -150,7 +150,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               onChange={(e) => setUserId(e.target.value)}
               disabled={submitting}
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              className="w-full border rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="w-full border rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
               style={{
                 borderColor: '#D3D8E0',
                 color: '#0B2545',
@@ -182,7 +182,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
               placeholder="salesrep@contoh.com"
-              className="w-full border rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="w-full border rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Email sales rep"
             />
@@ -205,7 +205,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               onChange={(e) => setName(e.target.value)}
               disabled={submitting}
               placeholder="Nama lengkap"
-              className="w-full border rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="w-full border rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Nama lengkap sales rep"
             />

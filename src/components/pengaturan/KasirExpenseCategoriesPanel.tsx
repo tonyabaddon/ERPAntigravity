@@ -145,7 +145,7 @@ export default function KasirExpenseCategoriesPanel({ isEditable, showToast }: P
       <button
         type="button"
         onClick={() => refetch?.()}
-        className="px-3 py-1.5 rounded-md bg-[#012749] text-white text-xs font-bold"
+        className="px-3 py-1.5 rounded-sm bg-[#012749] text-white text-xs font-bold"
       >
         Coba lagi
       </button>
@@ -153,7 +153,7 @@ export default function KasirExpenseCategoriesPanel({ isEditable, showToast }: P
   );
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden">
+    <div className="bg-white rounded-sm border border-slate-100 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-100">
         <h3 className="text-base font-extrabold text-[#012749]">Kategori Pengeluaran Kasir</h3>
         <p className="text-xs text-slate-500 mt-1">
@@ -163,7 +163,7 @@ export default function KasirExpenseCategoriesPanel({ isEditable, showToast }: P
           <button
             type="button"
             onClick={() => setAddingLabel('')}
-            className="mt-4 inline-flex items-center gap-1 bg-[#012749] text-white rounded-xl px-4 py-2 text-xs font-bold hover:bg-[#1e3d60]"
+            className="mt-4 inline-flex items-center gap-1 bg-[#012749] text-white rounded-sm px-4 py-2 text-xs font-bold hover:bg-[#1e3d60]"
           >
             <Plus className="w-4 h-4" /> Tambah kategori baru
           </button>
@@ -196,19 +196,19 @@ export default function KasirExpenseCategoriesPanel({ isEditable, showToast }: P
               else if (e.key === 'Escape') setAddingLabel(null);
             }}
             placeholder="Nama kategori"
-            className="flex-1 bg-white rounded-md px-2 py-1 border border-slate-300 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#012749]"
+            className="flex-1 bg-white rounded-sm px-2 py-1 border border-slate-300 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#012749]"
           />
           <button
             type="button"
             onClick={handleAddSubmit}
-            className="px-3 py-1.5 rounded-md bg-[#2d8a4e] text-white text-xs font-bold"
+            className="px-3 py-1.5 rounded-sm bg-[#2d8a4e] text-white text-xs font-bold"
           >
             Simpan
           </button>
           <button
             type="button"
             onClick={() => setAddingLabel(null)}
-            className="px-3 py-1.5 rounded-md text-slate-500 text-xs font-semibold"
+            className="px-3 py-1.5 rounded-sm text-slate-500 text-xs font-semibold"
           >
             Batal
           </button>

@@ -59,7 +59,7 @@ export default function NewProductInlineForm(props: Props) {
   };
 
   return (
-    <div className="mt-3 border-2 border-[#012749]/30 rounded-lg p-4 bg-[#012749]/5">
+    <div className="mt-3 border-2 border-[#012749]/30 rounded-sm p-4 bg-[#012749]/5">
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-sm font-extrabold text-[#012749]">Produk Baru</div>
@@ -74,14 +74,14 @@ export default function NewProductInlineForm(props: Props) {
           <input value={state.name}
             onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
             placeholder="Mis: MCB Schneider 25A 1P"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
         </div>
         <div>
           <label className="block text-[11px] font-bold text-slate-600 mb-1">Kategori <span className="text-red-500">*</span></label>
           <input list="np-cat-options" value={state.category}
             onChange={(e) => setState((s) => ({ ...s, category: e.target.value }))}
             placeholder="Mis: MCB"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
           <datalist id="np-cat-options">
             {categoryOptions.map((c) => <option key={c} value={c} />)}
           </datalist>
@@ -90,7 +90,7 @@ export default function NewProductInlineForm(props: Props) {
           <label className="block text-[11px] font-bold text-slate-600 mb-1">Unit</label>
           <select value={state.unit}
             onChange={(e) => setState((s) => ({ ...s, unit: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+            className="w-full px-3 py-2 border border-slate-300 rounded-sm">
             {COMMON_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>
@@ -99,22 +99,22 @@ export default function NewProductInlineForm(props: Props) {
           <input value={state.price}
             onChange={(e) => setState((s) => ({ ...s, price: e.target.value }))}
             placeholder="Mis: 45.000"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
         </div>
         <div>
           <label className="block text-[11px] font-bold text-slate-600 mb-1">Harga Modal / HPP (Rp)</label>
           <input value={state.hppText}
             onChange={(e) => setState((s) => ({ ...s, hppText: e.target.value }))}
             placeholder="Optional · recommend isi"
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
         </div>
         <div className="col-span-2">
           <label className="block text-[11px] font-bold text-slate-600 mb-1">Sub-kategori / Brand (optional)</label>
           <div className="grid grid-cols-2 gap-2">
             <input value={subcategory} onChange={(e) => setSubcategory(e.target.value)}
-              placeholder="Sub-kategori" className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              placeholder="Sub-kategori" className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
             <input value={brand} onChange={(e) => setBrand(e.target.value)}
-              placeholder="Brand" className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              placeholder="Brand" className="w-full px-3 py-2 border border-slate-300 rounded-sm" />
           </div>
         </div>
       </div>
@@ -125,9 +125,9 @@ export default function NewProductInlineForm(props: Props) {
 
       <div className="mt-3 flex justify-end gap-2">
         <button type="button" onClick={props.onCancel} disabled={submitting}
-          className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
+          className="px-3 py-1.5 text-xs font-semibold rounded-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
         <button type="button" onClick={onSubmit} disabled={!validation.ok || submitting}
-          className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90 disabled:opacity-50">
+          className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50">
           {submitting ? 'Menyimpan…' : '✓ Simpan & Tambah ke Cart'}
         </button>
       </div>

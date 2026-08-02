@@ -265,7 +265,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-3xl">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100">
+              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-sm flex items-center justify-center shadow-lg shadow-emerald-100">
                 <Bot className="w-8 h-8 text-emerald-600 fill-emerald-50" />
               </div>
               <div>
@@ -282,7 +282,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             </p>
           </div>
 
-          <div className="bg-[#eff4ff]/60 border border-blue-50/50 p-5 rounded-3xl shrink-0 flex items-center gap-3.5 select-none">
+          <div className="bg-[#eff4ff]/60 border border-blue-50/50 p-5 rounded-sm shrink-0 flex items-center gap-3.5 select-none">
             <Cpu className="text-[#012749] w-8 h-8 animate-spin" style={{ animationDuration: '6s' }} />
             <div>
               <span className="text-[9px] font-black text-slate-400 block tracking-widest uppercase">Koneksi Gateway</span>
@@ -301,7 +301,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
         className="bg-white rounded-[2rem] px-8 py-5 border border-[#e5eeff] shadow-md flex items-center justify-between cursor-pointer hover:border-[#012749]/30 hover:shadow-lg transition-all group"
       >
         <div className="flex items-center gap-4">
-          <div className="w-11 h-11 bg-[#012749] text-white rounded-xl flex items-center justify-center shadow-md shrink-0">
+          <div className="w-11 h-11 bg-[#012749] text-white rounded-sm flex items-center justify-center shadow-md shrink-0">
             <Inbox className="w-5 h-5" />
           </div>
           <div>
@@ -333,7 +333,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 select-none bg-[#f8f9ff] p-6 rounded-[2rem] border border-blue-50/50">
 
               {/* QR Code visual box */}
-              <div className="flex flex-col items-center justify-center bg-white border border-[#abc9f3]/40 p-6 rounded-2xl relative min-h-[220px]">
+              <div className="flex flex-col items-center justify-center bg-white border border-[#abc9f3]/40 p-6 rounded-sm relative min-h-[220px]">
                 {waConnected && (
                   <div className="text-center space-y-3">
                     <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto animate-bounce shrink-0" />
@@ -353,7 +353,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
 
                 {!waConnected && qrCode && (
                   <div className="text-center space-y-3">
-                    <div className="p-2 bg-white rounded-xl inline-block border border-slate-100 shadow">
+                    <div className="p-2 bg-white rounded-sm inline-block border border-slate-100 shadow">
                       <QRCodeSVG value={qrCode} size={160} />
                     </div>
                     <p className="text-[10px] text-slate-500 font-bold">Scan dengan WhatsApp → Perangkat Tertaut</p>
@@ -408,7 +408,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                         value={pairPhone}
                         onChange={(e) => setPairPhone(e.target.value.replace(/[^0-9]/g, ''))}
                         placeholder="6281234567890"
-                        className="flex-1 px-3 py-2 text-[11px] font-mono border-2 border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        className="flex-1 px-3 py-2 text-[11px] font-mono border-2 border-slate-200 rounded-sm focus:border-emerald-500 outline-none"
                       />
                       <button
                         onClick={async () => {
@@ -435,18 +435,18 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                           }
                         }}
                         disabled={pairCodeLoading || pairPhone.length < 10}
-                        className="bg-[#2d8a4e] hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-[10px] font-extrabold disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                        className="bg-[#2d8a4e] hover:bg-emerald-700 text-white px-4 py-2 rounded-sm text-[10px] font-extrabold disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
                       >
                         {pairCodeLoading ? '...' : 'Kirim Kode'}
                       </button>
                     </div>
                     {pairCodeError && (
-                      <p className="text-[10px] text-rose-600 font-bold mt-2 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
+                      <p className="text-[10px] text-rose-600 font-bold mt-2 bg-rose-50 px-3 py-1.5 rounded-sm border border-rose-100">
                         ⚠ {pairCodeError}
                       </p>
                     )}
                     {pairCode && (
-                      <div className="mt-3 bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4 text-center">
+                      <div className="mt-3 bg-emerald-50 border-2 border-emerald-200 rounded-sm p-4 text-center">
                         <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-2">
                           KODE PAIRING (BERLAKU ~2 MENIT)
                         </p>
@@ -478,7 +478,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                   <li>Arahkan kamera ke QR Code di kiri</li>
                   <li>Tunggu hingga status berubah ke <span className="text-emerald-600 font-black">TERHUBUNG</span></li>
                 </ol>
-                <p className="text-[9px] text-amber-600 bg-amber-50 rounded-xl px-3 py-2 border border-amber-100 font-semibold">
+                <p className="text-[9px] text-amber-600 bg-amber-50 rounded-sm px-3 py-2 border border-amber-100 font-semibold">
                   QR berlaku ~20 detik dan diperbarui otomatis. Pastikan daemon sedang berjalan.
                 </p>
               </div>
@@ -497,7 +497,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
               </div>
               <div
                 ref={logTerminalRef}
-                className="bg-[#0c1015]/95 text-[#f0f6fc] font-mono text-[10px] p-4 rounded-2xl max-h-[160px] overflow-y-auto space-y-1.5 border border-[#30363d] shadow-inner"
+                className="bg-[#0c1015]/95 text-[#f0f6fc] font-mono text-[10px] p-4 rounded-sm max-h-[160px] overflow-y-auto space-y-1.5 border border-[#30363d] shadow-inner"
               >
                 {terminalLogs.map((log, index) => (
                   <div key={index} className="opacity-95 leading-relaxed break-all">
@@ -536,12 +536,12 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             </p>
 
             <div className="relative">
-              <pre className="bg-[#0c1015] text-[#e1e4e8] font-mono text-[10px] p-5 rounded-2xl overflow-x-auto max-h-[300px] leading-relaxed border border-[#30363d] shadow-lg select-text text-left">
+              <pre className="bg-[#0c1015] text-[#e1e4e8] font-mono text-[10px] p-5 rounded-sm overflow-x-auto max-h-[300px] leading-relaxed border border-[#30363d] shadow-lg select-text text-left">
                 {activeCodeTab === 'go' ? codeSnippetGo : codeSnippetNode}
               </pre>
               <button
                 onClick={handleCopyCode}
-                className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 hover:scale-105 active:scale-95 text-white/80 hover:text-white p-2 rounded-xl transition-all border border-white/10 cursor-pointer"
+                className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 hover:scale-105 active:scale-95 text-white/80 hover:text-white p-2 rounded-sm transition-all border border-white/10 cursor-pointer"
                 title="Salin Code Snippet"
               >
                 {copiedCodeFlag ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -585,7 +585,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                 {waNumbers.map((num) => (
                   <div
                     key={num.id}
-                    className={`p-5 rounded-3xl border transition-all ${
+                    className={`p-5 rounded-sm border transition-all ${
                       num.isEnabled
                         ? 'bg-[#f8f9ff] border-[#abc9f3]/40 shadow-[#012749]/5 shadow-sm'
                         : 'bg-[#fafafa]/80 border-slate-100 opacity-65'
@@ -612,14 +612,14 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleCheckConnection(num.id)}
-                          className="text-slate-400 hover:text-emerald-600 p-1.5 hover:bg-emerald-50 rounded-xl transition-all cursor-pointer text-[9px] font-black"
+                          className="text-slate-400 hover:text-emerald-600 p-1.5 hover:bg-emerald-50 rounded-sm transition-all cursor-pointer text-[9px] font-black"
                           title="Cek Status Koneksi"
                         >
                           Cek
                         </button>
                         <button
                           onClick={() => handleDeleteNumber(num.id, num.phoneNumber)}
-                          className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                          className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-sm transition-all cursor-pointer"
                           title="Batalkan Sambungan Nomor"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -689,12 +689,12 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Contoh: CS Toko 2"
-                    className="w-full bg-white rounded-2xl px-4 py-2.5 border border-slate-200/60 font-semibold text-xs focus:ring-1 focus:ring-[#012749] outline-none"
+                    className="w-full bg-white rounded-sm px-4 py-2.5 border border-slate-200/60 font-semibold text-xs focus:ring-1 focus:ring-[#012749] outline-none"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500">Nomor Ponsel (WA)</label>
-                  <div className="bg-white border border-slate-200/60 rounded-2xl flex items-center px-3 gap-1.5">
+                  <div className="bg-white border border-slate-200/60 rounded-sm flex items-center px-3 gap-1.5">
                     <span className="text-[#012749]/40 text-xs font-black">+62</span>
                     <input
                       type="text"

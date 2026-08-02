@@ -105,7 +105,7 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+    <div className="bg-white rounded-sm border border-slate-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-extrabold text-[#012749]">Pre-order ter-fulfill (7 hari terakhir)</h3>
         <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Notify customer manual</span>
@@ -130,7 +130,7 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
                     <button
                       key={`${r.audit_id}-${i}`}
                       onClick={() => onNotifyWA(c, r.sku)}
-                      className="px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                      className="px-2 py-1 text-[11px] font-semibold rounded-sm bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                     >
                       WA {c.name.split(' ')[0]}
                     </button>

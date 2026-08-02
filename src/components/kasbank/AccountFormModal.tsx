@@ -243,11 +243,11 @@ export default function AccountFormModal({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex items-start justify-between">
           <div className="flex items-start gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${typeTint}`}>
+            <div className={`w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 ${typeTint}`}>
               <TypeIcon className="w-5 h-5" />
             </div>
             <div>
@@ -263,7 +263,7 @@ export default function AccountFormModal({
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100"
+            className="text-gray-500 hover:text-gray-700 p-1 rounded-sm hover:bg-gray-100"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -281,7 +281,7 @@ export default function AccountFormModal({
               value={form.account_type}
               onChange={(e) => updateField('account_type', e.target.value as CashAccountType)}
               disabled={isEdit}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
             >
               <option value="BANK">🏦 Bank</option>
               <option value="KAS">💵 Kas</option>
@@ -304,7 +304,7 @@ export default function AccountFormModal({
                   <select
                     value={form.bank_code ?? 'BCA'}
                     onChange={(e) => updateField('bank_code', e.target.value as BankCode)}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
+                    className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
                   >
                     {BANK_CODES.map((c) => (
                       <option key={c} value={c}>
@@ -322,7 +322,7 @@ export default function AccountFormModal({
                     value={form.account_number}
                     onChange={(e) => updateField('account_number', e.target.value)}
                     placeholder="1234567890"
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                    className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                   />
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function AccountFormModal({
                   value={form.account_holder}
                   onChange={(e) => updateField('account_holder', e.target.value)}
                   placeholder="Nama sesuai buku rekening"
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                 />
                 <p className="text-[11px] text-gray-500 mt-1">Untuk tampil di Invoice PDF customer (kalau Show in Invoice di-aktifkan)</p>
               </div>
@@ -351,7 +351,7 @@ export default function AccountFormModal({
               <select
                 value={form.provider}
                 onChange={(e) => updateField('provider', e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
+                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
               >
                 {WALLET_PROVIDERS.map((p) => (
                   <option key={p} value={p}>
@@ -377,7 +377,7 @@ export default function AccountFormModal({
                   ? 'Kas Toko Cabang 2'
                   : 'Lalamove Balance'
               }
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
             />
             <p className="text-[11px] text-gray-500 mt-1">Untuk memudahkan identifikasi di UI internal</p>
           </div>
@@ -389,7 +389,7 @@ export default function AccountFormModal({
             <select
               value={form.purpose}
               onChange={(e) => updateField('purpose', e.target.value as CashAccountPurpose)}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
             >
               {PURPOSES.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -412,7 +412,7 @@ export default function AccountFormModal({
                   value={form.opening_balance}
                   onChange={(n) => updateField('opening_balance', n)}
                   placeholder="0"
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                 />
                 <p className="text-[10px] text-gray-500 mt-1">Default 0 — adjust via Penyesuaian (Phase 2)</p>
               </div>
@@ -424,14 +424,14 @@ export default function AccountFormModal({
                   type="date"
                   value={form.opening_balance_date}
                   onChange={(e) => updateField('opening_balance_date', e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                 />
               </div>
             </div>
           )}
 
           {form.account_type === 'BANK' && (
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl p-3 flex items-center gap-2">
+            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-3 flex items-center gap-2">
               <input
                 type="checkbox"
                 id="show_in_invoice"
@@ -446,7 +446,7 @@ export default function AccountFormModal({
           )}
 
           {!isEdit && (
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl p-3 text-[11px] text-gray-600">
+            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-3 text-[11px] text-gray-600">
               💡 Saat Simpan: sistem otomatis create sub-COA{' '}
               <span className="font-mono font-bold">
                 {form.account_type === 'BANK' ? '1-12NN' : form.account_type === 'E_WALLET' ? '1-13NN' : '1-1110 (existing)'}

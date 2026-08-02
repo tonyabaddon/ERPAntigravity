@@ -164,7 +164,7 @@ export default function Step3Payment(props: Props) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
         <div className="lg:col-span-7 space-y-5">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-sm p-4">
             <div className="flex items-start gap-3">
               <div className="text-2xl">ℹ️</div>
               <div>
@@ -187,14 +187,14 @@ export default function Step3Payment(props: Props) {
               value={props.notes}
               onChange={(e) => props.onNotesChange(e.target.value)}
               placeholder="Mis: Penawaran berlaku selama harga komponen tidak naik. Garansi pabrik 1 tahun. Ongkir dihitung saat di-convert jadi invoice."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
             />
             <p className="text-[11px] text-slate-500 mt-1.5 italic">Note ini tampil di PDF Penawaran dan di Daftar Penawaran.</p>
           </div>
         </div>
 
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 space-y-1.5">
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-sm p-4 space-y-1.5">
             <div className="flex justify-between text-xs text-amber-800">
               <span>Subtotal produk</span>
               <span>{formatRp(props.subtotal)}</span>
@@ -210,7 +210,7 @@ export default function Step3Payment(props: Props) {
           </div>
 
           <button type="button" onClick={onSimpan} disabled={submitting || !validation.ok}
-            className="w-full px-6 py-3 text-sm font-bold rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed">
+            className="w-full px-6 py-3 text-sm font-bold rounded-sm bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed">
             {submitting ? 'Menyimpan…' : '✓ Simpan Sales Order'}
           </button>
           {!validation.ok && validation.errors?.[0] && (
@@ -236,7 +236,7 @@ export default function Step3Payment(props: Props) {
               <button
                 type="button"
                 onClick={() => props.onPaymentTypeChange('FULL')}
-                className={`px-4 py-3 rounded-lg border-2 text-left transition ${
+                className={`px-4 py-3 rounded-sm border-2 text-left transition ${
                   props.paymentType === 'FULL'
                     ? 'bg-[#012749]/5 border-[#012749] text-[#012749]'
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
@@ -248,7 +248,7 @@ export default function Step3Payment(props: Props) {
               <button
                 type="button"
                 onClick={() => props.onPaymentTypeChange('DP')}
-                className={`px-4 py-3 rounded-lg border-2 text-left transition ${
+                className={`px-4 py-3 rounded-sm border-2 text-left transition ${
                   props.paymentType === 'DP'
                     ? 'bg-amber-50 border-amber-500 text-amber-900'
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
@@ -261,7 +261,7 @@ export default function Step3Payment(props: Props) {
                 <button
                   type="button"
                   onClick={() => props.onPaymentTypeChange('TEMPO')}
-                  className={`px-4 py-3 rounded-lg border-2 text-left transition ${
+                  className={`px-4 py-3 rounded-sm border-2 text-left transition ${
                     isTempo
                       ? 'bg-amber-50 border-amber-500 text-amber-900'
                       : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
@@ -276,7 +276,7 @@ export default function Step3Payment(props: Props) {
 
           {/* TEMPO context box (only when TEMPO active) */}
           {isTempo && (
-            <div className={`rounded-lg p-4 border ${overLimit ? 'bg-rose-50 border-rose-300' : 'bg-amber-50 border-amber-200'}`}>
+            <div className={`rounded-sm p-4 border ${overLimit ? 'bg-rose-50 border-rose-300' : 'bg-amber-50 border-amber-200'}`}>
               <div className={`text-xs font-bold mb-2 uppercase tracking-wider ${overLimit ? 'text-rose-900' : 'text-amber-900'}`}>
                 Status Kredit Customer
               </div>
@@ -311,13 +311,13 @@ export default function Step3Payment(props: Props) {
 
           {/* DP amount input (only when DP) */}
           {isDp && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-sm p-4">
               <div className="text-xs font-bold mb-2 uppercase tracking-wider text-amber-900">DP / Tanda Jadi</div>
               <div className="flex items-center gap-2 mb-2">
                 <button
                   type="button"
                   onClick={() => props.onDpInputTypeChange('AMOUNT')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg ${
+                  className={`px-3 py-1.5 text-xs font-bold rounded-sm ${
                     props.dpInputType === 'AMOUNT' ? 'bg-amber-500 text-white' : 'bg-white text-amber-700 border border-amber-300'
                   }`}
                 >
@@ -326,7 +326,7 @@ export default function Step3Payment(props: Props) {
                 <button
                   type="button"
                   onClick={() => props.onDpInputTypeChange('PERCENT')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg ${
+                  className={`px-3 py-1.5 text-xs font-bold rounded-sm ${
                     props.dpInputType === 'PERCENT' ? 'bg-amber-500 text-white' : 'bg-white text-amber-700 border border-amber-300'
                   }`}
                 >
@@ -338,7 +338,7 @@ export default function Step3Payment(props: Props) {
                 value={props.dpAmount || ''}
                 onChange={(e) => props.onDpAmountChange(Number(e.target.value || 0))}
                 placeholder={props.dpInputType === 'PERCENT' ? 'Mis: 30' : 'Mis: 1.000.000'}
-                className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-200"
+                className="w-full px-3 py-2 text-sm border border-amber-300 rounded-sm outline-none focus:ring-2 focus:ring-amber-200"
               />
               <div className="text-[11px] text-amber-800 mt-2">
                 Bayar sekarang: <strong>{formatRp(props.effectiveDp)}</strong> · Sisa pelunasan: <strong>{formatRp(props.sisaPelunasan)}</strong>
@@ -358,7 +358,7 @@ export default function Step3Payment(props: Props) {
                   type="button"
                   onClick={() => !isTempo && props.onMethodChange(m.code)}
                   disabled={isTempo}
-                  className={`px-3 py-2 text-xs font-semibold rounded-lg border ${
+                  className={`px-3 py-2 text-xs font-semibold rounded-sm border ${
                     props.method === m.code
                       ? 'bg-[#012749]/5 border-[#012749] text-[#012749]'
                       : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -403,7 +403,7 @@ export default function Step3Payment(props: Props) {
               onChange={(e) => props.onOngkirAmountChange(Number(e.target.value || 0))}
               disabled={!props.ongkirOn}
               placeholder="0"
-              className="w-full text-right px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749] disabled:bg-slate-100 disabled:text-slate-400"
+              className="w-full text-right px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749] disabled:bg-slate-100 disabled:text-slate-400"
             />
           </div>
 
@@ -415,7 +415,7 @@ export default function Step3Payment(props: Props) {
               value={props.deliveryAddress}
               onChange={(e) => props.onDeliveryAddressChange(e.target.value)}
               placeholder="Mis: Jl. Merdeka No. 12, Jakarta Utara"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
             />
           </div>
 
@@ -427,7 +427,7 @@ export default function Step3Payment(props: Props) {
               value={props.notes}
               onChange={(e) => props.onNotesChange(e.target.value)}
               placeholder="Mis: kirim Selasa, jangan hari libur"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
             />
           </div>
 
@@ -456,7 +456,7 @@ export default function Step3Payment(props: Props) {
               ? `− Diskon Order (${props.orderDiscountValue}%)`
               : '− Diskon Order';
             return (
-              <div className="bg-[#012749] text-white rounded-lg p-4 space-y-1.5">
+              <div className="bg-[#012749] text-white rounded-sm p-4 space-y-1.5">
                 <div className="flex justify-between text-xs opacity-80">
                   <span>Subtotal pesanan</span>
                   <span>{formatRp(grossSubtotal)}</span>
@@ -525,7 +525,7 @@ export default function Step3Payment(props: Props) {
                   onClick={onSimpan}
                   disabled={saveDisabled}
                   title={saveDisabled ? (saveHint ?? 'Tombol non-aktif') : 'Klik untuk simpan'}
-                  className="w-full px-6 py-3 text-sm font-bold rounded-lg bg-[#2d8a4e] text-white hover:bg-[#236b3d] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 text-sm font-bold rounded-sm bg-[#2d8a4e] text-white hover:bg-[#236b3d] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Menyimpan…' : '✓ Simpan Sales Invoice'}
                 </button>

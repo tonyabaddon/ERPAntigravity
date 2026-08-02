@@ -161,11 +161,11 @@ export default function COAManagementTab({
   const accountCount = accounts.filter(a => a.is_active).length;
 
   return (
-    <div className="rounded-3xl border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#012749] shrink-0">
+          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749] shrink-0">
             <List className="w-5 h-5" />
           </div>
           <div>
@@ -179,9 +179,9 @@ export default function COAManagementTab({
         {/* ── Filter Bar ── */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Toggle pills */}
-          <div className="flex items-center gap-2 rounded-lg border border-[#c7d7f5] p-1 bg-white">
+          <div className="flex items-center gap-2 rounded-sm border border-[#c7d7f5] p-1 bg-white">
             <button
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
                 onlyActive
                   ? 'bg-[#c7d7f5] text-[#012749]'
                   : 'text-gray-600 hover:text-[#012749]'
@@ -191,7 +191,7 @@ export default function COAManagementTab({
               Aktif Saja
             </button>
             <button
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
                 !onlyActive
                   ? 'bg-[#c7d7f5] text-[#012749]'
                   : 'text-gray-600 hover:text-[#012749]'
@@ -206,7 +206,7 @@ export default function COAManagementTab({
           <input
             type="text"
             placeholder="Cari kode atau nama..."
-            className="flex-1 min-w-[200px] border border-[#c7d7f5] rounded-lg px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="flex-1 min-w-[200px] border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -215,7 +215,7 @@ export default function COAManagementTab({
 
       {/* ── Non-owner banner ── */}
       {!isOwner && (
-        <div className="mx-6 mt-4 rounded-xl border border-gray-300 bg-gray-50 p-3 text-[12px] text-gray-700">
+        <div className="mx-6 mt-4 rounded-sm border border-gray-300 bg-gray-50 p-3 text-[12px] text-gray-700">
           <strong>Tampilan Read-only</strong> · hanya Owner bisa mengedit Chart of Accounts
         </div>
       )}
@@ -241,7 +241,7 @@ export default function COAManagementTab({
                 <div key={accountType}>
                   {/* Section header */}
                   <div
-                    className={`${style.headerBg} font-bold py-2 px-3 rounded-lg mb-2`}
+                    className={`${style.headerBg} font-bold py-2 px-3 rounded-sm mb-2`}
                     style={{ color: style.headerColor }}
                   >
                     ━━ {label} ━━
@@ -256,7 +256,7 @@ export default function COAManagementTab({
                       return (
                         <div
                           key={account.id}
-                          className={`bg-[#fafbff] border border-[#c7d7f5] rounded-xl p-3 flex items-center gap-3 transition-opacity ${
+                          className={`bg-[#fafbff] border border-[#c7d7f5] rounded-sm p-3 flex items-center gap-3 transition-opacity ${
                             isInactive ? 'opacity-60' : ''
                           }`}
                         >
@@ -299,7 +299,7 @@ export default function COAManagementTab({
                             </div>
                             {isOwner && (
                               <button
-                                className="p-1.5 rounded-lg hover:bg-[#eff4ff] transition-colors text-[#012749]"
+                                className="p-1.5 rounded-sm hover:bg-[#eff4ff] transition-colors text-[#012749]"
                                 onClick={() => handleEditClick(account)}
                                 title="Edit akun"
                               >

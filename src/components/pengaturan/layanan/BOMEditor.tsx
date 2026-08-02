@@ -40,12 +40,12 @@ export default function BOMEditor({
   return (
     <div className="space-y-2">
       {value.length === 0 ? (
-        <div className="text-[12px] text-slate-500 border border-dashed border-slate-300 rounded-lg px-4 py-3 text-center">
+        <div className="text-[12px] text-slate-500 border border-dashed border-slate-300 rounded-sm px-4 py-3 text-center">
           BOM kosong — layanan ini akan diperlakukan sebagai labor-only atau
           custom mode.
         </div>
       ) : (
-        <div className="border border-slate-200 rounded-lg overflow-hidden">
+        <div className="border border-slate-200 rounded-sm overflow-hidden">
           <table className="w-full text-[13px]">
             <thead className="bg-slate-50">
               <tr>

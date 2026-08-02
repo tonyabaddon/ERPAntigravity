@@ -280,7 +280,7 @@ export default function BalanceAdjustmentModal({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
 
         {/* Header — rose themed */}
         <div
@@ -289,7 +289,7 @@ export default function BalanceAdjustmentModal({
         >
           <div className="flex items-start gap-3">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0"
               style={{ background: '#fecaca', color: '#991b1b' }}
             >
               <Scale className="w-5 h-5" />
@@ -305,7 +305,7 @@ export default function BalanceAdjustmentModal({
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-red-400 hover:text-red-700 p-1 rounded-lg hover:bg-white/60"
+            className="text-red-400 hover:text-red-700 p-1 rounded-sm hover:bg-white/60"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -318,14 +318,14 @@ export default function BalanceAdjustmentModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded-xl p-3 text-[12px] text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded-sm p-3 text-[12px] text-rose-700">
               ⚠ {fetchError}
             </div>
           )}
 
           {/* 1. Warning sub-card */}
           <div
-            className="rounded-xl border p-3"
+            className="rounded-sm border p-3"
             style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
           >
             <p className="text-[12px] text-amber-900">
@@ -334,7 +334,7 @@ export default function BalanceAdjustmentModal({
           </div>
 
           {/* 2. Account info sub-card */}
-          <div className="border border-slate-200 rounded-xl bg-[#fafbff] p-3 text-[12px]">
+          <div className="border border-slate-200 rounded-sm bg-[#fafbff] p-3 text-[12px]">
             <strong>Akun:</strong>{' '}
             {cashAccount.account_code && (
               <span className="font-mono">{cashAccount.account_code}</span>
@@ -356,7 +356,7 @@ export default function BalanceAdjustmentModal({
                   type="button"
                   onClick={() => handleDirectionChange('UP')}
                   disabled={saving}
-                  className={`flex-1 py-2 rounded-xl border font-bold text-[12px] transition-colors disabled:opacity-60 ${
+                  className={`flex-1 py-2 rounded-sm border font-bold text-[12px] transition-colors disabled:opacity-60 ${
                     direction === 'UP'
                       ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -368,7 +368,7 @@ export default function BalanceAdjustmentModal({
                   type="button"
                   onClick={() => handleDirectionChange('DOWN')}
                   disabled={saving}
-                  className={`flex-1 py-2 rounded-xl border font-bold text-[12px] transition-colors disabled:opacity-60 ${
+                  className={`flex-1 py-2 rounded-sm border font-bold text-[12px] transition-colors disabled:opacity-60 ${
                     direction === 'DOWN'
                       ? 'bg-rose-100 border-rose-300 text-rose-800'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -393,7 +393,7 @@ export default function BalanceAdjustmentModal({
                 onBlur={handleAmountBlur}
                 placeholder="Rp 0"
                 disabled={saving}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
+                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
               />
             </div>
           </div>
@@ -407,7 +407,7 @@ export default function BalanceAdjustmentModal({
               value={counterpartCoaId}
               onChange={(e) => setCounterpartCoaId(e.target.value)}
               disabled={saving || counterparts.length === 0}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
             >
               {counterparts.length === 0 && (
                 <option value="">Memuat...</option>
@@ -432,7 +432,7 @@ export default function BalanceAdjustmentModal({
               disabled={saving}
               rows={2}
               placeholder="Mis. cek m-banking saldo BCA Rp 12.550.000, koreksi +50rb (bunga deposito)"
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60 resize-none"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60 resize-none"
             />
             <p className={`text-[10px] mt-0.5 ${reasonOk ? 'text-gray-500' : 'text-red-500'}`}>
               {reason.length} / 10 min
@@ -449,12 +449,12 @@ export default function BalanceAdjustmentModal({
           )}
 
           {/* 7. Owner PIN block — uses shared PinPad for cross-flow consistency */}
-          <div className="rounded-2xl p-4 bg-[#012749]">
+          <div className="rounded-sm p-4 bg-[#012749]">
             <div className="text-[11px] uppercase tracking-widest text-blue-200 font-extrabold mb-3 flex items-center gap-2">
               <KeyRound className="w-3.5 h-3.5" />
               Owner PIN
             </div>
-            <div className="bg-white rounded-xl">
+            <div className="bg-white rounded-sm">
               <PinPad
                 compact
                 title=""

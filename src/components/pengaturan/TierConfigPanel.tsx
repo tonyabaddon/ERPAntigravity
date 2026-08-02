@@ -79,7 +79,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <div className="bg-white rounded-sm border border-gray-200 p-6 space-y-4">
       <div>
         <h2 className="text-base font-extrabold text-[#012749]">Tingkat Harga</h2>
         <p className="text-[11px] text-slate-500 mt-1">
@@ -94,7 +94,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
             value={t1}
             onChange={e => setT1(e.target.value)}
             aria-label="Tier 1"
-            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-sm text-sm"
           />
         </label>
         <label className="block">
@@ -103,7 +103,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
             value={t2}
             onChange={e => setT2(e.target.value)}
             aria-label="Tier 2"
-            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-sm text-sm"
           />
         </label>
         <label className="block">
@@ -113,7 +113,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
             onChange={e => setT3(e.target.value)}
             aria-label="Tier 3"
             placeholder="Kosongkan untuk menonaktifkan"
-            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-sm text-sm"
           />
         </label>
         <label className="block">
@@ -123,7 +123,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
             onChange={e => setT4(e.target.value)}
             aria-label="Tier 4"
             placeholder="Kosongkan untuk menonaktifkan"
-            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-sm text-sm"
           />
         </label>
       </div>
@@ -133,7 +133,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="px-4 py-2 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90 disabled:opacity-50"
+          className="px-4 py-2 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? 'Menyimpan…' : 'Simpan'}
         </button>

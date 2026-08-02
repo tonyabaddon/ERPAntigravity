@@ -186,7 +186,7 @@ export function TenantsTable({
   if (rows.length === 0) {
     return (
       <div
-        className="border rounded-xl p-8 text-center text-[13px]"
+        className="border rounded-sm p-8 text-center text-[13px]"
         style={{ borderColor: '#ECEEF1', color: '#9DB2CE' }}
         data-testid="tenants-empty"
       >
@@ -196,7 +196,7 @@ export function TenantsTable({
   }
 
   return (
-    <div className="border rounded-xl overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
+    <div className="border rounded-sm overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
       <table className="w-full text-[12px]" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
         <thead>
           <tr style={{ background: '#0B2545' }}>

@@ -299,7 +299,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         <p className="text-sm font-semibold text-red-600">{fetchError}</p>
         <button
           onClick={loadAdmins}
-          className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:opacity-90"
+          className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:opacity-90"
         >
           Coba Lagi
         </button>
@@ -309,7 +309,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
 
   return (
     <div className="space-y-8 animate-fadeIn pb-24">
-      <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-3xl flex items-center gap-3">
+      <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-sm flex items-center gap-3">
         <UserCheck className="w-6 h-6 text-[#2d8a4e] shrink-0" />
         <p className="text-xs text-[#0b743b] font-bold leading-relaxed">
           {isSupabaseConfigured
@@ -323,7 +323,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         {/* LEFT COLUMN: Add New Admin Form */}
         <section className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#012749] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-sm bg-blue-50 text-[#012749] flex items-center justify-center shrink-0">
               <UserPlus className="w-5 h-5" />
             </div>
             <h3 className="text-[#012749] font-extrabold text-lg leading-tight">Tambah Admin Baru</h3>
@@ -380,7 +380,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                     key={value}
                     type="button"
                     onClick={() => setNewGender(value)}
-                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors border ${
+                    className={`flex-1 py-2.5 px-3 rounded-sm text-xs font-bold transition-colors border ${
                       newGender === value
                         ? 'bg-[#012749] text-white border-[#012749]'
                         : 'bg-white text-[#43474e] border-[#e5eeff] hover:border-[#abc9f3]'
@@ -436,7 +436,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         <section className="lg:col-span-8 bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0 border border-emerald-100">
+              <div className="w-12 h-12 rounded-sm bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0 border border-emerald-100">
                 <span className="material-symbols-outlined font-black">verified</span>
               </div>
               <h3 className="text-[#012749] font-extrabold text-lg leading-tight">Hak Akses Menu Aplikasi</h3>
@@ -475,7 +475,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 );
                 const isExpanded = expandedId === adm.id;
                 return (
-                  <div key={adm.id} className="border border-[#e5eeff] rounded-2xl overflow-hidden">
+                  <div key={adm.id} className="border border-[#e5eeff] rounded-sm overflow-hidden">
                     {/* Collapsed row */}
                     <div
                       className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[#eff4ff]/40 transition-colors"
@@ -531,7 +531,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                                 {entries.map(({ key, label, description }) => (
                                   <label
                                     key={key}
-                                    className={`flex items-center justify-between bg-white border border-[#e5eeff] rounded-xl px-4 py-2.5 gap-3 ${
+                                    className={`flex items-center justify-between bg-white border border-[#e5eeff] rounded-sm px-4 py-2.5 gap-3 ${
                                       isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#abc9f3]'
                                     }`}
                                   >

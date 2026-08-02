@@ -328,7 +328,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#2d8a4e] rounded-xl flex items-center justify-center shadow-lg shadow-[#2d8a4e]/30">
+            <div className="w-10 h-10 bg-[#2d8a4e] rounded-sm flex items-center justify-center shadow-lg shadow-[#2d8a4e]/30">
               <Rocket className="w-5 h-5 text-white fill-white" />
             </div>
             <span className="text-white font-extrabold text-2xl tracking-tight">ERP Pro</span>
@@ -337,7 +337,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
         <div className="relative z-10 flex flex-col items-center text-center space-y-10 py-12">
           <div className="flex items-center justify-center gap-6">
-            <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center shadow-2xl skew-y-3 rotate-[-6deg]">
+            <div className="w-20 h-20 rounded-sm bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center shadow-2xl skew-y-3 rotate-[-6deg]">
               <span className="material-symbols-outlined text-[#25D366] text-3xl">chat</span>
               <div className="w-8 h-1 bg-white/20 rounded-full mt-2"></div>
             </div>
@@ -346,7 +346,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full border-2 border-white animate-ping"></div>
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full border-2 border-white"></div>
             </div>
-            <div className="w-20 h-20 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center shadow-2xl rotate-[6deg]">
+            <div className="w-20 h-20 rounded-sm bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center shadow-2xl rotate-[6deg]">
               <span className="material-symbols-outlined text-white/80 text-3xl">dashboard</span>
               <div className="w-8 h-1 bg-white/20 rounded-full mt-2"></div>
             </div>
