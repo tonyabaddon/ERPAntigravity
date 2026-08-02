@@ -24,6 +24,8 @@ import type { GeneralLedgerRow, JournalSource } from '../../lib/akuntansi/types'
 import { formatRp, wibDateString } from '../../lib/format';
 import { captureError } from '../../lib/captureError';
 import AksiDropdown from '../akuntansi/manual/AksiDropdown';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 import type { AksiAction } from '../akuntansi/manual/AksiDropdown';
 import ManualTransferModal from '../akuntansi/manual/ManualTransferModal';
 import OwnerDrawingModal from '../akuntansi/manual/OwnerDrawingModal';
@@ -373,11 +375,7 @@ export default function AccountDetailScreen({
   // ---------------------------------------------------------------------------
 
   if (loadingMeta) {
-    return (
-      <div className="p-8 text-caleo-13 text-[#43474e]">
-        Memuat data akun...
-      </div>
-    );
+    return <LoadingState label="Memuat data akun…" />;
   }
 
   if (!balance) {
@@ -390,7 +388,7 @@ export default function AccountDetailScreen({
           <ArrowLeft className="w-4 h-4" />
           Kas &amp; Bank
         </button>
-        <p className="text-caleo-13 text-gray-500">Akun tidak ditemukan.</p>
+        <EmptyState message="Akun tidak ditemukan." />
       </div>
     );
   }
@@ -696,14 +694,9 @@ export default function AccountDetailScreen({
           {/* Ledger table */}
           <div className="border-t border-gray-200">
             {loadingRows ? (
-              <div className="p-8 text-center text-caleo-13 text-gray-500">
-                Memuat riwayat...
-              </div>
+              <LoadingState label="Memuat riwayat…" />
             ) : rows.length === 0 ? (
-              <div className="p-12 text-center text-caleo-13 text-gray-500">
-                <List className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-                <p>Belum ada transaksi dalam periode ini.</p>
-              </div>
+              <EmptyState message="Belum ada transaksi dalam periode ini." />
             ) : (
               <>
                 <table className="w-full text-xs">
@@ -833,9 +826,7 @@ export default function AccountDetailScreen({
           {/* Content */}
           <div className="border-t border-gray-200">
             {loadingUnmatched ? (
-              <div className="p-8 text-center text-caleo-13 text-gray-500">
-                Memuat jurnal belum cocok...
-              </div>
+              <LoadingState label="Memuat jurnal belum cocok…" />
             ) : unmatchedLines.length === 0 ? (
               <div className="p-12 text-center text-caleo-13 text-gray-500">
                 <CheckCircle2 className="w-8 h-8 mx-auto mb-3 text-emerald-400" />

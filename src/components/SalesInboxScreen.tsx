@@ -7,6 +7,8 @@ import { categorize, categoryCounts, type InboxCategory } from '../lib/salesInbo
 import { conversationService } from '../lib/supabaseClient';
 import { getSignedChatMediaUrl } from '../lib/chatMediaSignedUrl';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
+import LoadingState from './ui/LoadingState';
+import EmptyState from './ui/EmptyState';
 
 const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
   GREETING:         { label: 'Sapa',             badgeClass: 'bg-violet-100 text-violet-700' },
@@ -179,8 +181,8 @@ export default function SalesInboxScreen({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-        Memuat percakapan...
+      <div className="flex items-center justify-center h-full">
+        <LoadingState label="Memuat percakapan…" />
       </div>
     );
   }
@@ -247,9 +249,11 @@ export default function SalesInboxScreen({
         {/* Conversation list */}
         <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
           {filteredConvs.length === 0 ? (
-            <p className="text-center text-xs text-gray-400 mt-8 px-3">
-              {searchQuery ? 'Tidak ada percakapan yang cocok.' : 'Belum ada percakapan.'}
-            </p>
+            <EmptyState
+              message={searchQuery ? 'Tidak ada percakapan yang cocok.' : 'Belum ada percakapan.'}
+              inline
+              className="mt-6 px-3"
+            />
           ) : (
             filteredConvs.map(conv => {
               const isSelected = conv.id === activeChatId;
@@ -687,7 +691,7 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
             )}
           </div>
         ) : (
-          <p className="text-caleo-9 text-gray-400 italic">Belum ada pesanan.</p>
+          <EmptyState message="Belum ada pesanan." inline />
         )}
       </div>
 

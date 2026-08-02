@@ -22,6 +22,8 @@ import {
 import { tukarFakturService } from '../../../lib/tukarFakturService';
 import type { DbTukarFaktur, TukarFakturStatus, UpdateTukarFakturPayload } from '../../../types';
 import { formatIDR } from '../../../lib/formatIDR';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 
 interface Props {
   tfNumber: string;
@@ -95,10 +97,10 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>;
+    return <LoadingState label="Memuat Tukar Faktur…" />;
   }
   if (!tf) {
-    return <div className="p-8 text-center text-sm text-gray-500">Tukar Faktur tidak ditemukan.</div>;
+    return <EmptyState message="Tukar Faktur tidak ditemukan." />;
   }
 
   const isVoided = !!tf.voided_at;
@@ -313,9 +315,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           <div className="text-caleo-11 text-gray-500">{tf.tagihans?.length ?? 0} Faktur</div>
         </div>
         {(!tf.tagihans || tf.tagihans.length === 0) ? (
-          <div className="p-6 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded">
-            Tidak ada Faktur dalam bundle ini.
-          </div>
+          <EmptyState message="Tidak ada Faktur dalam bundle ini." inline />
         ) : (
           <table className="w-full">
             <thead className="border-b border-gray-200">
@@ -425,7 +425,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
               ))}
             </div>
           ) : (
-            <div className="text-xs text-gray-400">Belum ada lampiran foto.</div>
+            <EmptyState message="Belum ada lampiran foto." inline />
           )}
         </div>
 

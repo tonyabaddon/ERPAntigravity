@@ -21,6 +21,8 @@ import CariByFotoModal from './kasir/CariByFotoModal';
 import HasilCariFotoModal from './kasir/HasilCariFotoModal';
 import type { SearchResult } from '../lib/cariByFotoService';
 import { useKasirExpenseCategories } from '../lib/hooks/useKasirExpenseCategories';
+import LoadingState from './ui/LoadingState';
+import EmptyState from './ui/EmptyState';
 
 interface KasirScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
@@ -336,9 +338,9 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-[480px]">
-            {loading && <p className="text-xs text-gray-400 text-center py-8">Memuat...</p>}
+            {loading && <LoadingState label="Memuat transaksi…" inline className="py-8 justify-center" />}
             {!loading && filteredEntries.length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-12">Belum ada transaksi.</p>
+              <EmptyState message="Belum ada transaksi." inline className="py-8 text-center" />
             )}
             {filteredEntries.map((entry) => {
               if (entry._src === 'wa') {

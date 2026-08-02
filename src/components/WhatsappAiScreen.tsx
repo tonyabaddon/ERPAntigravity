@@ -29,6 +29,7 @@ import { useTenant } from '../contexts/TenantContext';
 import { getBackendUrl } from '../lib/backendUrl';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
 import { captureError } from '../lib/captureError';
+import EmptyState from './ui/EmptyState';
 
 interface WhatsappAiScreenProps {
   stockList: StockItem[];
@@ -578,9 +579,11 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             {!loading && (
               <div className="space-y-4">
                 {waNumbers.length === 0 && (
-                  <p className="text-xs text-slate-400 font-semibold text-center py-4">
-                    Belum ada nomor WhatsApp terdaftar. Tambahkan via Go daemon atau Supabase dashboard.
-                  </p>
+                  <EmptyState
+                    message="Belum ada nomor WhatsApp terdaftar."
+                    hint="Tambahkan via Go daemon atau Supabase dashboard."
+                    inline
+                  />
                 )}
                 {waNumbers.map((num) => (
                   <div
