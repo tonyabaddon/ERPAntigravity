@@ -42,6 +42,41 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #10 — 2026-08-02 — Codemod added CSS `var()` in jsPDF context; broke every PDF at build time
+
+**Context:** In an 8-hour autonomous design-system session I shipped 2 codemods that migrated hex colors to CSS vars: PR #83 (`#012749` → `var(--color-caleo-primary)`, 640+ refs across 155 files) and PR #85 (soft-blue mist palette, 3 hex → 3 tokens, 326 refs). Both looked safe — semantic no-op, identical values, `npx vitest run --changed` green, hex-drift audit green.
+
+Then PR #87 (radius 4px reversal) pushed → Cloud Build failed with 20 PDF tests throwing:
+```
+Invalid color "var(--color-caleo-primary)" passed to jsPDF.encodeColorString
+Invalid color "var(--color-caleo-cloud)" passed to jsPDF.encodeColorString
+Invalid color "var(--color-caleo-mist-dark)" passed to jsPDF.encodeColorString
+```
+
+**Root cause:** `jspdf`'s `setDrawColor`/`setFillColor`/`setTextColor` accept hex string literals only — they do NOT resolve CSS `var(--foo)` (there's no browser-CSS runtime in the PDF-generation code path; jspdf runs in a plain JS context where `var()` is just an unknown string). The codemods blanketed all of `src/`, including `src/lib/sales/pdf/*.ts`, without excluding jsPDF-consuming files.
+
+**Real-world impact avoided:** Cloud Build guarded — full vitest suite ran in CI and blocked the deploy. Without CI, PR #83 would have shipped to prod and every Sales Order / Invoice DP / Invoice Lunas / Invoice Pelunasan / Surat Jalan / Catatan Pembatalan print button would have thrown at click time. All MSME tenants would have seen the print flow crash.
+
+**Root cause of the miss:**
+1. `npx vitest run --changed` only tests files IN the changed set. Codemod touched PDF source files but their `.test.ts` counterparts had unchanged content — vitest didn't pick them up. Full-suite testing would have caught it locally.
+2. Codemod's "safe transform" mental model didn't account for context differences: CSS `var()` works in the DOM (React JSX, inline style, .css files) because browser resolves it — but jsPDF, canvas rendering, email HTML, and any non-browser output need literal hex.
+3. `audit:hardcoded-color-hex` treats CSS var usage as "clean" — no way for it to know some contexts can't consume it.
+
+**Fix (shipped PR #88):** Manually reverted 7 files in `src/lib/sales/pdf/` from `var(--color-caleo-primary/mist/mist-dark/cloud)` back to hex literals. Full vitest suite green post-fix (1148/1150). Zero prod impact because Cloud Build blocked the broken PR before promote.
+
+**Prevention rules going forward:**
+1. **Any codemod that adds `var()` to source files MUST exclude jsPDF/canvas/non-browser-runtime paths.** Grep pattern to identify these: files that import from `jspdf`, `html2canvas`, `puppeteer`, `resend`/email templates, or any code where output is consumed by a non-browser runtime.
+2. **Full-suite vitest (`npx vitest run`) required before any codemod PR merge.** `--changed` is insufficient because codemod source changes without touching downstream tests. Add to release checklist.
+3. **When ambient-audit-baseline shows a "clean" result but you've done a large migration, don't trust the baseline blindly.** Cross-check by grep for the migrated pattern in known-brittle contexts (jsPDF, canvas, native runtime, etc.).
+4. **Consider audit script `audit:css-var-in-jspdf`** — scan `src/lib/**/pdf/**` (or files that import `jspdf`) and flag any `var(--...)` inside string literals. Not shipped yet; deferred to future audit-wire session.
+
+**Related past pattern (rhyming class):**
+- Entry #5 (2026-07-25): `[object Object]` in error toasts — different class of runtime-substitution bug (String(err) doesn't call toString on non-Error objects), same shape ("silent lossy conversion at rendering boundary").
+
+**Files updated:** this miss-log entry, PR #88 (7 PDF files reverted).
+
+---
+
 ## Entry #9 — 2026-07-31 — Anchored on "founder can't OTP" for 40 min; real bug was downstream user's wizard block
 
 **Context:** Founder reported: "ada bugs ga bisa login utk terima otp". I invoked systematic-debugging + spent ~40 min investigating the OTP send/verify path for founder's user (impersonation state, rate limit, Supabase Auth admin API, verifying vs sending, testing a fresh OTP inline to founder's inbox). All checks came back clean — service healthy, user unbanned, no MFA, no impersonation. Then founder clarified: "bug nya justru complaint dari garindo jaya panel" — the OTP complaint was FROM Jenny (Garindo Owner), NOT founder personally. That entirely changed the investigation. Turned out to be a completely different bug — Jenny's Penawaran wizard "Lanjut ke Pembayaran" button was disabled because Garindo had 0 warehouses configured (root cause found via tenant-config query, unrelated to OTP at all).
