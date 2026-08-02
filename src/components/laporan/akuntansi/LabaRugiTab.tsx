@@ -5,6 +5,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, FileDown, Grid, Info } from 'lucide-react';
+import LoadingState from '../../ui/LoadingState';
+import ErrorState from '../../ui/ErrorState';
+import EmptyState from '../../ui/EmptyState';
 import { fetchLabaRugi } from '../../../lib/akuntansi/reportQueries';
 import type { LabaRugiResult } from '../../../lib/akuntansi/reportQueries';
 import { fetchAccountingConfig } from '../../../lib/akuntansi/service';
@@ -284,17 +287,11 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
       {/* ── Body ── */}
       <div className="p-6">
         {loading ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">
-            Memuat data...
-          </div>
+          <LoadingState label="Memuat data…" />
         ) : error ? (
-          <div className="py-8 text-center text-caleo-13 text-rose-600">
-            Gagal memuat data: {error}
-          </div>
+          <ErrorState message={`Gagal memuat data: ${error}`} />
         ) : isEmpty ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">
-            Belum ada transaksi pada periode ini.
-          </div>
+          <EmptyState message="Belum ada transaksi pada periode ini." />
         ) : data ? (
           <>
             {/* ── P&L Table ── */}

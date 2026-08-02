@@ -10,6 +10,8 @@ import type { UpdatePlanInput } from '../../lib/adminTypes';
 import { AdminApiError } from '../../lib/adminTypes';
 import { adminToast } from '../../lib/adminToast';
 import { isSuperAdmin } from '../../lib/adminAuth';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 // ─── Module display labels (shared glossary) ──────────────────────────────────
 
@@ -423,11 +425,7 @@ export function PlansManagement() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="text-caleo-13 p-4" style={{ color: '#9DB2CE' }}>
-        Memuat paket...
-      </div>
-    );
+    return <LoadingState label="Memuat paket…" inline />;
   }
 
   return (
@@ -458,9 +456,7 @@ export function PlansManagement() {
       </div>
 
       {plans.length === 0 && (
-        <p className="text-caleo-13 text-center py-8" style={{ color: '#9DB2CE' }}>
-          Tidak ada paket ditemukan.
-        </p>
+        <EmptyState message="Tidak ada paket ditemukan." />
       )}
     </div>
   );

@@ -5,6 +5,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { Layout, FileDown, Grid, CheckCircle, AlertTriangle } from 'lucide-react';
+import LoadingState from '../../ui/LoadingState';
+import ErrorState from '../../ui/ErrorState';
+import EmptyState from '../../ui/EmptyState';
 import { fetchNeraca } from '../../../lib/akuntansi/reportQueries';
 import type { NeracaResult } from '../../../lib/akuntansi/reportQueries';
 import { tenantSettingsService } from '../../../lib/pengaturan/pengaturanServices';
@@ -228,17 +231,11 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
       {/* ── Body ── */}
       <div className="p-6">
         {loading ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">
-            Memuat data...
-          </div>
+          <LoadingState label="Memuat data…" />
         ) : error ? (
-          <div className="py-8 text-center text-caleo-13 text-rose-600">
-            Gagal memuat data: {error}
-          </div>
+          <ErrorState message={`Gagal memuat data: ${error}`} />
         ) : isEmpty ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">
-            Belum ada data Neraca pada tanggal ini.
-          </div>
+          <EmptyState message="Belum ada data Neraca pada tanggal ini." />
         ) : data ? (
           <>
             {/* ── 2-col grid ── */}
@@ -345,8 +342,8 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                         <SectionRows items={data.liabilitasJkPanjang} />
                       ) : (
                         <tr className="border-t border-gray-50">
-                          <td colSpan={2} className="py-1.5 px-3 pl-6 text-gray-400 italic text-caleo-11">
-                            Tidak ada
+                          <td colSpan={2} className="py-1.5 px-3 pl-6">
+                            <EmptyState message="Tidak ada" inline />
                           </td>
                         </tr>
                       )}
@@ -394,8 +391,8 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                       ))}
                       {data.ekuitas.length === 0 && (
                         <tr>
-                          <td colSpan={2} className="py-2 px-3 text-gray-400 italic text-caleo-11">
-                            Tidak ada data ekuitas
+                          <td colSpan={2} className="py-2 px-3">
+                            <EmptyState message="Tidak ada data ekuitas" inline />
                           </td>
                         </tr>
                       )}

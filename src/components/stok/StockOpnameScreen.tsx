@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 import {
   cancelOpnameSession,
   fetchOpnameAuditLog,
@@ -299,9 +301,9 @@ export default function StockOpnameScreen({
           Riwayat
         </h2>
         {loading && sessions.length === 0 ? (
-          <p className="text-sm text-slate-500">Memuat…</p>
+          <LoadingState label="Memuat…" inline />
         ) : historySessions.length === 0 ? (
-          <p className="text-sm text-slate-500">Belum ada riwayat opname.</p>
+          <EmptyState message="Belum ada riwayat opname." inline />
         ) : (
           <ul className="space-y-2">
             {historySessions.map((s) => (
@@ -345,9 +347,9 @@ export default function StockOpnameScreen({
             Catatan Audit Opname (7 hari terakhir)
           </h2>
           {auditLoading ? (
-            <p className="text-sm text-slate-500">Memuat…</p>
+            <LoadingState label="Memuat…" inline />
           ) : auditEntries.length === 0 ? (
-            <p className="text-sm text-slate-500">Belum ada catatan audit.</p>
+            <EmptyState message="Belum ada catatan audit." inline />
           ) : (
             <div className="bg-white border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-sm">

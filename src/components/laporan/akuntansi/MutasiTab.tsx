@@ -5,6 +5,8 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { FileDown, Grid, FileText, X, List } from 'lucide-react';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 import { fetchMutasi } from '../../../lib/akuntansi/reportQueries';
 import type { MutasiRow, MutasiFilters } from '../../../lib/akuntansi/reportQueries';
 import { fetchCashAccountBalances } from '../../../lib/kasbank/service';
@@ -298,7 +300,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
                 style={{ width: '280px' }}
               >
                 {loadingAccounts ? (
-                  <div className="text-caleo-11 text-gray-500">Memuat...</div>
+                  <LoadingState label="Memuat…" inline />
                 ) : (
                   <div className="space-y-1">
                     {accounts.map(acc => {
@@ -427,14 +429,14 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
           <tbody>
             {loadingRows ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-caleo-13 text-gray-500">
-                  Memuat mutasi...
+                <td colSpan={6} className="py-4 px-3">
+                  <LoadingState label="Memuat mutasi…" inline />
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-caleo-13 text-gray-500">
-                  Belum ada mutasi dalam periode + filter ini.
+                <td colSpan={6} className="py-4 px-3">
+                  <EmptyState message="Belum ada mutasi dalam periode + filter ini." inline />
                 </td>
               </tr>
             ) : (
