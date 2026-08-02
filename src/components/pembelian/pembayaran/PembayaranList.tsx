@@ -5,6 +5,8 @@ import { Plus, Search } from 'lucide-react';
 import { pembayaranService } from '../../../lib/pembayaranService';
 import type { DbPembayaran, PembayaranStatus } from '../../../types';
 import { formatIDR } from '../../../lib/formatIDR';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -71,8 +73,8 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
       </div>
 
       <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
-        {loading ? <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
-         : filtered.length === 0 ? <div className="p-8 text-center text-sm text-gray-500">Belum ada Pembayaran.</div>
+        {loading ? <LoadingState label="Memuat..." />
+         : filtered.length === 0 ? <EmptyState message="Belum ada Pembayaran." />
          : (
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">

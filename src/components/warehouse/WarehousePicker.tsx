@@ -8,6 +8,7 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { Warehouse } from '../../types';
+import EmptyState from '../ui/EmptyState';
 
 interface CommonProps {
   warehouses: Warehouse[];                        // expected: filtered to active + sorted
@@ -28,7 +29,7 @@ export default function WarehousePicker(props: Props) {
   const eligible = props.warehouses.filter(w => !props.excludeIds?.includes(w.id));
 
   if (eligible.length === 0) {
-    return <span className="text-xs text-slate-400 italic">Tidak ada gudang aktif</span>;
+    return <EmptyState message="Tidak ada gudang aktif." inline />;
   }
 
   if (eligible.length === 1) {
