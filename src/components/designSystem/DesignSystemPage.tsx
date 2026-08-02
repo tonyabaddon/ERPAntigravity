@@ -456,12 +456,202 @@ function StateTemplatesSection() {
   );
 }
 
+// ── Section: Form patterns ─────────────────────────────────────────────────
+
+function FormPatternsSection() {
+  return (
+    <section id="forms">
+      <h2>7. Form Patterns</h2>
+      <p>Every field on every form follows the same visual conventions. Consistency &gt; creativity for MSME non-tech users.</p>
+
+      <h3>Field anatomy</h3>
+      <div className="ds-component-box" style={{ padding: 20 }}>
+        <div style={{ maxWidth: 320, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <label style={{ fontSize: 10, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Nama Kategori <span style={{ color: '#dc2626' }}>*</span>
+          </label>
+          <input
+            style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 2, fontSize: 13, fontFamily: 'var(--font-sans)' }}
+            defaultValue="Sewa Gudang"
+            readOnly
+          />
+          <div style={{ fontSize: 11, color: '#6b7280', fontStyle: 'italic' }}>
+            3–40 karakter. Bebas huruf besar/kecil.
+          </div>
+        </div>
+      </div>
+
+      <table>
+        <thead><tr><th>Part</th><th>Class / rule</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Label</strong> (above input)</td>
+            <td><code>text-[10px] font-extrabold text-gray-500 uppercase tracking-widest block mb-1</code></td>
+            <td>Always above (never inline-left). MSME users scan top-down. Uppercase + tracking = clear field boundary.</td>
+          </tr>
+          <tr>
+            <td><strong>Required marker</strong></td>
+            <td><code>&lt;span className="text-red-600"&gt;*&lt;/span&gt;</code></td>
+            <td>Universal convention. Never use the word "wajib" — takes too much space + inconsistent placement.</td>
+          </tr>
+          <tr>
+            <td><strong>Input</strong></td>
+            <td><code>px-3 py-2 border border-slate-300 rounded-sm text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#012749]</code></td>
+            <td>Focus ring = clear focus state (accessibility). rounded-sm = MSME/Excel aesthetic.</td>
+          </tr>
+          <tr>
+            <td><strong>Help text</strong> (below input, muted)</td>
+            <td><code>text-[11px] text-slate-500 italic mt-1</code></td>
+            <td>Below input, italic, muted. Never above — MSME reads label first, help after they see the field.</td>
+          </tr>
+          <tr>
+            <td><strong>Error message</strong></td>
+            <td><code>text-[11px] text-red-600 mt-1</code></td>
+            <td>Same position as help text, red instead of muted. Never as toast for inline validation — user needs to see WHICH field.</td>
+          </tr>
+          <tr>
+            <td><strong>Disabled state</strong></td>
+            <td><code>opacity-50 cursor-not-allowed</code></td>
+            <td>Grayed + no-click cursor. Never hide the field entirely (MSME needs to see it exists but is locked).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Layout rules</h3>
+      <ul style={{ paddingLeft: 20, lineHeight: 1.7 }}>
+        <li><strong>One field per row on mobile</strong> — never side-by-side unless clearly related (e.g. from-to date).</li>
+        <li><strong>Group related fields</strong> — visual space (gap-4 or divider) between logical groups.</li>
+        <li><strong>Submit button ALWAYS at bottom</strong> — never floating, never fixed to viewport. Standard: right-aligned with Cancel to the left.</li>
+        <li><strong>Bahasa Indonesia label</strong> — "Nama", "Alamat", "Telepon" — never "Name", "Address", "Phone".</li>
+      </ul>
+
+      <h3>Anti-patterns</h3>
+      <table>
+        <thead><tr><th>❌ Don&#x27;t</th><th>✅ Do</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span className="ds-anti-bad">Inline label to the LEFT of input</span></td>
+            <td><span className="ds-anti-good">Label ABOVE input (MSME reads top-down)</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">"wajib" or "(required)" text</span></td>
+            <td><span className="ds-anti-good">Red <code>*</code> only</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">Placeholder as label (input empty = label disappears)</span></td>
+            <td><span className="ds-anti-good">Real <code>&lt;label&gt;</code> element always visible + placeholder for example</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">Toast for inline validation error</span></td>
+            <td><span className="ds-anti-good">Inline red text below the specific field</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">Hide disabled field entirely</span></td>
+            <td><span className="ds-anti-good">Show grayed + disabled — MSME sees what's not accessible + why</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+// ── Section: Interaction patterns ──────────────────────────────────────────
+
+function InteractionPatternsSection() {
+  return (
+    <section id="interactions">
+      <h2>8. Interaction Patterns</h2>
+      <p>Hover, click, focus, disabled — canonical class recipes for every interactive element.</p>
+
+      <table>
+        <thead><tr><th>State</th><th>Class recipe</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Row hover</strong> (list items)</td>
+            <td><code>hover:bg-slate-50</code></td>
+            <td>Subtle. MSME hovers to indicate "I'm about to click this row".</td>
+          </tr>
+          <tr>
+            <td><strong>Button hover</strong> (primary)</td>
+            <td><code>hover:opacity-90</code> OR <code>hover:bg-[#1e3d60]</code> (darker shade)</td>
+            <td>Fast visual feedback. Never use scale/translate transforms (feels flashy for MSME).</td>
+          </tr>
+          <tr>
+            <td><strong>Button hover</strong> (secondary/outline)</td>
+            <td><code>hover:bg-slate-100</code></td>
+            <td>Subtle fill on outline. Confirms clickability.</td>
+          </tr>
+          <tr>
+            <td><strong>Link hover</strong></td>
+            <td><code>hover:underline</code></td>
+            <td>Classic. MSME familiar with hyperlink underline convention.</td>
+          </tr>
+          <tr>
+            <td><strong>Focus ring</strong> (keyboard nav)</td>
+            <td><code>focus:outline-none focus:ring-2 focus:ring-[#012749] focus:ring-offset-1</code></td>
+            <td>Accessibility — keyboard users see WHERE focus is. Never remove outline without adding ring.</td>
+          </tr>
+          <tr>
+            <td><strong>Active/pressed</strong></td>
+            <td><code>active:opacity-80</code></td>
+            <td>Instant "I just clicked" feedback. Prevents double-click confusion.</td>
+          </tr>
+          <tr>
+            <td><strong>Disabled</strong></td>
+            <td><code>disabled:opacity-50 disabled:cursor-not-allowed</code></td>
+            <td>Universal disabled affordance. Never opacity-30/40/60 — pick one value.</td>
+          </tr>
+          <tr>
+            <td><strong>Loading (during mutation)</strong></td>
+            <td>Button label swap to <code>&lt;LoadingState inline label="Menyimpan…" /&gt;</code> + disabled</td>
+            <td>MSME sees action in progress, can't double-submit.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Keyboard shortcuts (existing, not exhaustive)</h3>
+      <table>
+        <thead><tr><th>Key</th><th>Action</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td><code>Enter</code></td><td>Submit form / confirm inline edit</td><td>All forms + KasirExpenseCategoriesPanel inline edit</td></tr>
+          <tr><td><code>Esc</code></td><td>Cancel inline edit / close modal</td><td>All modals + inline edits</td></tr>
+          <tr><td><code>Space</code></td><td>Toggle checkbox / grab drag handle (dnd-kit)</td><td>Native + Pengaturan drag-reorder</td></tr>
+          <tr><td><code>Arrows</code></td><td>Move dragged item / navigate select options</td><td>Native + dnd-kit keyboard nav</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Anti-patterns</h3>
+      <table>
+        <thead><tr><th>❌ Don&#x27;t</th><th>✅ Do</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span className="ds-anti-bad">Mixed disabled opacities (opacity-30, opacity-40, opacity-60 sprinkled across app)</span></td>
+            <td><span className="ds-anti-good">Standardize on opacity-50</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">focus:outline-none WITHOUT replacement focus:ring</span></td>
+            <td><span className="ds-anti-good">Always pair — keyboard users need visible focus</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">hover:scale-105 / hover:translate transforms</span></td>
+            <td><span className="ds-anti-good">Opacity or bg-color change only — MSME finds motion "flashy" / distrust-inducing</span></td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">Button without loading feedback during async action</span></td>
+            <td><span className="ds-anti-good">Swap label to "Menyimpan…" + disable to prevent double-click</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 // ── Section: Shared components catalog ──────────────────────────────────────
 
 function SharedComponentsSection() {
   return (
     <section id="components">
-      <h2>7. Shared Components (src/components/ui/)</h2>
+      <h2>9. Shared Components (src/components/ui/)</h2>
       <p>Reusable primitives. Prefer these over rolling one-off implementations. Adding a new primitive requires founder approval + entry in this catalog.</p>
       <table>
         <thead><tr><th>Component</th><th>Purpose</th><th>Key props</th><th>Where to use</th></tr></thead>
@@ -608,7 +798,7 @@ function IconRenderer({ name, size = 24, color = '#012749' }: { name: string; si
 function IconsSection() {
   return (
     <section id="icons">
-      <h2>8. Icons (MSME-friendly vocabulary)</h2>
+      <h2>10. Icons (MSME-friendly vocabulary)</h2>
       <p>Dari <code>lucide-react</code>. Every action has ONE canonical icon — MSME users learn once, recognize everywhere. Mixing icons for the same action = anti-pattern (confuses non-tech users).</p>
       <div className="ds-note">
         <strong>MSME rules:</strong> (1) Every button MUST have icon + label — never icon-only. (2) Prefer literal-meaning icons (Truck for kirim, not Send). (3) When multiple lucide icons exist for same concept, pick the boldest/clearest variant (Trash2 not Trash, CheckCircle not CheckCircle2).
@@ -638,7 +828,7 @@ function IconsSection() {
 function AntiPatternsSection() {
   return (
     <section id="anti-patterns">
-      <h2>9. Anti-patterns</h2>
+      <h2>11. Anti-patterns</h2>
       <p>Common drift patterns to reject during code review. Each has a shorter, better form.</p>
       <table>
         <thead><tr><th>❌ Don't</th><th>✅ Do</th><th>Why</th></tr></thead>
@@ -684,7 +874,7 @@ function AntiPatternsSection() {
 function ExtendSection() {
   return (
     <section id="extend">
-      <h2>10. How to Extend</h2>
+      <h2>12. How to Extend</h2>
       <ol style={{ paddingLeft: 20, lineHeight: 1.7 }}>
         <li><strong>Propose in a design brief</strong> — describe the need + why existing token/component doesn't cover it. Show a mockup or reference (per CLAUDE.md FE UI/UX approval protocol).</li>
         <li><strong>Founder approves</strong> — "go", "approved", "lock it", or iteration comment. Assumptions of approval = violation per CLAUDE.md.</li>
@@ -723,6 +913,8 @@ export function DesignSystemPage({ tokens }: Props) {
         <a href="#radius-shadow">Radius & Shadow</a>
         <a href="#spacing-layout">Spacing & Layout</a>
         <a href="#states">States</a>
+        <a href="#forms">Forms</a>
+        <a href="#interactions">Interactions</a>
         <a href="#components">Components</a>
         <a href="#icons">Icons</a>
         <a href="#anti-patterns">Anti-patterns</a>
@@ -735,6 +927,8 @@ export function DesignSystemPage({ tokens }: Props) {
       <RadiusShadowSection tokens={tokens} />
       <SpacingLayoutSection />
       <StateTemplatesSection />
+      <FormPatternsSection />
+      <InteractionPatternsSection />
       <SharedComponentsSection />
       <IconsSection />
       <AntiPatternsSection />
