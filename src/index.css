@@ -91,6 +91,24 @@
   font-feature-settings: 'liga';
 }
 
+/* Focus-visible standardization (2026-08-02) — keyboard-focus only (mouse
+   click stays quiet). Site-specific focus-visible:ring-* classes still win
+   via higher specificity. Global fallback is a safety net for interactive
+   elements without explicit rings (custom [role="button"] divs, third-party
+   components, [tabindex] elements). Per spec
+   docs/superpowers/specs/2026-08-02-focus-ring-standardization-design.md. */
+:focus-visible {
+  outline: 2px solid var(--color-caleo-gold);
+  outline-offset: 2px;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
 @layer utilities {
   /* Hide scrollbars but keep functionality */
   .hide-scrollbar::-webkit-scrollbar {
