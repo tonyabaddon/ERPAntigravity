@@ -92,6 +92,7 @@ function CustomerPicker({
 // import React for JSX (needed for CustomerPicker)
 import React from 'react';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
+import EmptyState from '../../ui/EmptyState';
 
 export default function Step2Aktiva({ data, onChange, showToast }: Props) {
   const [autoValue, setAutoValue] = useState<number | null>(null);
@@ -232,8 +233,8 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                 <tbody className="divide-y divide-slate-100">
                   {(data.piutang.lines ?? []).length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-4 text-center text-slate-400 text-xs">
-                        Belum ada baris. Klik + Tambah Baris.
+                      <td colSpan={5} className="px-4 py-2">
+                        <EmptyState message="Belum ada baris. Klik + Tambah Baris." inline />
                       </td>
                     </tr>
                   ) : (
@@ -455,8 +456,8 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                 <tbody className="divide-y divide-slate-100">
                   {data.lain_lain.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-4 text-center text-slate-400 text-xs">
-                        Belum ada baris.
+                      <td colSpan={4} className="px-4 py-2">
+                        <EmptyState message="Belum ada baris." inline />
                       </td>
                     </tr>
                   ) : (

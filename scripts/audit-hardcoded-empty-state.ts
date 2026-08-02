@@ -42,7 +42,7 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/WhatsappAiScreen.tsx',
   'src/components/admin/CaleoBotDashboard.tsx',
   'src/components/admin/PendingPaymentRow.tsx',
-  'src/components/admin/PlansManagement.tsx',
+  'src/components/admin/PlansManagement.tsx', // false-positive: adminToast.success('Tidak ada perubahan.') at line ~233 — JS string in toast call, not JSX empty-state node (Rule 2 skip); real empty states swept in batch 8
   'src/components/admin/TenantDetail/PembayaranTab.tsx',
   'src/components/admin/TenantsList.tsx', // false-positive: 'Belum ada grant aktif...' at line 212 — JS string in toast branch, not JSX node (Rule 2 skip)
   'src/components/akuntansi/CashAccountPicker.tsx', // loading/error in <option> tags (can't embed components); empty-state is amber instructional div (visual change if replaced)
@@ -53,17 +53,12 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/feedback/CustomerFeedbackScreen.tsx',
   'src/components/kasbank/AccountDetailScreen.tsx',
   'src/components/kasir/HasilCariFotoModal.tsx',
-  'src/components/laporan/akuntansi/LabaRugiTab.tsx',
-  'src/components/laporan/akuntansi/MutasiTab.tsx',
-  'src/components/laporan/akuntansi/NeracaTab.tsx',
   'src/components/pembelian/form/SupplierPicker.tsx', // CTA button sub-description 'Tidak ada di list?...' — button copy, not empty-state; main empty states swept
   'src/components/pembelian/pembayaran/PembayaranFormPage.tsx',
   'src/components/pembelian/tagihan/TagihanFormPage.tsx',
   'src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx',
   'src/components/pembelian/tukar-faktur/TukarFakturFormPage.tsx',
   'src/components/pengaturan/PromoProdukPanel.tsx',
-  'src/components/pengaturan/saldoAwal/Step2Aktiva.tsx',
-  'src/components/penjualan/CartRows.tsx',
   'src/components/piutang/PiutangScreen.tsx',
   'src/components/produk/BulkUploadSection.tsx', // "Belum ada produk" is inside showToast() call — not a JSX empty-state node
   'src/components/produk/ProductForm.tsx',
@@ -71,7 +66,7 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/sales/DaftarPesananScreen.tsx',
   'src/components/stok/PriceChangeRequestModal.tsx',
   'src/components/stok/StockAdjustmentModal.tsx', // false-positive: 'Tidak ada user aktif' is a toast string, not JSX
-  'src/components/stok/StockOpnameScreen.tsx',
+  'src/components/stok/StockOpnameScreen.tsx', // false-positive: showToast('Tidak ada user aktif', ...) at line ~165 — toast string, not JSX empty-state node (Rule 2 skip); real empty states swept in batch 8
   'src/components/stok/StockOpnameSessionView.tsx',
   'src/components/warehouseTransfer/WarehouseTransferCreateScreen.tsx', // "Belum ada penerima" is a field-level inline caption under a form control with an embedded link — Rule 2 skip
 ]);

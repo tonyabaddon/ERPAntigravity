@@ -1,5 +1,6 @@
 import React from 'react';
 import { Lock, LockOpen } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
 import { KasirItem } from '../../types';
 import type { DiscountType, RakitServiceType, DbServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
@@ -378,9 +379,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
   // for a jasa-only cart even though their subtotal flowed into Total Invoice.
   if (totalLineCount === 0) {
     return (
-      <div className="px-6 py-8 text-center text-slate-400 text-caleo-13 bg-slate-50 border border-dashed border-slate-300 rounded">
-        Belum ada item. Tambahkan dari hasil pencarian di atas.
-      </div>
+      <EmptyState message="Belum ada item. Tambahkan dari hasil pencarian di atas." />
     );
   }
 
