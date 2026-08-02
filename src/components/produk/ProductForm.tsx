@@ -274,7 +274,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
     <div className="grid grid-cols-12 gap-5">
       <div className="col-span-12 lg:col-span-7 space-y-4">
         {/* Card: Identitas */}
-        <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
+        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">📋 Identitas Produk</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <CategoryDropdown
@@ -315,7 +315,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         </div>
 
         {/* Card: Spesifikasi (dynamic per category, fallback Aksesori) */}
-        <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
+        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">
             ⚙ Spesifikasi <span className="text-amber-700">{category}</span>
           </h5>
@@ -337,7 +337,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         </div>
 
         {/* Card: Foto Produk */}
-        <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
+        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">📷 Foto Produk <span className="text-[10px] font-medium text-slate-400 ml-1">(opsional)</span></h5>
@@ -424,7 +424,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         </div>
 
         {/* Card: Harga & Stok */}
-        <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
+        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">💰 Harga & Stok</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div className="space-y-1">
@@ -547,7 +547,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         </div>
 
         {/* Card: Pengaturan Lanjutan (collapsible) */}
-        <details className="bg-white rounded-sm border border-[#e5eeff] shadow-sm group">
+        <details className="bg-white rounded-sm border border-[var(--color-caleo-mist)] shadow-sm group">
           <summary className="cursor-pointer p-6 flex items-center gap-3 list-none">
             <div className="w-11 h-11 rounded-sm bg-slate-100 text-slate-600 flex items-center justify-center">
               <span className="material-symbols-outlined text-xl">tune</span>

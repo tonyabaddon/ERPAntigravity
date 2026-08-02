@@ -71,9 +71,9 @@ export default function JournalColumn({
   }
 
   return (
-    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm flex flex-col overflow-hidden">
+    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[var(--color-caleo-mist)] shadow-sm flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-[#e5eeff]">
+      <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">
@@ -148,7 +148,7 @@ export default function JournalColumn({
           <div
             key={line.id}
             onClick={() => onPickJournalLine(line)}
-            className="p-3 rounded-sm border mb-2 cursor-pointer border-[#e5eeff] hover:bg-blue-50 hover:border-blue-200 transition-colors"
+            className="p-3 rounded-sm border mb-2 cursor-pointer border-[var(--color-caleo-mist)] hover:bg-blue-50 hover:border-blue-200 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div className="min-w-0">

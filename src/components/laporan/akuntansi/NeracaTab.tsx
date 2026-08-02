@@ -198,7 +198,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Hero header (violet) ── */}
       <div
         className="p-6 text-white text-center rounded-t-3xl"
@@ -220,7 +220,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
           type="date"
           value={asOfDate}
           onChange={e => setAsOfDate(e.target.value)}
-          className="text-[12px] border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-[#1e3d60] font-bold focus:outline-none focus:ring-2 focus:ring-violet-300"
+          className="text-[12px] border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-[#1e3d60] font-bold focus:outline-none focus:ring-2 focus:ring-violet-300"
         />
         <span className="ml-auto text-[11px] text-gray-500 font-medium">{asOfLabel}</span>
       </div>
@@ -245,7 +245,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
             <div className="grid lg:grid-cols-2 gap-4">
 
               {/* ── LEFT: ASET ── */}
-              <div className="rounded-sm border border-[#c7d7f5] overflow-hidden">
+              <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] overflow-hidden">
                 {/* Sub-card header */}
                 <div className="py-2.5 px-4" style={{ background: '#dbeafe' }}>
                   <span className="font-extrabold text-[13px] text-blue-900 uppercase">ASET</span>
@@ -471,14 +471,14 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
               <button
                 onClick={handlePdfExport}
                 disabled={exporting || !data}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 {exporting ? 'Menghasilkan...' : 'PDF SAK EMKM'}
               </button>
               <button
                 onClick={() => showToast('Export Excel akan hadir segera', 'info')}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors"
+                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
               >
                 <Grid className="w-3.5 h-3.5" />
                 Excel

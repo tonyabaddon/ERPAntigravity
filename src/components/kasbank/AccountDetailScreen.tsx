@@ -660,7 +660,7 @@ export default function AccountDetailScreen({
                 className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                   activePreset === key
                     ? 'bg-[var(--color-caleo-primary)] text-white'
-                    : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
+                    : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
                 }`}
               >
                 {label}
@@ -669,7 +669,7 @@ export default function AccountDetailScreen({
 
             <button
               onClick={() => showToast('Custom date picker hadir di Phase 2', 'info')}
-              className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors"
+              className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
             >
               Custom...
             </button>
@@ -678,14 +678,14 @@ export default function AccountDetailScreen({
             <div className="ml-auto flex gap-2">
               <button
                 onClick={() => showToast('Export PDF hadir di Phase 2', 'info')}
-                className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors inline-flex items-center gap-1.5"
+                className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors inline-flex items-center gap-1.5"
               >
                 <FileDown className="w-3 h-3" />
                 PDF
               </button>
               <button
                 onClick={() => showToast('Export Excel hadir di Phase 2', 'info')}
-                className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors inline-flex items-center gap-1.5"
+                className="text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors inline-flex items-center gap-1.5"
               >
                 <Grid className="w-3 h-3" />
                 Excel
@@ -707,7 +707,7 @@ export default function AccountDetailScreen({
             ) : (
               <>
                 <table className="w-full text-[12px]">
-                  <thead style={{ background: '#eff4ff' }}>
+                  <thead style={{ background: 'var(--color-caleo-cloud)' }}>
                     <tr className="text-[10px] uppercase font-extrabold text-gray-600">
                       <th className="text-left py-2 px-3">Tanggal</th>
                       <th className="text-left py-2 px-3">No. Entry</th>
@@ -761,7 +761,7 @@ export default function AccountDetailScreen({
                   </tbody>
                   <tfoot
                     className="border-t-2"
-                    style={{ background: '#eff4ff', borderColor: '#1e40af' }}
+                    style={{ background: 'var(--color-caleo-cloud)', borderColor: '#1e40af' }}
                   >
                     <tr className="font-extrabold" style={{ color: 'var(--color-primary)' }}>
                       <td colSpan={3} className="py-3 px-3 text-right text-[11px] uppercase tracking-wide">
@@ -822,7 +822,7 @@ export default function AccountDetailScreen({
                 className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                   activePreset === key
                     ? 'bg-[var(--color-caleo-primary)] text-white'
-                    : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
+                    : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
                 }`}
               >
                 {label}
@@ -855,7 +855,7 @@ export default function AccountDetailScreen({
 
                 {/* Table */}
                 <table className="w-full text-[12px]">
-                  <thead style={{ background: '#eff4ff' }}>
+                  <thead style={{ background: 'var(--color-caleo-cloud)' }}>
                     <tr className="text-[10px] uppercase font-extrabold text-gray-600">
                       <th className="text-left py-2 px-3">Tanggal</th>
                       <th className="text-left py-2 px-3">No. Entry</th>

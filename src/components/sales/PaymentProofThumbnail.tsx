@@ -25,7 +25,7 @@ export function PaymentProofThumbnail({ proofUrl, source, onClick }: Props) {
       <img
         src={proofUrl}
         alt="Bukti pembayaran (thumbnail)"
-        style={{ width: 90, height: 120, objectFit: 'cover', borderRadius: 12, border: '2px solid #c7d7f5' }}
+        style={{ width: 90, height: 120, objectFit: 'cover', borderRadius: 12, border: '2px solid var(--color-caleo-mist-dark)' }}
       />
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary)' }}>Bukti Pembayaran</div>

@@ -180,8 +180,8 @@ export default function PinPad({
   ];
 
   const containerCls = compact
-    ? 'rounded-sm border border-[#e5eeff] bg-white p-4'
-    : 'rounded-sm border border-[#e5eeff] bg-white shadow-lg p-6';
+    ? 'rounded-sm border border-[var(--color-caleo-mist)] bg-white p-4'
+    : 'rounded-sm border border-[var(--color-caleo-mist)] bg-white shadow-lg p-6';
 
   const dotSize = compact ? 'w-3 h-3' : 'w-3.5 h-3.5';
   const buttonCls = compact ? 'text-xl' : 'text-2xl';
@@ -191,7 +191,7 @@ export default function PinPad({
     <div className={containerCls}>
       {(title || subtitle || showDemoHint) && (
         <div className="text-center mb-4">
-          <span className="inline-block rounded-full bg-[#e5eeff] text-[var(--color-caleo-primary)] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1">
+          <span className="inline-block rounded-full bg-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1">
             Approval Sync
           </span>
           {title && (
@@ -237,7 +237,7 @@ export default function PinPad({
               onClick={k.onClick}
               disabled={busy}
               aria-label={k.ariaLabel ?? `Tekan ${k.label}`}
-              className="aspect-square rounded-sm border border-[#e5eeff] bg-white hover:bg-blue-50 active:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="aspect-square rounded-sm border border-[var(--color-caleo-mist)] bg-white hover:bg-blue-50 active:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className={`font-extrabold text-[var(--color-caleo-primary)] ${buttonCls}`}>{k.label}</span>
             </button>
@@ -258,7 +258,7 @@ export default function PinPad({
               type="button"
               onClick={onCancel}
               disabled={busy}
-              className="px-4 py-2 rounded-full border border-[#e5eeff] text-xs font-extrabold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              className="px-4 py-2 rounded-full border border-[var(--color-caleo-mist)] text-xs font-extrabold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
               Batal
             </button>

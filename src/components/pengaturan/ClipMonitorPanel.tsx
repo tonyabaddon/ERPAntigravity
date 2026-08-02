@@ -22,12 +22,12 @@ export default function ClipMonitorPanel() {
   }, []);
 
   if (loading) {
-    return <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm text-sm text-slate-500">Memuat data inference…</div>;
+    return <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm text-sm text-slate-500">Memuat data inference…</div>;
   }
   if (!agg) return null;
 
   return (
-    <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
+    <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
       <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mb-3">Aktivitas CLIP Inference — Hari Ini</h3>
 
       <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 mb-4 text-[11px] text-[var(--color-caleo-primary)]">

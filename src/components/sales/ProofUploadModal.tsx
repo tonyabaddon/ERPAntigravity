@@ -36,7 +36,7 @@ export function ProofUploadModal({ orderId, field, onUploaded, onClose }: Props)
   function radioRow(value: ProofSource, title: string, desc: string) {
     const isSel = source === value;
     return (
-      <label style={{ display: 'flex', gap: 8, padding: 12, borderRadius: 10, border: `2px solid ${isSel ? 'var(--color-primary)' : '#e5eeff'}`, cursor: 'pointer' }}>
+      <label style={{ display: 'flex', gap: 8, padding: 12, borderRadius: 10, border: `2px solid ${isSel ? 'var(--color-primary)' : 'var(--color-caleo-mist)'}`, cursor: 'pointer' }}>
         <input type="radio" name="src" checked={isSel} onChange={() => setSource(value)} />
         <div>
           <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-primary)' }}>{title}</div>

@@ -261,7 +261,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
   return (
     <div className="space-y-8 animate-fadeIn pb-24">
       {/* Top Welcome Title Grid Header */}
-      <section className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl">
+      <section className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-3xl">
             <div className="flex items-center gap-4 mb-4">
@@ -282,7 +282,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             </p>
           </div>
 
-          <div className="bg-[#eff4ff]/60 border border-blue-50/50 p-5 rounded-sm shrink-0 flex items-center gap-3.5 select-none">
+          <div className="bg-[var(--color-caleo-cloud)]/60 border border-blue-50/50 p-5 rounded-sm shrink-0 flex items-center gap-3.5 select-none">
             <Cpu className="text-[var(--color-caleo-primary)] w-8 h-8 animate-spin" style={{ animationDuration: '6s' }} />
             <div>
               <span className="text-[9px] font-black text-slate-400 block tracking-widest uppercase">Koneksi Gateway</span>
@@ -298,7 +298,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
       {/* Sales Inbox shortcut */}
       <section
         onClick={() => onNavigate('sales-inbox')}
-        className="bg-white rounded-[2rem] px-8 py-5 border border-[#e5eeff] shadow-md flex items-center justify-between cursor-pointer hover:border-[var(--color-caleo-primary)]/30 hover:shadow-lg transition-all group"
+        className="bg-white rounded-[2rem] px-8 py-5 border border-[var(--color-caleo-mist)] shadow-md flex items-center justify-between cursor-pointer hover:border-[var(--color-caleo-primary)]/30 hover:shadow-lg transition-all group"
       >
         <div className="flex items-center gap-4">
           <div className="w-11 h-11 bg-[var(--color-caleo-primary)] text-white rounded-sm flex items-center justify-center shadow-md shrink-0">
@@ -321,7 +321,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
         <div className="xl:col-span-7 space-y-8">
 
           {/* pairing / Connection Setup Panel */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl space-y-6">
+          <div className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl space-y-6">
             <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] flex items-center gap-2">
               <QrCode className="w-5 h-5 text-emerald-600" />
               whatsmeow QR Code &amp; Device Pairing Hub
@@ -509,13 +509,13 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
           </div>
 
           {/* Development Integration Reference Guide */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl space-y-5">
+          <div className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] flex items-center gap-2">
                 <Code className="w-5 h-5 text-emerald-600" />
                 Go whatsmeow + Gemini API Code Boilerplate
               </h3>
-              <div className="flex bg-[#eff4ff] p-1 rounded-full text-[10px] font-black border border-blue-50">
+              <div className="flex bg-[var(--color-caleo-cloud)] p-1 rounded-full text-[10px] font-black border border-blue-50">
                 <button
                   className={`px-3 py-1 rounded-full cursor-pointer ${activeCodeTab === 'go' ? 'bg-[var(--color-caleo-primary)] text-white' : 'text-[var(--color-caleo-primary)]'}`}
                   onClick={() => setActiveCodeTab('go')}
@@ -532,7 +532,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-              Gunakan script backend template berikut untuk diletakkan di server internal produksi Anda. Script ini menginisialisasi client <code className="font-mono bg-[#eff4ff] text-emerald-600 px-1.5 py-0.5 rounded text-[10px]">whatsmeow</code> dan menyalurkan request pesan ke API AI toko Anda.
+              Gunakan script backend template berikut untuk diletakkan di server internal produksi Anda. Script ini menginisialisasi client <code className="font-mono bg-[var(--color-caleo-cloud)] text-emerald-600 px-1.5 py-0.5 rounded text-[10px]">whatsmeow</code> dan menyalurkan request pesan ke API AI toko Anda.
             </p>
 
             <div className="relative">
@@ -555,7 +555,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
         <div className="xl:col-span-5 space-y-8">
 
           {/* Numbers list card */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl space-y-6">
+          <div className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl space-y-6">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] flex items-center gap-2">

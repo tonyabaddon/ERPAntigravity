@@ -52,7 +52,7 @@ export function SubStageSection({
           padding: '14px 24px',
           cursor: 'pointer',
           background: isUrgent ? 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' : 'white',
-          borderBottom: '1px solid #e5eeff',
+          borderBottom: '1px solid var(--color-caleo-mist)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center' }}>

@@ -147,7 +147,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
       </div>
 
       {/* Daftar Gudang */}
-      <section className="bg-white border border-[#e5eeff] rounded-sm p-6 shadow-sm">
+      <section className="bg-white border border-[var(--color-caleo-mist)] rounded-sm p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-extrabold text-sm text-[var(--color-caleo-primary)]">Daftar Gudang</h2>
           <button
@@ -223,7 +223,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
 
       {/* Tambah Gudang */}
       {showAdd && (
-        <section className="bg-white border border-[#e5eeff] rounded-sm p-6 shadow-sm">
+        <section className="bg-white border border-[var(--color-caleo-mist)] rounded-sm p-6 shadow-sm">
           <h3 className="font-extrabold text-sm text-[var(--color-caleo-primary)] mb-3">Tambah Gudang Baru</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
             <input
@@ -258,7 +258,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
       )}
 
       {/* Riwayat Perubahan */}
-      <section className="bg-white border border-[#e5eeff] rounded-sm p-6 shadow-sm">
+      <section className="bg-white border border-[var(--color-caleo-mist)] rounded-sm p-6 shadow-sm">
         <h2 className="font-extrabold text-sm text-[var(--color-caleo-primary)] mb-3">Riwayat Perubahan</h2>
         {audit.length === 0 ? <p className="text-xs text-slate-400">Belum ada perubahan.</p> : (
           <ul className="space-y-2">

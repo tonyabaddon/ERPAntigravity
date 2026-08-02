@@ -368,7 +368,7 @@ export default function ManualTransferModal({
               </label>
               {cfg.sourceLocked ? (
                 /* Locked: sub-card display */
-                <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
+                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
                   {accountLabel(sourceAccount)}
                   <span className="ml-2 font-mono text-gray-500 text-[11px]">
                     Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
@@ -400,7 +400,7 @@ export default function ManualTransferModal({
               </label>
               {cfg.destLocked ? (
                 /* Locked: sub-card display */
-                <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
+                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
                   {accountLabel(sourceAccount)}
                   <span className="ml-2 font-mono text-gray-500 text-[11px]">
                     Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
@@ -484,7 +484,7 @@ export default function ManualTransferModal({
               Bukti transfer (opsional)
             </label>
             <div
-              className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-4 text-center text-[12px] text-gray-500"
+              className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-4 text-center text-[12px] text-gray-500"
               style={{ borderStyle: 'dashed' }}
             >
               <UploadCloud className="w-6 h-6 mx-auto text-blue-400 mb-1" />
@@ -511,7 +511,7 @@ export default function ManualTransferModal({
           <button
             onClick={() => !saving && onClose()}
             disabled={saving}
-            className="border border-[#c7d7f5] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[#eff4ff] disabled:opacity-50"
+            className="border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[var(--color-caleo-cloud)] disabled:opacity-50"
           >
             Batal
           </button>

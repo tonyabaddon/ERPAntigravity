@@ -8,7 +8,7 @@ interface Props {
 
 export function TypeTabs({ active, counts, onChange }: Props) {
   return (
-    <div style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fafbff 100%)', padding: '20px 24px 0', borderBottom: '1px solid #e5eeff' }}>
+    <div style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fafbff 100%)', padding: '20px 24px 0', borderBottom: '1px solid var(--color-caleo-mist)' }}>
       <div style={{ display: 'flex', gap: 32 }}>
         {(Object.entries(TYPE_TAB_CFG) as [TypeTab, typeof TYPE_TAB_CFG[TypeTab]][]).map(([key, cfg]) => {
           const isSel = key === active;

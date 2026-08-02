@@ -12,13 +12,13 @@ export function UrgentOrdersPreview({ orders }: Props) {
     .slice(0, 3);
 
   return (
-    <div style={{ background: 'white', border: '1px solid #e5eeff', borderRadius: 20, boxShadow: '0 2px 12px rgba(1,39,73,0.06)', overflow: 'hidden' }}>
+    <div style={{ background: 'white', border: '1px solid var(--color-caleo-mist)', borderRadius: 20, boxShadow: '0 2px 12px rgba(1,39,73,0.06)', overflow: 'hidden' }}>
       <div style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', padding: '12px 20px', borderBottom: '1px solid #fde68a', display: 'flex', alignItems: 'center' }}>
         <span style={{ fontSize: 10, color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>⚡ Perlu Kerjakan Sekarang · {urgent.length}</span>
         <button onClick={() => navigate('daftarPesanan')} style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-primary)', fontWeight: 700, background: 'transparent', border: 'none', cursor: 'pointer' }}>Lihat semua →</button>
       </div>
       {urgent.map(o => (
-        <div key={o.id} style={{ padding: '14px 20px', borderBottom: '1px solid #e5eeff', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div key={o.id} style={{ padding: '14px 20px', borderBottom: '1px solid var(--color-caleo-mist)', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: 14 }}>{o.customer}</div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{o.channel} · {SUB_STAGES.find(s => s.id === o.funnel_sub_stage)?.name ?? o.funnel_sub_stage}</div>

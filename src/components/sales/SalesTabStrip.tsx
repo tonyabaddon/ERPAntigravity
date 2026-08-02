@@ -4,7 +4,7 @@ interface Props { activeCount: number; }
 
 export function SalesTabStrip({ activeCount }: Props) {
   return (
-    <div className="flex items-end gap-1 border-b mb-5" style={{ borderColor: '#e5eeff' }}>
+    <div className="flex items-end gap-1 border-b mb-5" style={{ borderColor: 'var(--color-caleo-mist)' }}>
       <button onClick={() => navigate('penjualanBaru')} className="px-4 py-3 text-sm font-bold transition flex items-center gap-2" style={{ color: '#6b7280', borderBottom: '3px solid transparent', background: 'transparent' }}>
         📝 Sales Invoice
         <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500 }}>→ wizard</span>

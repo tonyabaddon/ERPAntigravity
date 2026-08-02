@@ -58,7 +58,7 @@ export default function CatalogListView({
   const [promoPopoverSku, setPromoPopoverSku] = useState<string | null>(null);
 
   return (
-    <div className="bg-white rounded-sm border border-[#e5eeff] shadow-sm overflow-hidden">
+    <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] shadow-sm overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left border-b-2 border-slate-200 bg-slate-50/50">

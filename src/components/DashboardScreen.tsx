@@ -109,7 +109,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
 
       {/* Aktivitas Sistem */}
       <section>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h4 className="text-lg font-bold text-[var(--color-caleo-primary)]">Detak Jantung Log Aktivitas AI</h4>

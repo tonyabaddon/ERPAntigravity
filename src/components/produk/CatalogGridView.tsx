@@ -25,13 +25,13 @@ export default function CatalogGridView({ stockList, onAdd, onEdit, hideToolbar 
   }, [stockList, q, cat, hideToolbar]);
 
   return (
-    <section className="bg-white rounded-[2.5rem] p-6 border border-[#e5eeff] shadow-xl">
+    <section className="bg-white rounded-[2.5rem] p-6 border border-[var(--color-caleo-mist)] shadow-xl">
       {!hideToolbar && (
         <div className="flex flex-col lg:flex-row gap-3 mb-5">
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama atau SKU…"
-                 className="flex-1 px-4 py-3 bg-[#eff4ff] rounded-full text-xs font-bold" />
+                 className="flex-1 px-4 py-3 bg-[var(--color-caleo-cloud)] rounded-full text-xs font-bold" />
           <select value={cat} onChange={e => setCat(e.target.value)}
-                  className="px-4 py-3 bg-[#eff4ff] rounded-full text-xs font-black">
+                  className="px-4 py-3 bg-[var(--color-caleo-cloud)] rounded-full text-xs font-black">
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <button onClick={onAdd}

@@ -39,6 +39,13 @@
      admin panel text color). */
   --color-caleo-primary: #012749;
 
+  /* Caleo soft-blue "mist" palette (2026-08-02: promoted from 319 combined
+     inline uses — the de-facto tenant app surface + border tones for cards,
+     panels, dividers on soft-blue background). */
+  --color-caleo-mist:       #e5eeff; /* card/panel border, subtle dividers   (117 refs) */
+  --color-caleo-mist-dark:  #c7d7f5; /* stronger border, active-state accent (105 refs) */
+  --color-caleo-cloud:      #eff4ff; /* card background, hover surface        (97 refs) */
+
   --radius-default: 2px;
   --radius-lg: 2px;
   --radius-xl: 2px;

@@ -112,7 +112,7 @@ export default function COAEditModal({
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
                 Kode Akun
               </label>
-              <div className="px-3 py-2 rounded-sm border border-[#c7d7f5] bg-gray-50 font-mono text-[13px] text-gray-600">
+              <div className="px-3 py-2 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-gray-50 font-mono text-[13px] text-gray-600">
                 {account.account_code}
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function COAEditModal({
               <label className="block text-xs font-bold text-gray-700 mb-1.5">
                 Tipe Akun
               </label>
-              <div className="px-3 py-2 rounded-sm border border-[#c7d7f5] bg-gray-50 text-[13px] text-gray-600">
+              <div className="px-3 py-2 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-gray-50 text-[13px] text-gray-600">
                 {account.account_type}
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function COAEditModal({
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
                   Akun Induk
                 </label>
-                <div className="px-3 py-2 rounded-sm border border-[#c7d7f5] bg-gray-50 text-[13px] text-gray-600">
+                <div className="px-3 py-2 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-gray-50 text-[13px] text-gray-600">
                   {account.parent_id}
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function COAEditModal({
               </label>
               <input
                 type="text"
-                className="w-full px-3 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+                className="w-full px-3 py-2 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
                 placeholder="Nama akun"
@@ -162,7 +162,7 @@ export default function COAEditModal({
                 Deskripsi
               </label>
               <textarea
-                className="w-full px-3 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5] resize-none"
+                className="w-full px-3 py-2 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)] resize-none"
                 rows={3}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
@@ -178,7 +178,7 @@ export default function COAEditModal({
                   checked={isActive}
                   onChange={e => setIsActive(e.target.checked)}
                   disabled={isSystemAccount}
-                  className="w-4 h-4 rounded border-[#c7d7f5] text-[var(--color-caleo-primary)] focus:ring-[#c7d7f5] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-4 h-4 rounded border-[var(--color-caleo-mist-dark)] text-[var(--color-caleo-primary)] focus:ring-[var(--color-caleo-mist-dark)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-xs font-bold text-gray-700">Aktif</span>
               </label>
@@ -193,7 +193,7 @@ export default function COAEditModal({
           {/* ── Footer ── */}
           <div className="px-6 py-4 border-t border-gray-200 flex items-center gap-2 justify-end">
             <button
-              className="px-4 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] font-bold text-[var(--color-caleo-primary)] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] font-bold text-[var(--color-caleo-primary)] hover:bg-gray-50 transition-colors"
               onClick={onClose}
               disabled={saving}
             >

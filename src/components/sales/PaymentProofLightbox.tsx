@@ -32,7 +32,7 @@ export function PaymentProofLightbox({ proofUrl, orderId, onApprove, onReject, o
           display: 'flex', flexDirection: 'column', maxWidth: 900, width: '100%', maxHeight: '92vh',
         }}
       >
-        <div style={{ padding: '12px 20px', borderBottom: '1px solid #e5eeff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--color-caleo-mist)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-primary)' }}>Bukti Pembayaran</div>
             <div style={{ fontSize: 11, color: '#9ca3af' }}>Order #{orderId.slice(0, 8)}</div>
@@ -46,7 +46,7 @@ export function PaymentProofLightbox({ proofUrl, orderId, onApprove, onReject, o
             style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}
           />
         </div>
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #e5eeff', display: 'flex', gap: 12, justifyContent: 'flex-end', background: '#fafbff' }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--color-caleo-mist)', display: 'flex', gap: 12, justifyContent: 'flex-end', background: '#fafbff' }}>
           <button
             onClick={() => {
               // eslint-disable-next-line no-alert

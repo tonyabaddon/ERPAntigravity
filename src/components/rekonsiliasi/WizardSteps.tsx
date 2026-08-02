@@ -24,12 +24,12 @@ const STEPS = [
 
 export default function WizardSteps({ currentStep, counts, onJump }: Props) {
   return (
-    <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[#e5eeff] shadow-sm">
+    <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[var(--color-caleo-mist)] shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🧭 Langkah Rekonsiliasi</div>
         <div className="text-[10px] text-slate-500 font-bold">Step {currentStep} dari 6</div>
       </div>
-      <div className="flex rounded-sm overflow-hidden border border-[#e5eeff]">
+      <div className="flex rounded-sm overflow-hidden border border-[var(--color-caleo-mist)]">
         {STEPS.map(s => {
           const cls = s.n < currentStep
             ? 'bg-emerald-50'

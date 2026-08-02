@@ -431,7 +431,7 @@ export default function AccountFormModal({
           )}
 
           {form.account_type === 'BANK' && (
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-3 flex items-center gap-2">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-3 flex items-center gap-2">
               <input
                 type="checkbox"
                 id="show_in_invoice"
@@ -446,7 +446,7 @@ export default function AccountFormModal({
           )}
 
           {!isEdit && (
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-3 text-[11px] text-gray-600">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-3 text-[11px] text-gray-600">
               💡 Saat Simpan: sistem otomatis create sub-COA{' '}
               <span className="font-mono font-bold">
                 {form.account_type === 'BANK' ? '1-12NN' : form.account_type === 'E_WALLET' ? '1-13NN' : '1-1110 (existing)'}
@@ -461,7 +461,7 @@ export default function AccountFormModal({
           <button
             onClick={() => !saving && onClose()}
             disabled={saving}
-            className="border border-[#c7d7f5] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[#eff4ff] disabled:opacity-50"
+            className="border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[var(--color-caleo-cloud)] disabled:opacity-50"
           >
             Batal
           </button>

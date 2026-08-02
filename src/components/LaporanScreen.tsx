@@ -119,11 +119,11 @@ export default function LaporanScreen(props: LaporanScreenProps) {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Top tab strip */}
-      <div className="flex gap-2 bg-white p-2 rounded-sm border border-[#c7d7f5] w-fit">
+      <div className="flex gap-2 bg-white p-2 rounded-sm border border-[var(--color-caleo-mist-dark)] w-fit">
         <button
           onClick={() => setActiveTab('performa')}
           className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
-            activeTab === 'performa' ? 'bg-[var(--color-caleo-primary)] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
+            activeTab === 'performa' ? 'bg-[var(--color-caleo-primary)] text-white' : 'text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" /> Performa
@@ -131,7 +131,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         <button
           onClick={() => setActiveTab('akuntansi')}
           className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
-            activeTab === 'akuntansi' ? 'bg-[var(--color-caleo-primary)] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
+            activeTab === 'akuntansi' ? 'bg-[var(--color-caleo-primary)] text-white' : 'text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
           }`}
         >
           <BarChart2 className="w-3.5 h-3.5" /> Akuntansi
@@ -231,7 +231,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       )}
 
       {/* Revenue by channel: stacked bar (left) + Profit per Channel list (right) */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl hover:shadow-2xl transition-all duration-300">
         <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-1">Revenue per Channel</h4>
         <p className="text-xs text-gray-400 mb-6">Breakdown harian dan profit margin per channel</p>
         <div className="flex flex-col lg:flex-row gap-6">
@@ -285,7 +285,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       </div>
 
         {/* Top products */}
-        <div className="bg-white rounded-sm p-6 md:p-8 border border-[#e5eeff] shadow-xl">
+        <div className="bg-white rounded-sm p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Produk Terlaris</h4>
           {topProducts.length === 0 ? (
             <p className="text-sm text-gray-400 italic">
@@ -316,14 +316,14 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         </div>
 
         {/* Slow-moving stock */}
-        <div className="bg-white rounded-sm p-6 md:p-8 border border-[#e5eeff] shadow-xl">
+        <div className="bg-white rounded-sm p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Produk Slow-Moving</h4>
           <p className="text-xs text-slate-500 mb-4">SKU dengan penjualan rendah dalam periode. Pertimbangkan bundling, diskon, atau retur ke supplier.</p>
           <SlowMoverTable days={days} />
         </div>
 
         {/* Top Customer */}
-        <div className="bg-white rounded-sm p-6 md:p-8 border border-[#e5eeff] shadow-xl">
+        <div className="bg-white rounded-sm p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Top 10 Customer</h4>
           <p className="text-xs text-slate-500 mb-4">Customer dengan total belanja tertinggi dalam periode.</p>
           <TopCustomerTable days={days} />

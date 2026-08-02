@@ -281,7 +281,7 @@ export default function AksiDropdown({
           className="absolute top-full right-0 mt-2 w-full rounded-sm py-2 shadow-lg z-10"
           style={{
             background: '#fafbff',
-            border: '1px solid #c7d7f5',
+            border: '1px solid var(--color-caleo-mist-dark)',
           }}
         >
           {items.map((item, idx) => (

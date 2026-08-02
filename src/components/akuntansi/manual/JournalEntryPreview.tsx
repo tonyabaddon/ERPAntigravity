@@ -108,7 +108,7 @@ export default function JournalEntryPreview({
           </tbody>
 
           {/* Footer with totals */}
-          <tfoot style={{ background: '#eff4ff' }}>
+          <tfoot style={{ background: 'var(--color-caleo-cloud)' }}>
             <tr className="font-extrabold" style={{ color: '#1e3d60' }}>
               <td colSpan={2} className="py-2 px-3 text-right">
                 Total

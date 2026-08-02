@@ -15,8 +15,8 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
   const pct = batches.length === 0 ? 0 : Math.round(matched / batches.length * 100);
 
   return (
-    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm flex flex-col overflow-hidden">
-      <div className="px-4 py-4 border-b border-[#e5eeff]">
+    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[var(--color-caleo-mist)] shadow-sm flex flex-col overflow-hidden">
+      <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">💵 Kas Tunai</div>
           <span className="text-[10px] text-slate-500 font-bold">{matched}/{batches.length} batch</span>
@@ -48,7 +48,7 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
               </div>
               <div className="flex gap-1.5 mt-2 items-center">
                 <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${isDeposited ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{b.status}</span>
-                {!isDeposited && <button onClick={() => onFindDeposit(b.id)} className="ml-auto text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-[#e5eeff] text-[var(--color-caleo-primary)]">Cari setoran →</button>}
+                {!isDeposited && <button onClick={() => onFindDeposit(b.id)} className="ml-auto text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Cari setoran →</button>}
                 {hasVariance && <button onClick={() => onExplain(b.id)} className="ml-auto text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-red-700">Jelaskan</button>}
               </div>
             </div>

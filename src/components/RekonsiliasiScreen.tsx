@@ -350,7 +350,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
   return (
     <div className="space-y-5 animate-fadeIn max-w-[1440px] mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center gap-4 bg-white/78 backdrop-blur-xl p-5 rounded-[2rem] border border-[#e5eeff] shadow-sm">
+      <div className="flex justify-between items-center gap-4 bg-white/78 backdrop-blur-xl p-5 rounded-[2rem] border border-[var(--color-caleo-mist)] shadow-sm">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-widest text-[#2d8a4e] bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5 align-middle" />
@@ -378,7 +378,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
           <select
             value={`${period.year}-${period.month}`}
             onChange={(e) => { const [y, m] = e.target.value.split('-').map(Number); setPeriod({ year: y, month: m }); }}
-            className="bg-white border border-[#e5eeff] rounded-sm px-3 py-2 text-xs font-bold text-[var(--color-caleo-primary)]"
+            className="bg-white border border-[var(--color-caleo-mist)] rounded-sm px-3 py-2 text-xs font-bold text-[var(--color-caleo-primary)]"
           >
             {Array.from({ length: 6 }).map((_, i) => {
               const d = new Date(); d.setMonth(d.getMonth() - i);
