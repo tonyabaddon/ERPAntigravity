@@ -30,7 +30,7 @@ export default function PaymentMethodSelector({ method, subtype, onMethodChange,
               if (m.key !== 'edc') onSubtypeChange(null);
               else if (subtype === null) onSubtypeChange('debit');
             }}
-            className={`border rounded-sm py-3 px-2 text-[12px] font-bold flex flex-col items-center gap-1 ${
+            className={`border rounded py-3 px-2 text-[12px] font-bold flex flex-col items-center gap-1 ${
               method === m.key
                 ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                 : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'

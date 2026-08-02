@@ -202,7 +202,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   return (
     <aside 
       id="sidebar"
-      className={`fixed left-4 top-4 bottom-4 z-50 bg-[var(--color-caleo-primary)] shadow-2xl rounded-sm flex flex-col py-8 overflow-hidden transition-all duration-300 ease-in-out group ${
+      className={`fixed left-4 top-4 bottom-4 z-50 bg-[var(--color-caleo-primary)] shadow-2xl rounded flex flex-col py-8 overflow-hidden transition-all duration-300 ease-in-out group ${
         isExpanded ? 'w-64' : 'w-20'
       }`}
       onMouseEnter={() => setIsExpanded(true)}
@@ -211,7 +211,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     >
       {/* Brand Header */}
       <div className="px-4 mb-10 flex items-center gap-4 overflow-hidden whitespace-nowrap">
-        <div className="w-10 h-10 bg-[#2d8a4e] text-white rounded-sm flex items-center justify-center shrink-0 shadow-lg shadow-[#2d8a4e]/20 hover:rotate-12 transition-transform duration-300">
+        <div className="w-10 h-10 bg-[#2d8a4e] text-white rounded flex items-center justify-center shrink-0 shadow-lg shadow-[#2d8a4e]/20 hover:rotate-12 transition-transform duration-300">
           <Zap className="w-5 h-5 fill-white text-[#2d8a4e]" />
         </div>
         <div className={`transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -315,13 +315,13 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
 
       {/* Footer Profile */}
       <div className="mt-auto px-3 pt-6 border-t border-white/10 space-y-3">
-        <div className="flex items-center gap-3 p-2 bg-white/5 rounded-sm overflow-hidden whitespace-nowrap">
+        <div className="flex items-center gap-3 p-2 bg-white/5 rounded overflow-hidden whitespace-nowrap">
           <AvatarBadge
             name={currentUser.name}
             gender={currentUser.gender}
             avatarUrl={currentUser.avatarUrl}
             size={40}
-            className="shrink-0 ring-2 ring-emerald-500/30 rounded-sm overflow-hidden"
+            className="shrink-0 ring-2 ring-emerald-500/30 rounded overflow-hidden"
           />
           <div className={`flex flex-col transition-opacity duration-300 overflow-hidden ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>

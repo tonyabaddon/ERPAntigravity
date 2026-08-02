@@ -53,7 +53,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           id="kasir-invoice-root"
-          className="bg-white rounded-sm overflow-hidden shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+          className="bg-white rounded overflow-hidden shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
           onClick={e => e.stopPropagation()}
         >
           {/* Toolbar */}
@@ -65,7 +65,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2d8a4e] text-white text-xs font-bold rounded-sm hover:bg-green-700"
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2d8a4e] text-white text-xs font-bold rounded hover:bg-green-700"
               >
                 <Download className="w-3.5 h-3.5" /> Cetak / PDF
               </button>
@@ -75,7 +75,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
 
           {/* Invoice body */}
           <div className="overflow-y-auto bg-gray-100 p-4 flex-1">
-            <div className="bg-white rounded-sm shadow-sm p-7 font-serif text-sm">
+            <div className="bg-white rounded shadow-sm p-7 font-serif text-sm">
               {loading ? (
                 <p className="text-center text-gray-400 py-8">Memuat...</p>
               ) : (

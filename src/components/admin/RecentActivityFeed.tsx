@@ -19,7 +19,7 @@ interface Props {
 
 export function RecentActivityFeed({ events }: Props) {
   return (
-    <div className="border rounded-sm overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
+    <div className="border rounded overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
       {/* Header */}
       <div
         className="px-4 py-2 text-[12px] font-bold uppercase tracking-widest"

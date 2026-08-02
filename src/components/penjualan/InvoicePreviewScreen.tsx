@@ -176,20 +176,20 @@ export default function InvoicePreviewScreen({
         <div className="flex gap-2">
           <button
             onClick={() => setLayananModalOpen(true)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-sm text-emerald-700 border border-emerald-300 hover:bg-emerald-50"
+            className="px-3 py-1.5 text-xs font-semibold rounded text-emerald-700 border border-emerald-300 hover:bg-emerald-50"
             title="Tambah layanan (Wiring / Jasa) dari katalog"
           >
             🛠 Tambah Layanan
           </button>
           <button
             onClick={onLihatDaftar}
-            className="px-3 py-1.5 text-xs font-semibold rounded-sm text-slate-700 border border-slate-300 hover:bg-slate-100"
+            className="px-3 py-1.5 text-xs font-semibold rounded text-slate-700 border border-slate-300 hover:bg-slate-100"
           >
             📋 Lihat di Daftar Pesanan
           </button>
           <button
             onClick={onCatatLagi}
-            className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
+            className="px-4 py-1.5 text-xs font-bold rounded bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
           >
             + Catat Penjualan Lagi
           </button>
@@ -215,7 +215,7 @@ export default function InvoicePreviewScreen({
             <div className="text-xs text-slate-500 max-w-md mx-auto">{loadError}</div>
             <button
               onClick={onLihatDaftar}
-              className="mt-4 px-4 py-2 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
+              className="mt-4 px-4 py-2 text-xs font-bold rounded bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
             >
               Buka Daftar Pesanan
             </button>
@@ -243,26 +243,26 @@ export default function InvoicePreviewScreen({
               <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Cetak</div>
               <button
                 onClick={() => onCetak('normal')}
-                className="w-full px-4 py-3 text-sm font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 text-sm font-bold rounded bg-[var(--color-caleo-primary)] text-white hover:opacity-90 flex items-center justify-center gap-2"
               >
                 🖨️ Printer Biasa (A4 / A5)
               </button>
               <button
                 onClick={() => onCetak('dot_matrix')}
-                className="w-full px-4 py-3 text-sm font-bold rounded-sm bg-slate-700 text-white hover:bg-slate-800 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 text-sm font-bold rounded bg-slate-700 text-white hover:bg-slate-800 flex items-center justify-center gap-2"
               >
                 🖨️ Dot Matrix (struk panjang)
               </button>
               <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 mt-4">File &amp; Share</div>
               <button
                 onClick={onBagikanWA}
-                className="w-full px-4 py-3 text-sm font-bold rounded-sm bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 text-sm font-bold rounded bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center gap-2"
               >
                 📱 Bagikan via WhatsApp
               </button>
               <button
                 onClick={onDownloadPdf}
-                className="w-full px-4 py-3 text-sm font-semibold rounded-sm bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 text-sm font-semibold rounded bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2"
               >
                 ⬇️ Download PDF
               </button>

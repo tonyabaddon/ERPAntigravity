@@ -274,7 +274,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
     <div className="grid grid-cols-12 gap-5">
       <div className="col-span-12 lg:col-span-7 space-y-4">
         {/* Card: Identitas */}
-        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
+        <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">📋 Identitas Produk</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <CategoryDropdown
@@ -315,7 +315,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         </div>
 
         {/* Card: Spesifikasi (dynamic per category, fallback Aksesori) */}
-        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
+        <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">
             ⚙ Spesifikasi <span className="text-amber-700">{category}</span>
           </h5>
@@ -330,14 +330,14 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             }}
           />
           {/* Auto-name preview pill */}
-          <div className="bg-purple-50 border border-purple-200 rounded-sm px-3 py-2 mt-3">
+          <div className="bg-purple-50 border border-purple-200 rounded px-3 py-2 mt-3">
             <div className="text-[9px] font-black uppercase tracking-widest text-purple-700">Nama Produk</div>
             <div className="text-sm font-extrabold text-purple-900">{previewName || '—'}</div>
           </div>
         </div>
 
         {/* Card: Foto Produk */}
-        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
+        <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">📷 Foto Produk <span className="text-[10px] font-medium text-slate-400 ml-1">(opsional)</span></h5>
@@ -348,7 +348,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             </span>
           </div>
           <div
-            className={`relative grid grid-cols-12 gap-3 rounded-sm transition-colors ${dragOverFiles ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50/60' : ''}`}
+            className={`relative grid grid-cols-12 gap-3 rounded transition-colors ${dragOverFiles ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50/60' : ''}`}
             onDragEnter={e => {
               if (e.dataTransfer.types.includes('Files')) {
                 e.preventDefault();
@@ -384,7 +384,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             }}
           >
             {dragOverFiles && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/10 rounded-sm z-10">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/10 rounded z-10">
                 <div className="bg-white px-4 py-2 rounded-full border-2 border-dashed border-emerald-500 text-[12px] font-extrabold text-emerald-700 uppercase tracking-widest">
                   Lepas untuk upload {photos.length < MAX_PHOTOS ? `(sisa ${MAX_PHOTOS - photos.length} slot)` : '(slot penuh)'}
                 </div>
@@ -424,7 +424,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         </div>
 
         {/* Card: Harga & Stok */}
-        <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
+        <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm">
           <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">💰 Harga & Stok</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div className="space-y-1">
@@ -432,7 +432,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                 {showGrosir ? 'Harga Eceran (Rp) *' : 'Harga Jual (Rp) *'}
               </label>
               <NumberInput value={price} onChange={setPrice}
-                     className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                     className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
               <p className="text-[10px] text-slate-400 pl-1">per {unit}</p>
             </div>
             <div className="space-y-1">
@@ -448,7 +448,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               </div>
               <NumberInput nullable value={hargaModal ?? null} readOnly={hargaModalIsAktual}
                      onChange={setHargaModal}
-                     className={`w-full rounded-sm px-3 py-2.5 border text-[13px] font-semibold ${
+                     className={`w-full rounded px-3 py-2.5 border text-[13px] font-semibold ${
                        hargaModalIsAktual ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white border-slate-200'
                      }`} />
               <p className="text-[10px] text-emerald-700 font-bold pl-1">
@@ -466,7 +466,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                 value={priceGrosir ?? null}
                 onChange={setPriceGrosir}
                 placeholder="Kosongkan jika belum di-set"
-                className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+                className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
               />
               {priceGrosir != null && priceGrosir > price && (
                 <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga grosir di atas eceran — tidak biasa. Pastikan benar.</p>
@@ -488,7 +488,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                   value={value ?? null}
                   onChange={onChange}
                   placeholder="Kosongkan untuk pakai harga base"
-                  className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+                  className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
                 />
                 {value != null && value > price && (
                   <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga {t.label} di atas eceran — tidak biasa. Pastikan benar.</p>
@@ -517,12 +517,12 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Jumlah Stok (opsional)</label>
                 <NumberInput allowDecimal={false} value={stokAwal} onChange={setStokAwal}
-                       className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                       className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Gudang Tujuan</label>
                 <select value={gudangTujuanId ?? ''} onChange={e => setGudangTujuanId(e.target.value || null)}
-                        className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
+                        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
                   {warehouses.filter(w => w.is_active).map(w => (
                     <option key={w.id} value={w.id}>{w.name} ({w.code}){w.is_default ? ' · Default' : ''}</option>
                   ))}
@@ -531,7 +531,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             </div>
 
             {stokAwal > 0 && (
-              <div className="mt-3 bg-amber-50 border border-amber-200 rounded-sm px-3 py-2.5 flex items-start gap-2">
+              <div className="mt-3 bg-amber-50 border border-amber-200 rounded px-3 py-2.5 flex items-start gap-2">
                 <span className="material-symbols-outlined text-amber-600 text-base shrink-0">verified_user</span>
                 <div className="flex-1">
                   <p className="text-[11px] font-bold text-amber-900 leading-tight">
@@ -547,9 +547,9 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         </div>
 
         {/* Card: Pengaturan Lanjutan (collapsible) */}
-        <details className="bg-white rounded-sm border border-[var(--color-caleo-mist)] shadow-sm group">
+        <details className="bg-white rounded border border-[var(--color-caleo-mist)] shadow-sm group">
           <summary className="cursor-pointer p-6 flex items-center gap-3 list-none">
-            <div className="w-11 h-11 rounded-sm bg-slate-100 text-slate-600 flex items-center justify-center">
+            <div className="w-11 h-11 rounded bg-slate-100 text-slate-600 flex items-center justify-center">
               <span className="material-symbols-outlined text-xl">tune</span>
             </div>
             <div className="flex-1">
@@ -560,7 +560,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           </summary>
           <div className="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
             {/* Multi-satuan */}
-            <div className="bg-blue-50 border border-blue-100 rounded-sm p-3">
+            <div className="bg-blue-50 border border-blue-100 rounded p-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={multiSatuanOn}
                        onChange={e => {
@@ -576,7 +576,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                   <div className="space-y-1">
                     <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">1 Paket (Sekunder)</label>
                     <select value={unitAlt ?? ''} onChange={e => setUnitAlt(e.target.value || null)}
-                            className="w-full bg-white rounded-sm px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold">
+                            className="w-full bg-white rounded px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold">
                       <option value="">—</option>
                       {units.filter(u => u.name !== unit).map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
                     </select>
@@ -585,11 +585,11 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                   <div className="space-y-1">
                     <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Berapa</label>
                     <NumberInput nullable allowDecimal={false} value={unitAltFactor ?? null} onChange={setUnitAltFactor}
-                           className="w-full bg-white rounded-sm px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
+                           className="w-full bg-white rounded px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Satuan Utama</label>
-                    <input readOnly value={unit} className="w-full bg-slate-100 rounded-sm px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
+                    <input readOnly value={unit} className="w-full bg-slate-100 rounded px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
                   </div>
                   <p className="text-[9.5px] text-blue-800 italic pb-1.5">Stok dilacak per Satuan Utama.</p>
                 </div>
@@ -603,7 +603,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                 <NumberInput nullable allowDecimal={false} value={minStockPerProduct ?? null}
                        onChange={setMinStockPerProduct}
                        placeholder="kosong = global"
-                       className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                       className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
                 <p className="text-[10px] text-slate-400">Alert kalau stok ≤ angka ini</p>
               </div>
             </div>
@@ -622,7 +622,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                 </button>
               </div>
               <textarea rows={3} value={description} onChange={e => setDescription(e.target.value.slice(0, 500))}
-                        className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] resize-none" />
+                        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] resize-none" />
               <p className="text-[10px] text-slate-400 text-right">{description.length} / 500</p>
             </div>
           </div>
@@ -661,7 +661,7 @@ function CategoryDropdown(p: { value: string; options: string[]; onChange: (v: s
       <select
         value={p.value}
         onChange={e => { if (e.target.value === '__new__') setCreating(true); else p.onChange(e.target.value); }}
-        className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
       >
         {p.options.map(o => <option key={o} value={o}>{o}</option>)}
         <option value="__new__">+ Buat kategori baru…</option>
@@ -669,7 +669,7 @@ function CategoryDropdown(p: { value: string; options: string[]; onChange: (v: s
       {creating && (
         <div className="flex gap-2 mt-1">
           <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nama kategori"
-                 className="flex-1 bg-white rounded-sm px-3 py-2 border border-emerald-200 text-xs" />
+                 className="flex-1 bg-white rounded px-3 py-2 border border-emerald-200 text-xs" />
           <button onClick={async () => { await p.onCreateNew(newName); setCreating(false); setNewName(''); }}
                   className="px-3 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold">Tambah</button>
           <button onClick={() => { setCreating(false); setNewName(''); }} className="px-3 py-2 text-emerald-700 text-xs">Batal</button>
@@ -689,7 +689,7 @@ function SubCategoryDropdown(p: { value: string; options: string[]; parentName: 
       <select
         value={p.value}
         onChange={e => { if (e.target.value === '__new__') setCreating(true); else p.onChange(e.target.value); }}
-        className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+        className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
       >
         <option value="">— Tidak ada —</option>
         {p.options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -698,7 +698,7 @@ function SubCategoryDropdown(p: { value: string; options: string[]; parentName: 
       {creating && (
         <div className="flex gap-2 mt-1">
           <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nama sub-kategori"
-                 className="flex-1 bg-white rounded-sm px-3 py-2 border border-emerald-200 text-xs" />
+                 className="flex-1 bg-white rounded px-3 py-2 border border-emerald-200 text-xs" />
           <button onClick={async () => { await p.onCreateNew(newName); setCreating(false); setNewName(''); }}
                   className="px-3 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold">Tambah</button>
         </div>
@@ -714,14 +714,14 @@ function UnitDropdown(p: { value: string; options: string[]; onChange: (v: strin
     <div className="space-y-1">
       <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Satuan *</label>
       <select value={p.value} onChange={e => { if (e.target.value === '__new__') setCreating(true); else p.onChange(e.target.value); }}
-              className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
+              className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
         {p.options.map(o => <option key={o} value={o}>{o}</option>)}
         <option value="__new__">+ Buat satuan baru…</option>
       </select>
       {creating && (
         <div className="flex gap-2 mt-1">
           <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Mis: kg, lembar"
-                 className="flex-1 bg-white rounded-sm px-3 py-2 border border-emerald-200 text-xs" />
+                 className="flex-1 bg-white rounded px-3 py-2 border border-emerald-200 text-xs" />
           <button onClick={async () => { await p.onCreateNew(newName); setCreating(false); setNewName(''); }}
                   className="px-3 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold">Tambah</button>
         </div>
@@ -736,7 +736,7 @@ function SkuInput(p: { value: string; onChange: (v: string) => void }) {
       <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Kode / SKU</label>
       <input value={p.value} onChange={e => p.onChange(e.target.value)}
              placeholder="Kosongkan untuk auto"
-             className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+             className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
     </div>
   );
 }
@@ -763,7 +763,7 @@ function SpecForm(p: {
               </label>
               <select value={p.specs[f.key] ?? ''}
                       onChange={e => { if (e.target.value === '__new_brand__') setAddingBrand(true); else p.onChange(f.key, e.target.value); }}
-                      className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
+                      className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
                 <option value="">—</option>
                 {options.map(o => <option key={o} value={o}>{o}</option>)}
                 {isMcbMerek && <option value="__new_brand__">+ Tambah merek baru…</option>}
@@ -771,7 +771,7 @@ function SpecForm(p: {
               {isMcbMerek && addingBrand && (
                 <div className="flex gap-2 mt-1">
                   <input value={newBrand} onChange={e => setNewBrand(e.target.value)} placeholder="Merek baru"
-                         className="flex-1 bg-white rounded-sm px-3 py-2 border border-emerald-200 text-xs" />
+                         className="flex-1 bg-white rounded px-3 py-2 border border-emerald-200 text-xs" />
                   <button onClick={async () => { await p.onAddBrand(newBrand); setAddingBrand(false); setNewBrand(''); }}
                           className="px-3 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold">Tambah</button>
                 </div>
@@ -784,7 +784,7 @@ function SpecForm(p: {
             <div key={f.key} className="space-y-1">
               <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">{f.label}{f.required && ' *'}</label>
               <input type="number" value={p.specs[f.key] ?? ''} onChange={e => p.onChange(f.key, e.target.value)}
-                     className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                     className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
             </div>
           );
         }
@@ -793,7 +793,7 @@ function SpecForm(p: {
           <div key={f.key} className="space-y-1 sm:col-span-3">
             <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">{f.label}{f.required && ' *'}</label>
             <input type="text" value={p.specs[f.key] ?? ''} onChange={e => p.onChange(f.key, e.target.value)}
-                   className="w-full bg-white rounded-sm px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                   className="w-full bg-white rounded px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
           </div>
         );
       })}
@@ -816,7 +816,7 @@ interface PhotoSlotProps {
 const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
   if (!p.photo) {
     return (
-      <label className="aspect-square rounded-sm border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-700 cursor-pointer hover:bg-emerald-50/40">
+      <label className="aspect-square rounded border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-700 cursor-pointer hover:bg-emerald-50/40">
         <span className="material-symbols-outlined text-3xl mb-1">add_a_photo</span>
         <span className="text-[10px] font-extrabold uppercase tracking-widest">Tambah</span>
         <input type="file" accept="image/*" multiple className="hidden"
@@ -831,7 +831,7 @@ const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
       onDragStart={p.onDragStart}
       onDragOver={e => { e.preventDefault(); p.onDragOver(); }}
       onDrop={e => { e.preventDefault(); p.onDrop(); }}
-      className={`relative aspect-square rounded-sm overflow-hidden border ${p.isThumbnail ? 'border-2 border-emerald-300' : 'border-slate-200'} group`}
+      className={`relative aspect-square rounded overflow-hidden border ${p.isThumbnail ? 'border-2 border-emerald-300' : 'border-slate-200'} group`}
     >
       {thumb ? <img src={thumb} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-200" />}
       {p.isThumbnail && (

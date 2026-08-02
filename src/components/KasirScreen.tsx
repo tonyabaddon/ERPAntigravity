@@ -89,7 +89,7 @@ function KpiCard({ label, value, sub, color, icon, locked }: KpiCardProps) {
 
   if (locked) {
     return (
-      <div className="bg-white border border-dashed border-gray-200 rounded-sm p-5 flex flex-col items-center justify-center gap-1">
+      <div className="bg-white border border-dashed border-gray-200 rounded p-5 flex flex-col items-center justify-center gap-1">
         <Lock className="w-5 h-5 text-gray-300" />
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">{label}</span>
       </div>
@@ -97,7 +97,7 @@ function KpiCard({ label, value, sub, color, icon, locked }: KpiCardProps) {
   }
 
   return (
-    <div className={`rounded-sm p-5 border relative overflow-hidden ${colorMap[color]}`}>
+    <div className={`rounded p-5 border relative overflow-hidden ${colorMap[color]}`}>
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${topBar[color]}`} />
       <div className={`text-lg mb-2 ${color === 'navy' ? 'text-white' : ''}`}>{icon}</div>
       <div className={`text-[10px] font-black uppercase tracking-widest mb-1 ${labelColor}`}>{label}</div>
@@ -232,7 +232,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
               value={selectedDate}
               max={todayISO()}
               onChange={e => setSelectedDate(e.target.value)}
-              className="bg-white border border-[var(--color-caleo-mist)] rounded-sm px-3 py-2 text-xs font-semibold text-[var(--color-caleo-primary)] outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+              className="bg-white border border-[var(--color-caleo-mist)] rounded px-3 py-2 text-xs font-semibold text-[var(--color-caleo-primary)] outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
             />
           )}
           {isOwner && (
@@ -253,7 +253,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           <button
             type="button"
             onClick={() => onOpenPenjualanBaru?.()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#2d8a4e] text-white font-extrabold text-[13px] rounded-sm hover:bg-green-700"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#2d8a4e] text-white font-extrabold text-[13px] rounded hover:bg-green-700"
           >
             📋 Catat Penjualan
           </button>
@@ -347,7 +347,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                   ? (o.items ?? []).reduce((s: number, i: { sku: string; qty: number }) => s + (stockMap[i.sku]?.harga_modal ?? 0) * i.qty, 0)
                   : 0;
                 return (
-                  <div key={`wa-${o.id}`} className="flex items-center gap-3 p-3 rounded-sm border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/30 transition-all">
+                  <div key={`wa-${o.id}`} className="flex items-center gap-3 p-3 rounded border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/30 transition-all">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                     <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 flex-shrink-0">
                       💬 WA Order
@@ -359,7 +359,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                       <div className="text-[10px] text-gray-400 font-medium">Auto-sync · {formatTime(o.updated_at)}</div>
                     </div>
                     {isOwner && waHpp > 0 && (
-                      <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-sm flex-shrink-0">
+                      <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded flex-shrink-0">
                         HPP {formatRp(waHpp)}
                       </span>
                     )}
@@ -370,7 +370,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
               const tx = entry.tx;
               const isIncome = tx.type === 'income';
               return (
-                <div key={`tx-${tx.id}`} className="flex items-center gap-3 p-3 rounded-sm border border-slate-100 bg-slate-50/50 hover:bg-blue-50/20 transition-all">
+                <div key={`tx-${tx.id}`} className="flex items-center gap-3 p-3 rounded border border-slate-100 bg-slate-50/50 hover:bg-blue-50/20 transition-all">
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isIncome ? 'bg-emerald-500' : 'bg-red-500'}`} />
                   {tx.channel ? (
                     <ChannelPill channel={tx.channel} />
@@ -399,7 +399,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                         <button
                           type="button"
                           onClick={() => setMarkLunasTx(tx)}
-                          className="px-2 py-0.5 rounded-sm text-[10px] font-extrabold bg-amber-500 text-white hover:bg-amber-600"
+                          className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500 text-white hover:bg-amber-600"
                         >
                           Tandai Lunas
                         </button>
@@ -407,7 +407,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                     )}
                   </div>
                   {isOwner && isIncome && tx.hpp_total > 0 && (
-                    <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-sm flex-shrink-0">
+                    <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded flex-shrink-0">
                       HPP {formatRp(tx.hpp_total)}
                     </span>
                   )}
@@ -417,7 +417,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                   {isIncome && tx.invoice_number && (
                     <button
                       onClick={() => setPrintTx(tx)}
-                      className="p-1.5 rounded-sm hover:bg-slate-100 text-gray-400 hover:text-[var(--color-caleo-primary)] transition-all flex-shrink-0"
+                      className="p-1.5 rounded hover:bg-slate-100 text-gray-400 hover:text-[var(--color-caleo-primary)] transition-all flex-shrink-0"
                       title="Cetak invoice"
                     >
                       <Printer className="w-3.5 h-3.5" />
@@ -437,7 +437,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
             <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-1">Catat Transaksi</h3>
             <p className="text-[10px] text-gray-400 mb-4">Pilih jenis transaksi</p>
 
-            <div className="bg-emerald-50 border border-emerald-200 rounded-sm px-4 py-3 flex items-start gap-2.5 mb-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded px-4 py-3 flex items-start gap-2.5 mb-4">
               <span className="w-2 h-2 mt-1 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
               <div>
                 <div className="text-[11px] font-bold text-emerald-800">WA Orders — Auto-Sync</div>
@@ -448,7 +448,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
             <div className="grid grid-cols-1 gap-2.5">
               <button
                 onClick={() => setShowExpenseModal(true)}
-                className="flex flex-col items-center justify-center p-4 rounded-sm border-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 transition-all hover:scale-[1.02] text-center"
+                className="flex flex-col items-center justify-center p-4 rounded border-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 transition-all hover:scale-[1.02] text-center"
               >
                 <span className="text-xl mb-1">📤</span>
                 <span className="text-[11px] font-black uppercase tracking-wide">Pengeluaran</span>
@@ -469,7 +469,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 ] as const).map(({ key, label, color }) => {
                   const val = summary.byPaymentMethod[key] ?? 0;
                   return (
-                    <div key={key} className={`flex items-center justify-between px-3 py-2 rounded-sm border ${color}`}>
+                    <div key={key} className={`flex items-center justify-between px-3 py-2 rounded border ${color}`}>
                       <span className="text-[11px] font-bold">{label}</span>
                       <span className="text-[11px] font-black">{formatRp(val)}</span>
                     </div>
@@ -486,7 +486,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-1">Tutup Buku Harian</h3>
                 <p className="text-[10px] text-gray-400 mb-4">Ringkasan &amp; cetak laporan</p>
               </div>
-              <div className="mx-5 mb-5 bg-gradient-to-br from-[var(--color-caleo-primary)] to-[#1e3d60] rounded-sm p-4 text-white">
+              <div className="mx-5 mb-5 bg-gradient-to-br from-[var(--color-caleo-primary)] to-[#1e3d60] rounded p-4 text-white">
                 <div className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-3">
                   Rekap {new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
@@ -512,7 +512,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 </div>
                 <button
                   onClick={() => window.print()}
-                  className="mt-3 w-full py-2 rounded-sm bg-white/10 border border-white/20 text-white text-xs font-bold uppercase tracking-wide hover:bg-white/20 transition-all"
+                  className="mt-3 w-full py-2 rounded bg-white/10 border border-white/20 text-white text-xs font-bold uppercase tracking-wide hover:bg-white/20 transition-all"
                 >
                   🖨️ Cetak Laporan Harian
                 </button>
@@ -634,7 +634,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-sm shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)]">Catat Pengeluaran</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
@@ -660,7 +660,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
                 value={category}
                 onChange={e => setCategory(e.target.value)}
                 disabled={isLoading || activeCategories.length === 0}
-                className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] disabled:opacity-50"
+                className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] disabled:opacity-50"
               >
                 {isLoading && <option>Memuat kategori...</option>}
                 {!isLoading && activeCategories.length === 0 && (
@@ -679,7 +679,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Contoh: Galon air x2, Bayar WiFi Indihome..."
-              className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
             />
           </div>
 
@@ -691,7 +691,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0"
-              className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
             />
           </div>
         </div>
@@ -700,7 +700,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
           <button
             onClick={handleSave}
             disabled={!canSave}
-            className="w-full py-2.5 rounded-sm text-xs font-bold bg-[var(--color-caleo-primary)] text-white hover:bg-[#1e3d60] transition-all disabled:opacity-50"
+            className="w-full py-2.5 rounded text-xs font-bold bg-[var(--color-caleo-primary)] text-white hover:bg-[#1e3d60] transition-all disabled:opacity-50"
           >
             {saving ? 'Menyimpan...' : 'Simpan Pengeluaran'}
           </button>

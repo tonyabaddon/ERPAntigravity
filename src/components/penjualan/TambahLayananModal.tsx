@@ -121,7 +121,7 @@ export default function TambahLayananModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl my-4">
+      <div className="bg-white rounded shadow-2xl w-full max-w-2xl my-4">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <h2 className="text-[15px] font-extrabold text-[var(--color-caleo-primary)]">
             + Tambah Layanan ke Pesanan
@@ -139,7 +139,7 @@ export default function TambahLayananModal({
               Memuat katalog layanan…
             </div>
           ) : catalog.length === 0 ? (
-            <div className="text-center py-8 text-[13px] text-slate-500 border border-dashed border-slate-300 rounded-sm">
+            <div className="text-center py-8 text-[13px] text-slate-500 border border-dashed border-slate-300 rounded">
               Belum ada layanan aktif. Setup di Pengaturan → 🛠 Layanan dulu.
             </div>
           ) : (
@@ -151,7 +151,7 @@ export default function TambahLayananModal({
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                 >
                   <option value="">— pilih —</option>
                   {catalog.map((c) => (
@@ -173,7 +173,7 @@ export default function TambahLayananModal({
                       value={qty}
                       onChange={(n) => setQty(Math.max(1, n))}
                       allowDecimal={false}
-                      className="w-32 border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-32 border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                     />
                   </div>
 
@@ -185,7 +185,7 @@ export default function TambahLayananModal({
                       value={labor}
                       onChange={setLabor}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                     />
                     <div className="text-[11px] text-slate-400 mt-1">
                       Default catalog:{' '}
@@ -202,7 +202,7 @@ export default function TambahLayananModal({
                       value={finalPrice}
                       onChange={setFinalPrice}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                     />
                   </div>
 
@@ -285,7 +285,7 @@ export default function TambahLayananModal({
                     </div>
                   </div>
 
-                  <div className="border border-slate-200 rounded-sm bg-slate-50 p-3 text-[12px]">
+                  <div className="border border-slate-200 rounded bg-slate-50 p-3 text-[12px]">
                     <div className="text-slate-500 mb-1">
                       Estimasi (approx — HPP sebenarnya dari FIFO saat
                       pengiriman):
@@ -303,14 +303,14 @@ export default function TambahLayananModal({
         <div className="px-6 py-4 border-t border-slate-200 flex justify-between">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded-sm hover:bg-slate-200"
+            className="px-4 py-2 text-[13px] font-semibold text-slate-600 bg-slate-100 rounded hover:bg-slate-200"
           >
             Batal
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving || !selectedId}
-            className="px-4 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60"
+            className="px-4 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded hover:opacity-90 disabled:opacity-60"
           >
             {saving ? 'Menyimpan…' : 'Tambah ke Pesanan'}
           </button>

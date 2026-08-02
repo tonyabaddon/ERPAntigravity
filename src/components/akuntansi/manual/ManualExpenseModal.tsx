@@ -254,7 +254,7 @@ export default function ManualExpenseModal({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="bg-white rounded-sm max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
         <div
@@ -262,7 +262,7 @@ export default function ManualExpenseModal({
           style={{ background: '#ffedd5' }}
         >
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 bg-orange-200 text-orange-700">
+            <div className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0 bg-orange-200 text-orange-700">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
@@ -276,7 +276,7 @@ export default function ManualExpenseModal({
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-orange-500 hover:text-orange-700 p-1 rounded-sm hover:bg-white/60"
+            className="text-orange-500 hover:text-orange-700 p-1 rounded hover:bg-white/60"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -289,7 +289,7 @@ export default function ManualExpenseModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-orange-200 bg-orange-50 rounded-sm p-3 text-[12px] text-orange-700">
+            <div className="border border-orange-200 bg-orange-50 rounded p-3 text-[12px] text-orange-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -303,7 +303,7 @@ export default function ManualExpenseModal({
               value={selectedBebanId}
               onChange={(e) => setSelectedBebanId(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 bg-white disabled:opacity-60"
             >
               <option value="">— Pilih kategori beban —</option>
               {bebanCategories.map((cat) => (
@@ -323,7 +323,7 @@ export default function ManualExpenseModal({
               value={selectedSourceId}
               onChange={(e) => setSelectedSourceId(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 bg-white disabled:opacity-60"
             >
               <option value="">— Pilih sumber dana —</option>
               {cashAccounts.map((acc) => (
@@ -349,7 +349,7 @@ export default function ManualExpenseModal({
               onBlur={handleAmountBlur}
               placeholder="Rp 0"
               disabled={saving}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
             />
           </div>
 
@@ -363,7 +363,7 @@ export default function ManualExpenseModal({
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
             />
             {isFuture && (
               <p className="text-[11px] text-amber-700 mt-1">
@@ -383,7 +383,7 @@ export default function ManualExpenseModal({
               onChange={(e) => setDescription(e.target.value)}
               disabled={saving}
               placeholder="Mis. gaji Andi periode Juni 2026"
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
             />
             {description.trim().length > 0 && description.trim().length < 3 && (
               <p className="text-[11px] text-rose-700 mt-1">
@@ -398,7 +398,7 @@ export default function ManualExpenseModal({
               Bukti pengeluaran (opsional)
             </label>
             <div
-              className="border-2 border-slate-200 rounded-sm px-3 py-3 text-center text-[12px] text-gray-500 flex flex-col items-center gap-1"
+              className="border-2 border-slate-200 rounded px-3 py-3 text-center text-[12px] text-gray-500 flex flex-col items-center gap-1"
               style={{ borderStyle: 'dashed' }}
             >
               <svg

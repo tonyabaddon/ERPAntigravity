@@ -1,8 +1,8 @@
-// Scan src/ for radius classes other than rounded-sm and rounded-full.
-// Post-PR3 (2026-08-02), all radius should be rounded-sm (2px, Excel-flat
-// aesthetic) or rounded-full (semantic circular for avatars/pills/badges).
+// Scan src/ for radius classes other than `rounded` (Tailwind default 4px)
+// and `rounded-full`. Post-2026-08-02 v2, all radius unified to 4px
+// (`rounded`) or semantic circular (`rounded-full`).
 //
-// This audit prevents regression to rounded-lg/xl/2xl/3xl/md.
+// This audit prevents regression to rounded-sm/md/lg/xl/2xl/3xl.
 //
 // Usage: npm run audit:radius-non-canonical
 // Exit 0 = clean (no old radius classes). Exit 1 = regressions surfaced.
@@ -11,7 +11,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = 'src';
-const BANNED_RE = /\brounded-(md|lg|xl|2xl|3xl)\b/g;
+const BANNED_RE = /\brounded-(sm|md|lg|xl|2xl|3xl)\b/g;
 
 function walk(dir: string, out: string[]): void {
   for (const entry of readdirSync(dir)) {
@@ -48,7 +48,7 @@ for (const f of files) {
 }
 
 if (violations.length === 0) {
-  console.log(`✓ clean — no rounded-md/lg/xl/2xl/3xl (all radius is rounded-sm or rounded-full post-PR3)`);
+  console.log(`✓ clean — no rounded-sm/md/lg/xl/2xl/3xl (all radius is 'rounded' 4px or rounded-full)`);
   process.exit(0);
 }
 

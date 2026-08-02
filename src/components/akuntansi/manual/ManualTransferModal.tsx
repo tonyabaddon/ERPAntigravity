@@ -320,7 +320,7 @@ export default function ManualTransferModal({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="bg-white rounded-sm max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
         <div
@@ -328,7 +328,7 @@ export default function ManualTransferModal({
           style={{ background: cfg.headerBg }}
         >
           <div className="flex items-start gap-3">
-            <div className={`w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 ${cfg.iconTileCls}`}>
+            <div className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 ${cfg.iconTileCls}`}>
               <Icon className="w-5 h-5" />
             </div>
             <div>
@@ -340,7 +340,7 @@ export default function ManualTransferModal({
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded-sm hover:bg-white/60"
+            className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-white/60"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -353,7 +353,7 @@ export default function ManualTransferModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded-sm p-3 text-[12px] text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-[12px] text-rose-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -368,7 +368,7 @@ export default function ManualTransferModal({
               </label>
               {cfg.sourceLocked ? (
                 /* Locked: sub-card display */
-                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
+                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded px-3 py-2 text-[12px]">
                   {accountLabel(sourceAccount)}
                   <span className="ml-2 font-mono text-gray-500 text-[11px]">
                     Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
@@ -379,7 +379,7 @@ export default function ManualTransferModal({
                   value={fromId}
                   onChange={(e) => handleFromChange(e.target.value)}
                   disabled={saving}
-                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
                 >
                   {sourceList.length === 0 && (
                     <option value="">— Tidak ada akun tersedia —</option>
@@ -400,7 +400,7 @@ export default function ManualTransferModal({
               </label>
               {cfg.destLocked ? (
                 /* Locked: sub-card display */
-                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
+                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded px-3 py-2 text-[12px]">
                   {accountLabel(sourceAccount)}
                   <span className="ml-2 font-mono text-gray-500 text-[11px]">
                     Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
@@ -411,7 +411,7 @@ export default function ManualTransferModal({
                   value={toId}
                   onChange={(e) => setToId(e.target.value)}
                   disabled={saving}
-                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
                 >
                   {destList.length === 0 && (
                     <option value="">— Tidak ada akun tersedia —</option>
@@ -441,7 +441,7 @@ export default function ManualTransferModal({
                 onBlur={handleAmountBlur}
                 placeholder="Rp 0"
                 disabled={saving}
-                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
               />
             </div>
             <div>
@@ -453,7 +453,7 @@ export default function ManualTransferModal({
                 value={entryDate}
                 onChange={(e) => setEntryDate(e.target.value)}
                 disabled={saving}
-                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
               />
               {isFuture && (
                 <p className="text-[11px] text-amber-700 mt-1">
@@ -474,7 +474,7 @@ export default function ManualTransferModal({
               onChange={(e) => setNotes(e.target.value)}
               disabled={saving}
               placeholder="Mis. pindah dana untuk bayar supplier besok"
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
             />
           </div>
 
@@ -484,7 +484,7 @@ export default function ManualTransferModal({
               Bukti transfer (opsional)
             </label>
             <div
-              className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-4 text-center text-[12px] text-gray-500"
+              className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-4 text-center text-[12px] text-gray-500"
               style={{ borderStyle: 'dashed' }}
             >
               <UploadCloud className="w-6 h-6 mx-auto text-blue-400 mb-1" />

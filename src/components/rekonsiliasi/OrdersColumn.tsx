@@ -89,7 +89,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
           <select
             value={dropdownValue}
             onChange={e => { if (e.target.value) setFilter(e.target.value as SalesChannel); }}
-            className="text-xs border border-slate-300 rounded-sm px-2 py-1 bg-white"
+            className="text-xs border border-slate-300 rounded px-2 py-1 bg-white"
           >
             <option value="">— pilih kanal spesifik —</option>
             {(Object.keys(CHANNEL_VISUAL) as SalesChannel[]).map(code => {
@@ -108,7 +108,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
           const cardBorder = allMatched ? '#a7f3d0' : isPiutang ? '#fde68a' : '#f1f5f9';
           const def = getChannelDef(o.channel);
           return (
-            <div key={o.id} className="p-3 rounded-sm border mb-2" style={{ background: cardBg, borderColor: cardBorder }}>
+            <div key={o.id} className="p-3 rounded border mb-2" style={{ background: cardBg, borderColor: cardBorder }}>
               <div className="flex justify-between items-start">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

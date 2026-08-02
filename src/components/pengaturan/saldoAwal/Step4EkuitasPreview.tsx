@@ -130,7 +130,7 @@ export default function Step4EkuitasPreview({
               value={data.modal_owner.amount}
               onChange={(n) => onChange({ ...data, modal_owner: { amount: n } })}
               allowDecimal={false}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               placeholder="0"
             />
             <div className="text-[11px] text-slate-400">{formatIDR(data.modal_owner.amount)}</div>
@@ -147,7 +147,7 @@ export default function Step4EkuitasPreview({
               value={data.prive.amount}
               onChange={(n) => onChange({ ...data, prive: { amount: n } })}
               allowDecimal={false}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               placeholder="0"
             />
             <div className="text-[11px] text-slate-400">{formatIDR(data.prive.amount)}</div>
@@ -160,7 +160,7 @@ export default function Step4EkuitasPreview({
         </div>
 
         {/* Laba Ditahan (computed) */}
-        <div className="border border-slate-200 rounded-sm p-4 bg-slate-50/50">
+        <div className="border border-slate-200 rounded p-4 bg-slate-50/50">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-[12px] font-semibold text-slate-700">Laba Ditahan (dihitung otomatis)</div>
@@ -198,7 +198,7 @@ export default function Step4EkuitasPreview({
           )}
         </div>
 
-        <div className="border border-slate-200 rounded-sm overflow-hidden text-[12px]">
+        <div className="border border-slate-200 rounded overflow-hidden text-[12px]">
           {/* Aktiva */}
           <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
             <div className="font-extrabold text-[10.5px] text-emerald-700 uppercase tracking-wider">Aktiva</div>
@@ -261,7 +261,7 @@ export default function Step4EkuitasPreview({
       </section>
 
       {/* ── Confirmation checkboxes ────────────────────────────────────────────── */}
-      <section className="space-y-3 border border-amber-200 bg-amber-50 rounded-sm p-4">
+      <section className="space-y-3 border border-amber-200 bg-amber-50 rounded p-4">
         <div className="text-[12px] font-semibold text-amber-800 mb-2">Konfirmasi sebelum post</div>
         <label className="flex items-start gap-2 cursor-pointer">
           <input
@@ -293,7 +293,7 @@ export default function Step4EkuitasPreview({
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="px-6 py-2.5 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? 'Menyimpan & Post…' : 'Simpan & Post Saldo Awal'}
         </button>
@@ -301,7 +301,7 @@ export default function Step4EkuitasPreview({
           type="button"
           onClick={handlePrint}
           disabled={printing || previewLoading || preview === null}
-          className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 text-[13px] font-semibold rounded-sm hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 text-[13px] font-semibold rounded hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {printing ? 'Mencetak…' : '📄 Cetak Ringkasan (PDF)'}
         </button>

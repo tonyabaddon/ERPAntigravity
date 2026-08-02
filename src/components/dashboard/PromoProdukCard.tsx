@@ -31,7 +31,7 @@ export default function PromoProdukCard({ onNavigateToPengaturan }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-sm border border-slate-200 p-4 shadow-sm">
+    <div className="bg-white rounded border border-slate-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">🏷 Promo Produk</h3>
       </div>

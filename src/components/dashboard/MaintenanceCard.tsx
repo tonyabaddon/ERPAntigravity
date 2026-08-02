@@ -23,9 +23,9 @@ export default function MaintenanceCard({
 }: Props) {
   if (count <= 0) return null;
   return (
-    <div className="bg-white rounded-sm p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
+    <div className="bg-white rounded p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-3 mb-3">
-        <div className={`w-10 h-10 rounded-sm flex items-center justify-center border ${BADGE_CLASSES[badgeVariant]}`}>
+        <div className={`w-10 h-10 rounded flex items-center justify-center border ${BADGE_CLASSES[badgeVariant]}`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
@@ -36,7 +36,7 @@ export default function MaintenanceCard({
       </div>
       <button
         onClick={onCta}
-        className="w-full flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-sm transition-colors"
+        className="w-full flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded transition-colors"
       >
         {ctaLabel}
         <ArrowRight className="w-3.5 h-3.5" />

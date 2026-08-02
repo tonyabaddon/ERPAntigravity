@@ -124,7 +124,7 @@ export default function CoAPicker({
           onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:bg-slate-50 disabled:cursor-not-allowed"
+          className="w-full border border-slate-200 rounded px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:bg-slate-50 disabled:cursor-not-allowed"
         />
         {value && !disabled && (
           <button
@@ -138,7 +138,7 @@ export default function CoAPicker({
         )}
       </div>
       {open && (
-        <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-sm shadow-lg max-h-52 overflow-y-auto">
+        <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-52 overflow-y-auto">
           {loading ? (
             <div className="px-3 py-2 text-[12px] text-slate-400">Mencari…</div>
           ) : results.length === 0 ? (

@@ -148,7 +148,7 @@ export default function JournalColumn({
           <div
             key={line.id}
             onClick={() => onPickJournalLine(line)}
-            className="p-3 rounded-sm border mb-2 cursor-pointer border-[var(--color-caleo-mist)] hover:bg-blue-50 hover:border-blue-200 transition-colors"
+            className="p-3 rounded border mb-2 cursor-pointer border-[var(--color-caleo-mist)] hover:bg-blue-50 hover:border-blue-200 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div className="min-w-0">

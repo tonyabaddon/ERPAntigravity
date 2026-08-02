@@ -156,7 +156,7 @@ export function ModuleTogglePanel({ tenantId }: Props) {
 
   return (
     <section
-      className="border rounded-sm p-5 mt-4"
+      className="border rounded p-5 mt-4"
       style={{ borderColor: C.border, background: C.bg }}
       data-testid="module-toggle-panel"
       aria-label="Pengaturan Modul"
@@ -185,7 +185,7 @@ export function ModuleTogglePanel({ tenantId }: Props) {
       {/* Load error */}
       {loadError && (
         <p
-          className="text-[12px] px-3 py-2 rounded-sm mb-3"
+          className="text-[12px] px-3 py-2 rounded mb-3"
           style={{ background: '#fff7ed', color: '#92400e' }}
           data-testid="module-toggle-error"
         >

@@ -48,11 +48,11 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
   if (loading) return null;
   if (pis.length === 0) {
     return (
-      <div className="mt-3 flex items-center justify-between bg-violet-50/40 border border-violet-200 rounded-sm px-3 py-2">
+      <div className="mt-3 flex items-center justify-between bg-violet-50/40 border border-violet-200 rounded px-3 py-2">
         <div className="text-[11px] text-violet-700 flex items-center gap-1.5">
           <Zap className="w-3 h-3" /> Belum ada Purchase Invoice (pass-through) untuk Order ini
         </div>
-        <button onClick={openCreate} className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-700 px-2 py-1 rounded-sm bg-white border border-violet-200 hover:bg-violet-50">
+        <button onClick={openCreate} className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-700 px-2 py-1 rounded bg-white border border-violet-200 hover:bg-violet-50">
           <Plus className="w-3 h-3" /> Buat PI
         </button>
       </div>
@@ -60,12 +60,12 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
   }
 
   return (
-    <div className="mt-3 bg-violet-50/40 border border-violet-200 rounded-sm p-3">
+    <div className="mt-3 bg-violet-50/40 border border-violet-200 rounded p-3">
       <div className="flex items-center justify-between mb-2">
         <div className="text-[11px] font-bold uppercase tracking-wide text-violet-700 flex items-center gap-1.5">
           <Zap className="w-3 h-3" /> Purchase Invoice Terkait ({pis.length})
         </div>
-        <button onClick={openCreate} className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-700 px-2 py-1 rounded-sm bg-white border border-violet-200 hover:bg-violet-50">
+        <button onClick={openCreate} className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-700 px-2 py-1 rounded bg-white border border-violet-200 hover:bg-violet-50">
           <Plus className="w-3 h-3" /> Buat PI
         </button>
       </div>
@@ -76,7 +76,7 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
             href={`?screen=pembelian&bnl=${pi.pi_number}`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 bg-white rounded-sm border border-gray-200 px-2 py-1.5 text-xs hover:bg-violet-50"
+            className="flex items-center gap-2 bg-white rounded border border-gray-200 px-2 py-1.5 text-xs hover:bg-violet-50"
           >
             <div className="font-bold text-[var(--color-caleo-primary)]">{pi.pi_number}</div>
             <PiStatusBadge pi={pi} />

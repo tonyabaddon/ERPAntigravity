@@ -320,7 +320,7 @@ export default function StockOpnameSessionView({
       </button>
 
       {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-sm p-4 flex items-start justify-between gap-3 flex-wrap">
+      <div className="bg-white border border-slate-200 rounded p-4 flex items-start justify-between gap-3 flex-wrap">
         <div>
           <span className={`inline-block px-2 py-0.5 rounded-full text-xs ${STATUS_PILL[session.status]}`}>
             {STATUS_LABEL[session.status]}
@@ -374,7 +374,7 @@ export default function StockOpnameSessionView({
 
       {/* Counts cards (grouped per SKU) */}
       {groupedBySku.size === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-sm px-3 py-6 text-sm text-slate-500 text-center">
+        <div className="bg-white border border-slate-200 rounded px-3 py-6 text-sm text-slate-500 text-center">
           {counts.length === 0
             ? 'Sesi ini belum punya scope. Kembali ke daftar.'
             : 'Tidak ada SKU cocok dengan pencarian.'}
@@ -389,7 +389,7 @@ export default function StockOpnameSessionView({
             return (
               <div
                 key={sku}
-                className={`bg-white border border-slate-200 rounded-sm overflow-hidden ${
+                className={`bg-white border border-slate-200 rounded overflow-hidden ${
                   allFilled ? 'border-l-4 border-l-emerald-500' : ''
                 }`}
               >

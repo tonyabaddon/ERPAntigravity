@@ -181,7 +181,7 @@ export function AuditLogViewer() {
         <button
           onClick={() => downloadCsv(events)}
           disabled={events.length === 0 || loading}
-          className="border rounded-sm px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+          className="border rounded px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
           style={{ borderColor: C.surface, color: C.navy, background: '#ffffff' }}
           aria-label="Ekspor CSV"
         >
@@ -197,7 +197,7 @@ export function AuditLogViewer() {
           <select
             value={actionCode}
             onChange={(e) => handleFilterChange(setActionCode)(e.target.value)}
-            className="border rounded-sm px-3 py-1.5 text-[12px] focus:outline-none"
+            className="border rounded px-3 py-1.5 text-[12px] focus:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '170px' }}
             aria-label="Filter aksi"
           >
@@ -217,7 +217,7 @@ export function AuditLogViewer() {
             placeholder="Cari email admin…"
             value={actorInput}
             onChange={(e) => handleActorChange(e.target.value)}
-            className="border rounded-sm px-3 py-1.5 text-[12px] focus:outline-none"
+            className="border rounded px-3 py-1.5 text-[12px] focus:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '180px' }}
             aria-label="Filter pelaku"
           />
@@ -234,7 +234,7 @@ export function AuditLogViewer() {
               onChange={(e) => {
                 handleFilterChange(setFromDate)(e.target.value);
               }}
-              className="border rounded-sm px-2 py-1.5 text-[12px] focus:outline-none"
+              className="border rounded px-2 py-1.5 text-[12px] focus:outline-none"
               style={{ borderColor: C.surface, color: C.ink }}
               aria-label="Dari tanggal"
             />
@@ -246,7 +246,7 @@ export function AuditLogViewer() {
               onChange={(e) => {
                 handleFilterChange(setToDate)(e.target.value);
               }}
-              className="border rounded-sm px-2 py-1.5 text-[12px] focus:outline-none"
+              className="border rounded px-2 py-1.5 text-[12px] focus:outline-none"
               style={{ borderColor: C.surface, color: C.ink }}
               aria-label="Sampai tanggal"
             />
@@ -261,7 +261,7 @@ export function AuditLogViewer() {
             placeholder="Cari aksi / email…"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="border rounded-sm px-3 py-1.5 text-[12px] focus:outline-none"
+            className="border rounded px-3 py-1.5 text-[12px] focus:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '180px' }}
             aria-label="Cari log"
           />
@@ -271,14 +271,14 @@ export function AuditLogViewer() {
       {/* Error inline retry */}
       {error && !loading && (
         <div
-          className="border rounded-sm px-4 py-3 text-[13px] flex items-center justify-between"
+          className="border rounded px-4 py-3 text-[13px] flex items-center justify-between"
           style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
           data-testid="audit-viewer-error"
         >
           <span>Gagal memuat log: {error}</span>
           <button
             onClick={() => fetchEvents(filters)}
-            className="ml-4 px-3 py-1 rounded-sm border font-medium text-[12px] hover:opacity-80"
+            className="ml-4 px-3 py-1 rounded border font-medium text-[12px] hover:opacity-80"
             style={{ borderColor: C.danger, color: C.danger }}
           >
             Coba lagi
@@ -306,7 +306,7 @@ export function AuditLogViewer() {
             <button
               disabled={page <= 1}
               onClick={() => setPage(page - 1)}
-              className="border rounded-sm px-3 py-1 font-medium transition-opacity disabled:opacity-40"
+              className="border rounded px-3 py-1 font-medium transition-opacity disabled:opacity-40"
               style={{ borderColor: C.surface, color: C.navy }}
               aria-label="Halaman sebelumnya"
             >
@@ -315,7 +315,7 @@ export function AuditLogViewer() {
             <button
               disabled={!hasMore}
               onClick={() => setPage(page + 1)}
-              className="border rounded-sm px-3 py-1 font-medium transition-opacity disabled:opacity-40"
+              className="border rounded px-3 py-1 font-medium transition-opacity disabled:opacity-40"
               style={{ borderColor: C.surface, color: C.navy }}
               aria-label="Halaman selanjutnya"
             >

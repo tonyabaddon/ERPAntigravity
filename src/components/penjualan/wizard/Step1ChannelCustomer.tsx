@@ -72,7 +72,7 @@ export default function Step1ChannelCustomer(props: Props) {
             <button
               type="button"
               onClick={() => setShowNewCustomerForm(true)}
-              className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
+              className="px-4 py-1.5 text-xs font-bold rounded bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
             >
               + Customer Baru
             </button>

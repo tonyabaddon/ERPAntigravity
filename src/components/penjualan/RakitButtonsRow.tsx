@@ -48,8 +48,8 @@ export default function RakitButtonsRow({ formOpen, formType, onOpen }: RakitBut
     // Loading or all deactivated
     return (
       <div className="grid grid-cols-2 gap-2">
-        <div className="h-9 rounded-sm bg-slate-100 animate-pulse" />
-        <div className="h-9 rounded-sm bg-slate-100 animate-pulse" />
+        <div className="h-9 rounded bg-slate-100 animate-pulse" />
+        <div className="h-9 rounded bg-slate-100 animate-pulse" />
       </div>
     );
   }
@@ -66,7 +66,7 @@ export default function RakitButtonsRow({ formOpen, formType, onOpen }: RakitBut
             type="button"
             onClick={() => onOpen(rakitType)}
             disabled={disabled}
-            className={`px-3 py-2 text-xs font-semibold rounded-sm border transition disabled:opacity-50`}
+            className={`px-3 py-2 text-xs font-semibold rounded border transition disabled:opacity-50`}
             style={{
               backgroundColor: isActive
                 ? `${color}22`

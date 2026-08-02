@@ -244,7 +244,7 @@ export function TenantWizard() {
 
       {error && (
         <div
-          className="p-3 rounded-sm text-[13px]"
+          className="p-3 rounded text-[13px]"
           style={{ background: '#FEF2F2', color: C.red, border: `1px solid #FCA5A5` }}
         >
           {error}
@@ -256,7 +256,7 @@ export function TenantWizard() {
           {step !== 'tenant' ? (
             <button
               onClick={goBack}
-              className="px-4 py-2 rounded-sm text-[13px] font-semibold"
+              className="px-4 py-2 rounded text-[13px] font-semibold"
               style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.navy }}
             >
               ← Kembali
@@ -268,7 +268,7 @@ export function TenantWizard() {
             <button
               onClick={submit}
               disabled={submitting}
-              className="px-6 py-2 rounded-sm text-[13px] font-bold disabled:opacity-50"
+              className="px-6 py-2 rounded text-[13px] font-bold disabled:opacity-50"
               style={{ background: C.gold, color: C.navy }}
             >
               {submitting ? 'Memproses…' : 'Onboard tenant'}
@@ -276,7 +276,7 @@ export function TenantWizard() {
           ) : (
             <button
               onClick={goNext}
-              className="px-6 py-2 rounded-sm text-[13px] font-bold"
+              className="px-6 py-2 rounded text-[13px] font-bold"
               style={{ background: C.navy, color: '#FFFFFF' }}
             >
               Lanjut →
@@ -344,7 +344,7 @@ function TenantStep({ form, update }: StepProps) {
           value={form.slug}
           onChange={e => update('slug', e.target.value.toLowerCase())}
           placeholder="warung-sinar-rezeki"
-          className="w-full border rounded-sm px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-[13px]"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -354,7 +354,7 @@ function TenantStep({ form, update }: StepProps) {
           value={form.name}
           onChange={e => update('name', e.target.value)}
           placeholder="Warung Sinar Rezeki"
-          className="w-full border rounded-sm px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-[13px]"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -367,7 +367,7 @@ function TenantStep({ form, update }: StepProps) {
                 key={p.code}
                 type="button"
                 onClick={() => update('planCode', p.code)}
-                className="text-left p-3 rounded-sm border-2 transition-all"
+                className="text-left p-3 rounded border-2 transition-all"
                 style={{
                   borderColor: selected ? C.gold : C.border,
                   background: selected ? C.cream : C.bg,
@@ -394,7 +394,7 @@ function TenantStep({ form, update }: StepProps) {
                 key={m}
                 type="button"
                 onClick={() => update('expiresInMonths', m)}
-                className="p-3 rounded-sm border-2 transition-all text-left"
+                className="p-3 rounded border-2 transition-all text-left"
                 style={{
                   borderColor: selected ? C.gold : C.border,
                   background: selected ? C.cream : C.bg,
@@ -428,7 +428,7 @@ function TenantStep({ form, update }: StepProps) {
                     update('discountMode', o.mode);
                     if (o.mode === 'none') update('discountValue', 0);
                   }}
-                  className="py-2 rounded-sm border-2 text-[12px] font-semibold transition-all"
+                  className="py-2 rounded border-2 text-[12px] font-semibold transition-all"
                   style={{
                     borderColor: selected ? C.gold : C.border,
                     background: selected ? C.cream : C.bg,
@@ -445,7 +445,7 @@ function TenantStep({ form, update }: StepProps) {
               allowDecimal={form.discountMode === 'percent'}
               value={form.discountValue}
               onChange={n => update('discountValue', n)}
-              className="w-full border rounded-sm px-3 py-2 text-[13px]"
+              className="w-full border rounded px-3 py-2 text-[13px]"
               style={{ borderColor: C.border }}
             />
           )}
@@ -461,7 +461,7 @@ function OwnerStep({ form, update }: StepProps) {
   return (
     <section className="space-y-4">
       <div
-        className="p-3 rounded-sm text-[12px]"
+        className="p-3 rounded text-[12px]"
         style={{ background: C.cream, color: C.navy, border: `1px solid ${C.gold}` }}
       >
         <strong>Info:</strong> Edge Function akan kirim email invite otomatis ke
@@ -473,7 +473,7 @@ function OwnerStep({ form, update }: StepProps) {
           value={form.ownerName}
           onChange={e => update('ownerName', e.target.value)}
           placeholder="Budi Santoso"
-          className="w-full border rounded-sm px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-[13px]"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -483,7 +483,7 @@ function OwnerStep({ form, update }: StepProps) {
           value={form.ownerEmail}
           onChange={e => update('ownerEmail', e.target.value)}
           placeholder="budi@warungsinar.com"
-          className="w-full border rounded-sm px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-[13px]"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -553,7 +553,7 @@ function ResultStep({ result }: { result: ProvisionResult }) {
   return (
     <section className="space-y-4">
       <div
-        className="p-6 rounded-sm space-y-4"
+        className="p-6 rounded space-y-4"
         style={{ background: C.cream, border: `2px solid ${C.gold}` }}
       >
         <div className="flex items-center gap-3">
@@ -586,7 +586,7 @@ function ResultStep({ result }: { result: ProvisionResult }) {
         <div className="flex gap-3 pt-2">
           <a
             href={detailUrl}
-            className="flex-1 text-center py-2 rounded-sm text-[13px] font-bold"
+            className="flex-1 text-center py-2 rounded text-[13px] font-bold"
             style={{ background: C.navy, color: '#FFFFFF' }}
           >
             Buka detail tenant →
@@ -595,7 +595,7 @@ function ResultStep({ result }: { result: ProvisionResult }) {
             href={tenantUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 text-center py-2 rounded-sm text-[13px] font-bold"
+            className="flex-1 text-center py-2 rounded text-[13px] font-bold"
             style={{ background: C.bg, color: C.navy, border: `1px solid ${C.border}` }}
           >
             Preview dashboard ↗

@@ -22,9 +22,9 @@ export default function InlineExpandPanel({
   const sortedWarehouses = [...warehouses].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
-    <div className="bg-white rounded-sm border border-violet-200 p-5 shadow-md">
+    <div className="bg-white rounded border border-violet-200 p-5 shadow-md">
       <div className="flex gap-6">
-        <div className="w-[280px] h-[280px] rounded-sm flex-shrink-0 bg-slate-100 flex items-center justify-center overflow-hidden">
+        <div className="w-[280px] h-[280px] rounded flex-shrink-0 bg-slate-100 flex items-center justify-center overflow-hidden">
           {mainPhoto ? (
             <img src={mainPhoto.url} alt={item.name} className="w-full h-full object-cover" />
           ) : (
@@ -64,7 +64,7 @@ export default function InlineExpandPanel({
                     onClick={() => onPhotoSelect(item.sku, i)}
                     aria-label={`Foto ${i + 1} dari ${photos.length}`}
                     aria-current={i === currentPhotoIndex}
-                    className={`w-16 h-16 rounded-sm overflow-hidden bg-slate-100 ${
+                    className={`w-16 h-16 rounded overflow-hidden bg-slate-100 ${
                       i === currentPhotoIndex
                         ? 'ring-2 ring-violet-500'
                         : 'opacity-60 hover:opacity-100 ring-2 ring-transparent hover:ring-violet-300'
@@ -76,7 +76,7 @@ export default function InlineExpandPanel({
               </div>
             </>
           )}
-          <div className="bg-slate-50 rounded-sm px-3 py-2 mb-3">
+          <div className="bg-slate-50 rounded px-3 py-2 mb-3">
             <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">
               Stok per Gudang
             </p>

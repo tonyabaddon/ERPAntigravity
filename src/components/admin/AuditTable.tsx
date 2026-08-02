@@ -111,7 +111,7 @@ function fmtDateTime(iso: string): string {
 
 export function AuditTableSkeleton() {
   return (
-    <div className="border rounded-sm overflow-hidden" style={{ borderColor: C.surface }}>
+    <div className="border rounded overflow-hidden" style={{ borderColor: C.surface }}>
       {[0, 1, 2, 3, 4].map((i) => (
         <div
           key={i}
@@ -138,7 +138,7 @@ export function AuditTable({ events, hideTenant = false }: AuditTableProps) {
   if (events.length === 0) {
     return (
       <div
-        className="border rounded-sm p-8 text-center"
+        className="border rounded p-8 text-center"
         style={{ borderColor: C.surface, color: C.muted }}
         data-testid="audit-table-empty"
       >
@@ -154,7 +154,7 @@ export function AuditTable({ events, hideTenant = false }: AuditTableProps) {
 
   return (
     <div
-      className="border rounded-sm overflow-hidden"
+      className="border rounded overflow-hidden"
       style={{ borderColor: C.surface }}
       data-testid="audit-table"
     >

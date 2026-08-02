@@ -169,7 +169,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
               type="button"
               onClick={() => setShowRejectModal(true)}
               disabled={verifying}
-              className="px-3 py-1.5 rounded-sm text-[12px] font-medium transition-colors"
+              className="px-3 py-1.5 rounded text-[12px] font-medium transition-colors"
               style={{ border: '1px solid #DC2626', color: '#DC2626', background: 'white' }}
               data-testid={`reject-btn-${payment.id}`}
             >
@@ -179,7 +179,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
               type="button"
               onClick={handleVerify}
               disabled={verifying}
-              className="px-3 py-1.5 rounded-sm text-[12px] font-medium transition-colors"
+              className="px-3 py-1.5 rounded text-[12px] font-medium transition-colors"
               style={{
                 border: '1px solid #16A34A',
                 color: verifying ? '#9DB2CE' : '#16A34A',

@@ -26,7 +26,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(1,39,73,0.4)' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="bg-white rounded-sm p-6 w-full max-w-lg">
+      <div onClick={e => e.stopPropagation()} className="bg-white rounded p-6 w-full max-w-lg">
         <h3 className="text-base font-black text-[var(--color-caleo-primary)] mb-1">Pecah {fmt(totalAmount)} ke beberapa target</h3>
         <p className="text-[11px] text-slate-500 font-semibold mb-4">Total alokasi harus sama dengan jumlah bank line.</p>
         {rows.map((r, i) => (
@@ -37,7 +37,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
                 const opt = candidates.find(c => c.id === e.target.value);
                 updateRow(i, { slotId: e.target.value, slotLabel: opt?.label ?? '' });
               }}
-              className="flex-1 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs"
+              className="flex-1 px-3 py-2 border border-[var(--color-caleo-mist)] rounded text-xs"
             >
               <option value="">— pilih target —</option>
               {candidates.map(c => <option key={c.id} value={c.id}>{c.label} ({fmt(c.expected)})</option>)}
@@ -45,7 +45,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
             <NumberInput
               value={r.amount}
               onChange={n => updateRow(i, { amount: n })}
-              className="w-32 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs"
+              className="w-32 px-3 py-2 border border-[var(--color-caleo-mist)] rounded text-xs"
             />
             <button onClick={() => deleteRow(i)} className="text-red-600 px-2">×</button>
           </div>

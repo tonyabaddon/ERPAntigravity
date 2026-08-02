@@ -19,9 +19,10 @@
   --color-caleo-info:    #2A6FDB;
   --color-caleo-special: #7C5CBF;
 
-  /* Caleo border radius tokens (2026-08-02: reduced to 2px MSME/Excel aesthetic —
-     "hampir persegi tapi rounded sedikit doang" per founder feedback). */
-  --radius-caleo-card: 2px;
+  /* Caleo border radius tokens (2026-08-02 v2: after visual review of 2px flat,
+     founder reversed to 4px — rounded ringan tapi visible, kompromi antara
+     MSME/Excel professional dan modern app soft). */
+  --radius-caleo-card: 4px;
   --radius-caleo-pill: 100px;
 
   /* Caleo box shadow tokens */
@@ -46,10 +47,10 @@
   --color-caleo-mist-dark:  #c7d7f5; /* stronger border, active-state accent (105 refs) */
   --color-caleo-cloud:      #eff4ff; /* card background, hover surface        (97 refs) */
 
-  --radius-default: 2px;
-  --radius-lg: 2px;
-  --radius-xl: 2px;
-  --radius-signature: 2px;
+  --radius-default: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-signature: 4px;
 
   /* Sales channel brand colors (D17) — used as background for icon containers + chart segments + pill border */
   --color-channel-walkin:    #64748B;

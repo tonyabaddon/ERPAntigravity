@@ -193,7 +193,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
 
       {/* Phase 2 banner: my pending requests */}
       {myPendingCount > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-sm p-3 text-sm text-yellow-900 flex items-center gap-3">
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-900 flex items-center gap-3">
           <PendingApprovalBadge count={myPendingCount} size="md" tooltip="Permintaan Anda yang menunggu Owner" />
           <span className="font-semibold">
             Permintaan Anda yang menunggu: {myPendingCount} sedang menunggu persetujuan Owner.
@@ -215,7 +215,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           </p>
         </div>
         {isSupabaseConfigured ? (
-          <div className="bg-emerald-50/80 border border-emerald-200/60 px-4 py-3 rounded-sm flex items-center gap-3">
+          <div className="bg-emerald-50/80 border border-emerald-200/60 px-4 py-3 rounded flex items-center gap-3">
             <span className="flex h-3 w-3 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
@@ -226,7 +226,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
             </div>
           </div>
         ) : (
-          <div className="bg-amber-50/80 border border-amber-200/60 px-4 py-3 rounded-sm flex items-center gap-3">
+          <div className="bg-amber-50/80 border border-amber-200/60 px-4 py-3 rounded flex items-center gap-3">
             <span className="flex h-3 w-3 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
@@ -240,7 +240,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
       </div>
 
       {/* Tab pills */}
-      <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-4 shadow-sm">
+      <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-4 shadow-sm">
         {activeTab === 'katalog' && (
           <div className="flex flex-col lg:flex-row gap-3 mb-3">
             <input

@@ -141,7 +141,7 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
         {isCloseable && (
           <button
             type="button"
-            className="ml-4 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-bold text-white transition-colors"
+            className="ml-4 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold text-white transition-colors"
             style={{ background: '#dc2626' }}
             onClick={() => setModalPeriod(p)}
           >
@@ -157,11 +157,11 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
 
   return (
     <>
-      <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
+      <div className="rounded border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
+            <div className="w-10 h-10 rounded bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
               <CalendarCheck className="w-5 h-5" />
             </div>
             <div>

@@ -22,20 +22,20 @@ export default function ClipMonitorPanel() {
   }, []);
 
   if (loading) {
-    return <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm text-sm text-slate-500">Memuat data inference…</div>;
+    return <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm text-sm text-slate-500">Memuat data inference…</div>;
   }
   if (!agg) return null;
 
   return (
-    <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
+    <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm">
       <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mb-3">Aktivitas CLIP Inference — Hari Ini</h3>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 mb-4 text-[11px] text-[var(--color-caleo-primary)]">
+      <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4 text-[11px] text-[var(--color-caleo-primary)]">
         ℹ️ CLIP berjalan di server kita. Angka di bawah adalah jumlah inference hari ini. Tidak ada quota eksternal — kapasitas dibatasi oleh CPU instance Cloud Run.
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-sm p-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded p-4">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700">Search Kasir</p>
           <p className="text-2xl font-black text-emerald-900 mt-1">{agg.search.success + agg.search.error + agg.search.coldStart}</p>
           <div className="flex gap-3 mt-1.5 text-[10.5px]">
@@ -43,7 +43,7 @@ export default function ClipMonitorPanel() {
             <span className="text-rose-700"><strong>{agg.search.error}</strong> error</span>
           </div>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-sm p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded p-4">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-blue-700">Indexing Upload</p>
           <p className="text-2xl font-black text-blue-900 mt-1">{agg.index.success + agg.index.error + agg.index.coldStart}</p>
           <div className="flex gap-3 mt-1.5 text-[10.5px]">
@@ -54,21 +54,21 @@ export default function ClipMonitorPanel() {
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-center">
+        <div className="bg-slate-50 border border-slate-200 rounded p-3 text-center">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Latency p50</p>
           <p className="text-lg font-black text-[var(--color-caleo-primary)] mt-1">{agg.latencyP50 != null ? `${agg.latencyP50} ms` : '—'}</p>
         </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-center">
+        <div className="bg-slate-50 border border-slate-200 rounded p-3 text-center">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Latency p95</p>
           <p className="text-lg font-black text-[var(--color-caleo-primary)] mt-1">{agg.latencyP95 != null ? `${agg.latencyP95} ms` : '—'}</p>
         </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-sm p-3 text-center">
+        <div className="bg-amber-50 border border-amber-200 rounded p-3 text-center">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-amber-700">Cold start hit</p>
           <p className="text-lg font-black text-amber-900 mt-1">{agg.search.coldStart + agg.index.coldStart} ×</p>
         </div>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-sm p-3">
+      <div className="bg-amber-50 border border-amber-200 rounded p-3">
         <p className="text-[10.5px] font-extrabold uppercase tracking-widest text-amber-700 mb-1">Sinyal kapan tindak lanjut</p>
         <ul className="text-[11px] text-amber-900 list-disc ml-5 space-y-0.5">
           <li>Latency p95 &gt; 3 detik konsisten → mungkin perlu bump CPU 1→2 vCPU di Cloud Run.</li>

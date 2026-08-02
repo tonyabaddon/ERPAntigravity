@@ -58,7 +58,7 @@ export default function CatalogListView({
   const [promoPopoverSku, setPromoPopoverSku] = useState<string | null>(null);
 
   return (
-    <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] shadow-sm overflow-hidden">
+    <div className="bg-white rounded border border-[var(--color-caleo-mist)] shadow-sm overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left border-b-2 border-slate-200 bg-slate-50/50">
@@ -93,14 +93,14 @@ export default function CatalogListView({
                       <button
                         type="button"
                         onClick={() => onToggleRow(item.sku)}
-                        className={`w-10 h-10 rounded-sm overflow-hidden bg-slate-100 ${isExpanded ? 'ring-2 ring-violet-500' : 'hover:ring-2 hover:ring-emerald-400'}`}
+                        className={`w-10 h-10 rounded overflow-hidden bg-slate-100 ${isExpanded ? 'ring-2 ring-violet-500' : 'hover:ring-2 hover:ring-emerald-400'}`}
                         aria-label={`Lihat foto ${item.name}`}
                         aria-expanded={isExpanded}
                       >
                         <img src={firstPhoto.url} alt="" loading="lazy" className="w-full h-full object-cover" />
                       </button>
                     ) : (
-                      <div className="w-10 h-10 bg-slate-50 border border-dashed border-slate-300 rounded-sm flex items-center justify-center" title="Belum ada foto">
+                      <div className="w-10 h-10 bg-slate-50 border border-dashed border-slate-300 rounded flex items-center justify-center" title="Belum ada foto">
                         <span className="material-symbols-outlined text-base text-slate-400">image_not_supported</span>
                       </div>
                     )}

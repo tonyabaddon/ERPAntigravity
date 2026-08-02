@@ -217,11 +217,11 @@ export default function TrialBalanceTab({
     : 'Periode —';
 
   return (
-    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
+    <div className="rounded border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
+          <div className="w-10 h-10 rounded bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
             <Scale className="w-5 h-5" />
           </div>
           <div>
@@ -235,7 +235,7 @@ export default function TrialBalanceTab({
         <div className="flex items-center gap-2 shrink-0">
           {/* Period selector */}
           <select
-            className="border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white w-44 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+            className="border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white w-44 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
             value={selectedPeriod?.id ?? ''}
             onChange={e => handlePeriodChange(e.target.value)}
             disabled={loading || periods.length === 0}
@@ -252,14 +252,14 @@ export default function TrialBalanceTab({
 
           {/* Export placeholders */}
           <button
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
             onClick={() => showToast('Export PDF/Excel hadir di Phase 4 Laporan', 'info')}
           >
             <FileDown className="w-3.5 h-3.5" />
             PDF
           </button>
           <button
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
             onClick={() => showToast('Export PDF/Excel hadir di Phase 4 Laporan', 'info')}
           >
             <Grid className="w-3.5 h-3.5" />
@@ -271,7 +271,7 @@ export default function TrialBalanceTab({
       {/* ── Balance banner ── */}
       {!loading && rows.length > 0 && (
         <div
-          className="mx-6 mt-6 rounded-sm border p-3 flex items-center gap-3"
+          className="mx-6 mt-6 rounded border p-3 flex items-center gap-3"
           style={
             isBalanced
               ? { background: '#d1fae5', borderColor: '#6ee7b7' }
@@ -301,7 +301,7 @@ export default function TrialBalanceTab({
 
       {/* ── Table area ── */}
       <div className="px-6 pb-6 mt-6">
-        <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] overflow-hidden">
+        <div className="rounded border border-[var(--color-caleo-mist-dark)] overflow-hidden">
           {loading ? (
             <div className="py-16 text-center text-[13px] text-gray-500">Memuat...</div>
           ) : rows.length === 0 ? (

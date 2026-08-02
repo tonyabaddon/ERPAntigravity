@@ -14,7 +14,7 @@ interface SettingCardProps {
 export default function SettingCard({ icon, title, description, currentStat, impactSummary, children, highlight }: SettingCardProps) {
   const borderClass = highlight ? 'border-2 border-emerald-200 bg-emerald-50/40' : 'border border-slate-200';
   return (
-    <div className={`rounded-sm p-4 flex items-start justify-between gap-4 hover:border-slate-300 ${borderClass}`}>
+    <div className={`rounded p-4 flex items-start justify-between gap-4 hover:border-slate-300 ${borderClass}`}>
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg">{icon}</span>
@@ -26,7 +26,7 @@ export default function SettingCard({ icon, title, description, currentStat, imp
           <div className="text-[11px] text-slate-500 mt-2">📊 Saat ini: {currentStat}</div>
         )}
         {impactSummary && impactSummary.level === 'warn' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-sm px-2 py-1.5 mt-2 text-[11px] text-amber-800">
+          <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mt-2 text-[11px] text-amber-800">
             ⚠️ Kalau dimatikan: {impactSummary.message}
           </div>
         )}

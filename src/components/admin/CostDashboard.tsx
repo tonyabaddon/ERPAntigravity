@@ -56,10 +56,10 @@ const OUTLIER_MULTIPLIER = 3;
 function Skeleton() {
   return (
     <div className="flex flex-col gap-4 animate-pulse" data-testid="cost-dashboard-loading">
-      <div className="h-10 rounded-sm w-72" style={{ background: '#F1F3F6' }} />
-      <div className="h-8 rounded-sm w-full" style={{ background: '#F1F3F6' }} />
+      <div className="h-10 rounded w-72" style={{ background: '#F1F3F6' }} />
+      <div className="h-8 rounded w-full" style={{ background: '#F1F3F6' }} />
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-12 rounded-sm w-full" style={{ background: '#F1F3F6' }} />
+        <div key={i} className="h-12 rounded w-full" style={{ background: '#F1F3F6' }} />
       ))}
     </div>
   );
@@ -71,7 +71,7 @@ function OutlierBanner({ outliers }: { outliers: TenantCostRow[] }) {
   if (outliers.length === 0) return null;
   return (
     <div
-      className="flex items-start gap-3 rounded-sm p-4 text-[13px]"
+      className="flex items-start gap-3 rounded p-4 text-[13px]"
       style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }}
       data-testid="cost-outlier-banner"
       role="alert"
@@ -108,7 +108,7 @@ function CostTable({
   if (rows.length === 0) {
     return (
       <div
-        className="rounded-sm p-8 text-center text-[13px]"
+        className="rounded p-8 text-center text-[13px]"
         style={{ background: '#F8FAFC', border: '1px solid #ECEEF1', color: '#64748B' }}
         data-testid="cost-empty"
       >
@@ -118,7 +118,7 @@ function CostTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-sm" style={{ border: '1px solid #ECEEF1' }}>
+    <div className="overflow-x-auto rounded" style={{ border: '1px solid #ECEEF1' }}>
       <table className="w-full text-[13px] font-caleo" style={{ borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #ECEEF1' }}>
@@ -272,7 +272,7 @@ export function CostDashboard() {
             value={date}
             max={todayISO()}
             onChange={(e) => setDate(e.target.value)}
-            className="text-[13px] px-3 py-1.5 rounded-sm"
+            className="text-[13px] px-3 py-1.5 rounded"
             style={{
               border: '1px solid #D1D5DB',
               color: '#0B2545',
@@ -284,7 +284,7 @@ export function CostDashboard() {
           <button
             onClick={handleBackfill}
             disabled={refreshing || loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[13px] font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors disabled:opacity-50"
             style={{ background: '#0B2545', color: '#FFFFFF' }}
             data-testid="cost-backfill-button"
           >
@@ -301,7 +301,7 @@ export function CostDashboard() {
       {/* Error state */}
       {error && (
         <div
-          className="rounded-sm p-4 text-[13px]"
+          className="rounded p-4 text-[13px]"
           style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B' }}
           data-testid="cost-error"
         >

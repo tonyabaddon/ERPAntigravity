@@ -161,11 +161,11 @@ export default function COAManagementTab({
   const accountCount = accounts.filter(a => a.is_active).length;
 
   return (
-    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
+    <div className="rounded border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
+          <div className="w-10 h-10 rounded bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
             <List className="w-5 h-5" />
           </div>
           <div>
@@ -179,9 +179,9 @@ export default function COAManagementTab({
         {/* ── Filter Bar ── */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Toggle pills */}
-          <div className="flex items-center gap-2 rounded-sm border border-[var(--color-caleo-mist-dark)] p-1 bg-white">
+          <div className="flex items-center gap-2 rounded border border-[var(--color-caleo-mist-dark)] p-1 bg-white">
             <button
-              className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 onlyActive
                   ? 'bg-[var(--color-caleo-mist-dark)] text-[var(--color-caleo-primary)]'
                   : 'text-gray-600 hover:text-[var(--color-caleo-primary)]'
@@ -191,7 +191,7 @@ export default function COAManagementTab({
               Aktif Saja
             </button>
             <button
-              className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 !onlyActive
                   ? 'bg-[var(--color-caleo-mist-dark)] text-[var(--color-caleo-primary)]'
                   : 'text-gray-600 hover:text-[var(--color-caleo-primary)]'
@@ -206,7 +206,7 @@ export default function COAManagementTab({
           <input
             type="text"
             placeholder="Cari kode atau nama..."
-            className="flex-1 min-w-[200px] border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+            className="flex-1 min-w-[200px] border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -215,7 +215,7 @@ export default function COAManagementTab({
 
       {/* ── Non-owner banner ── */}
       {!isOwner && (
-        <div className="mx-6 mt-4 rounded-sm border border-gray-300 bg-gray-50 p-3 text-[12px] text-gray-700">
+        <div className="mx-6 mt-4 rounded border border-gray-300 bg-gray-50 p-3 text-[12px] text-gray-700">
           <strong>Tampilan Read-only</strong> · hanya Owner bisa mengedit Chart of Accounts
         </div>
       )}
@@ -241,7 +241,7 @@ export default function COAManagementTab({
                 <div key={accountType}>
                   {/* Section header */}
                   <div
-                    className={`${style.headerBg} font-bold py-2 px-3 rounded-sm mb-2`}
+                    className={`${style.headerBg} font-bold py-2 px-3 rounded mb-2`}
                     style={{ color: style.headerColor }}
                   >
                     ━━ {label} ━━
@@ -256,7 +256,7 @@ export default function COAManagementTab({
                       return (
                         <div
                           key={account.id}
-                          className={`bg-[#fafbff] border border-[var(--color-caleo-mist-dark)] rounded-sm p-3 flex items-center gap-3 transition-opacity ${
+                          className={`bg-[#fafbff] border border-[var(--color-caleo-mist-dark)] rounded p-3 flex items-center gap-3 transition-opacity ${
                             isInactive ? 'opacity-60' : ''
                           }`}
                         >
@@ -299,7 +299,7 @@ export default function COAManagementTab({
                             </div>
                             {isOwner && (
                               <button
-                                className="p-1.5 rounded-sm hover:bg-[var(--color-caleo-cloud)] transition-colors text-[var(--color-caleo-primary)]"
+                                className="p-1.5 rounded hover:bg-[var(--color-caleo-cloud)] transition-colors text-[var(--color-caleo-primary)]"
                                 onClick={() => handleEditClick(account)}
                                 title="Edit akun"
                               >

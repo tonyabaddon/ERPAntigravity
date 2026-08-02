@@ -54,14 +54,14 @@ function mapEscalationDays(
 function Skeleton() {
   return (
     <div className="flex flex-col gap-4 animate-pulse" data-testid="caleo-bot-loading">
-      <div className="h-10 rounded-sm w-72" style={{ background: '#F1F3F6' }} />
+      <div className="h-10 rounded w-72" style={{ background: '#F1F3F6' }} />
       <div className="grid grid-cols-3 gap-4">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-20 rounded-sm" style={{ background: '#F1F3F6' }} />
+          <div key={i} className="h-20 rounded" style={{ background: '#F1F3F6' }} />
         ))}
       </div>
-      <div className="h-48 rounded-sm" style={{ background: '#F1F3F6' }} />
-      <div className="h-40 rounded-sm" style={{ background: '#F1F3F6' }} />
+      <div className="h-48 rounded" style={{ background: '#F1F3F6' }} />
+      <div className="h-40 rounded" style={{ background: '#F1F3F6' }} />
     </div>
   );
 }
@@ -85,7 +85,7 @@ function ProspectCards({ today, week, month }: ProspectCardsProps) {
       {cards.map((c) => (
         <div
           key={c.label}
-          className="rounded-sm p-4 border"
+          className="rounded p-4 border"
           style={{ background: '#FFFFFF', borderColor: '#ECEEF1' }}
           data-testid={`bot-kpi-${c.label.toLowerCase().replace(/\s/g, '-')}`}
         >
@@ -333,7 +333,7 @@ function FunnelDisplay({ prospects, demos, signups }: FunnelProps) {
       {stages.map((stage, i) => (
         <div key={stage.label} className="flex items-center gap-0 flex-1">
           <div
-            className="flex-1 rounded-sm p-4 text-center"
+            className="flex-1 rounded p-4 text-center"
             style={{ background: `${stage.color}10`, border: `1px solid ${stage.color}30` }}
             data-testid={stage.testId}
           >
@@ -457,7 +457,7 @@ export function CaleoBotDashboard() {
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[13px] font-medium transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors disabled:opacity-50"
           style={{ background: '#0B2545', color: '#FFFFFF' }}
           data-testid="bot-refresh-button"
         >
@@ -468,7 +468,7 @@ export function CaleoBotDashboard() {
       {/* Error state */}
       {error && (
         <div
-          className="rounded-sm p-4 text-[13px]"
+          className="rounded p-4 text-[13px]"
           style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B' }}
           data-testid="bot-error"
           role="alert"
@@ -501,7 +501,7 @@ export function CaleoBotDashboard() {
 
           {/* Row 2: Top FAQ bar chart */}
           <section
-            className="rounded-sm p-5 border"
+            className="rounded p-5 border"
             style={{ background: '#FFFFFF', borderColor: '#ECEEF1' }}
             aria-label="FAQ terpopuler"
           >
@@ -516,7 +516,7 @@ export function CaleoBotDashboard() {
 
           {/* Row 3: Escalation rate 7-day trend */}
           <section
-            className="rounded-sm p-5 border"
+            className="rounded p-5 border"
             style={{ background: '#FFFFFF', borderColor: '#ECEEF1' }}
             aria-label="Escalation rate 7 hari"
           >
@@ -534,7 +534,7 @@ export function CaleoBotDashboard() {
 
           {/* Row 4: Funnel */}
           <section
-            className="rounded-sm p-5 border"
+            className="rounded p-5 border"
             style={{ background: '#FFFFFF', borderColor: '#ECEEF1' }}
             aria-label="Funnel konversi prospek"
           >

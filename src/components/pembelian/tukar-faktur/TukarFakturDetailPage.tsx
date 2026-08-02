@@ -153,14 +153,14 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           <button
             onClick={handlePrint}
             disabled={printing}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
           >
             <Printer className="w-4 h-4" /> {printing ? 'Memproses...' : 'Cetak Tanda Terima'}
           </button>
           {!isVoided && (
             <button
               onClick={() => setShowEdit(true)}
-              className="text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50"
+              className="text-sm font-semibold text-gray-700 px-3 py-2 rounded border border-gray-200 hover:bg-gray-50"
             >
               Edit Header
             </button>
@@ -168,7 +168,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           {canDelete && (
             <button
               onClick={() => setShowDelete(true)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-sm border border-red-200 hover:bg-red-50"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50"
             >
               <XOctagon className="w-4 h-4" /> Hapus
             </button>
@@ -176,7 +176,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           {canBayar && (
             <button
               onClick={() => onBayar(tf.id)}
-              className="inline-flex items-center gap-2 text-sm font-bold text-white px-3 py-2 rounded-sm"
+              className="inline-flex items-center gap-2 text-sm font-bold text-white px-3 py-2 rounded"
               style={{ background: 'var(--color-caleo-primary)' }}
             >
               <CreditCard className="w-4 h-4" /> Bayar Tukar Faktur
@@ -186,7 +186,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
       </div>
 
       {isVoided && (
-        <div className="bg-red-50 border border-red-200 rounded-sm p-4 flex items-start gap-3">
+        <div className="bg-red-50 border border-red-200 rounded p-4 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
           <div>
             <div className="text-sm font-bold text-red-800">Tukar Faktur ini sudah dihapus</div>
@@ -198,7 +198,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
 
       {/* Header cards */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <Store className="w-3.5 h-3.5 text-violet-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Supplier</div>
@@ -210,7 +210,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
         </div>
 
         <div
-          className={`rounded-sm border shadow-sm p-4 ${
+          className={`rounded border shadow-sm p-4 ${
             overdue
               ? 'bg-red-50 border-red-200'
               : dueSoon
@@ -263,7 +263,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
         </div>
 
         <div
-          className={`rounded-sm border shadow-sm p-4 ${
+          className={`rounded border shadow-sm p-4 ${
             isLunas ? 'bg-green-50 border-green-200' : 'bg-indigo-50 border-indigo-200'
           }`}
         >
@@ -296,7 +296,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
       </div>
 
       {tf.notes && (
-        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-4">
           <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">
             Catatan
           </div>
@@ -305,7 +305,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
       )}
 
       {/* Daftar Faktur dalam Bundle */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
             Daftar Faktur dalam Bundle
@@ -313,7 +313,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           <div className="text-[11px] text-gray-500">{tf.tagihans?.length ?? 0} Faktur</div>
         </div>
         {(!tf.tagihans || tf.tagihans.length === 0) ? (
-          <div className="p-6 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-sm">
+          <div className="p-6 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded">
             Tidak ada Faktur dalam bundle ini.
           </div>
         ) : (
@@ -408,7 +408,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
 
       {/* Lampiran + Riwayat */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-4">
           <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">
             Lampiran Foto
           </div>
@@ -419,7 +419,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
                   <img
                     src={u}
                     alt={`Lampiran ${i + 1}`}
-                    className="w-full h-20 object-cover rounded-sm border border-gray-200"
+                    className="w-full h-20 object-cover rounded border border-gray-200"
                   />
                 </a>
               ))}
@@ -429,7 +429,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           )}
         </div>
 
-        <div className="bg-gray-50 rounded-sm border border-gray-200 p-4">
+        <div className="bg-gray-50 rounded border border-gray-200 p-4">
           <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">
             Riwayat
           </div>
@@ -450,7 +450,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
       </div>
 
       {/* Tanda Terima preview */}
-      <details className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
+      <details className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
         <summary className="cursor-pointer px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-500 hover:bg-gray-50">
           Preview Tanda Terima (klik untuk expand)
         </summary>
@@ -542,7 +542,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-md"
+        className="bg-white rounded border border-gray-200 shadow-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
@@ -562,7 +562,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
               type="date"
               value={tukarDate}
               onChange={e => setTukarDate(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300"
             />
           </div>
           <div>
@@ -571,7 +571,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
               type="date"
               value={paymentDueAt}
               onChange={e => setPaymentDueAt(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300"
             />
           </div>
           <div>
@@ -580,7 +580,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
               value={notes}
               onChange={e => setNotes(e.target.value)}
               rows={3}
-              className="w-full text-sm px-3 py-2 rounded-sm border border-gray-300"
+              className="w-full text-sm px-3 py-2 rounded border border-gray-300"
             />
           </div>
           <div className="text-[11px] text-gray-500">
@@ -591,14 +591,14 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50"
+            className="text-sm font-medium text-gray-600 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
           >
             Batal
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
+            className="text-sm font-semibold text-white px-4 py-2 rounded disabled:opacity-50"
             style={{ background: 'var(--color-caleo-primary)' }}
           >
             {saving ? 'Menyimpan...' : 'Simpan'}
@@ -644,7 +644,7 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-sm border border-red-200 shadow-xl w-full max-w-md"
+        className="bg-white rounded border border-red-200 shadow-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
@@ -670,7 +670,7 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
               onChange={e => setReason(e.target.value)}
               rows={3}
               placeholder="Contoh: Salah supplier, mau dibuat ulang"
-              className="w-full text-sm px-3 py-2 rounded-sm border border-gray-300 focus:border-red-400 focus:outline-none"
+              className="w-full text-sm px-3 py-2 rounded border border-gray-300 focus:border-red-400 focus:outline-none"
             />
             <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
@@ -678,14 +678,14 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50"
+            className="text-sm font-medium text-gray-600 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
           >
             Batal
           </button>
           <button
             onClick={handleConfirm}
             disabled={!valid || saving}
-            className="text-sm font-semibold text-white bg-red-600 px-4 py-2 rounded-sm hover:bg-red-700 disabled:opacity-50"
+            className="text-sm font-semibold text-white bg-red-600 px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
           >
             {saving ? 'Memproses...' : 'Hapus'}
           </button>

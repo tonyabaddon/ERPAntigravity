@@ -52,7 +52,7 @@ export function SalesLandingScreen() {
       </div>
       <div className="grid grid-cols-2 gap-4 mb-6">
         <button onClick={() => navigate('penjualanBaru')}
-          className="border-2 border-[var(--color-caleo-primary)] bg-[var(--color-caleo-primary)]/5 rounded-sm p-6 text-left hover:bg-[var(--color-caleo-primary)]/10 transition">
+          className="border-2 border-[var(--color-caleo-primary)] bg-[var(--color-caleo-primary)]/5 rounded p-6 text-left hover:bg-[var(--color-caleo-primary)]/10 transition">
           <div className="text-3xl mb-2">🧾</div>
           <div className="text-base font-extrabold text-[var(--color-caleo-primary)]">+ Sales Invoice</div>
           <div className="text-xs text-slate-600 mt-1">
@@ -60,7 +60,7 @@ export function SalesLandingScreen() {
           </div>
         </button>
         <button onClick={() => navigate('penjualanBaru', { mode: 'quote' })}
-          className="border-2 border-amber-400 bg-amber-50 rounded-sm p-6 text-left hover:bg-amber-100 transition">
+          className="border-2 border-amber-400 bg-amber-50 rounded p-6 text-left hover:bg-amber-100 transition">
           <div className="text-3xl mb-2">📄</div>
           <div className="text-base font-extrabold text-amber-800">+ Sales Order</div>
           <div className="text-xs text-amber-700 mt-1">

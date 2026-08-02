@@ -84,7 +84,7 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
         </div>
         <button
           onClick={onCreate}
-          className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm"
+          className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded"
           style={{ background: 'var(--color-caleo-primary)' }}
         >
           <Plus className="w-4 h-4" /> Buat Tukar Faktur
@@ -123,7 +123,7 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
         </div>
       </div>
 
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
         ) : filtered.length === 0 ? (
@@ -204,7 +204,7 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
                     <td className="px-4 py-4 text-right whitespace-nowrap">
                       <button
                         onClick={() => onOpenDetail(tf.tf_number)}
-                        className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                        className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                       >
                         Detail
                       </button>
