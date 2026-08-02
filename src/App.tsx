@@ -1058,7 +1058,7 @@ export default function App() {
                   {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
                   {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
                   {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
-                  <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+                  <span className="font-extrabold text-xs text-[var(--color-caleo-primary)] tracking-tight">{toastMessage}</span>
                 </div>
               </div>
             )}
@@ -1094,7 +1094,7 @@ export default function App() {
                   {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
                   {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
                   {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
-                  <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+                  <span className="font-extrabold text-xs text-[var(--color-caleo-primary)] tracking-tight">{toastMessage}</span>
                 </div>
               </div>
             )}
@@ -1108,7 +1108,7 @@ export default function App() {
               <header className="flex justify-between items-center w-full px-8 py-4 bg-white/60 backdrop-blur-xl rounded-sm border border-white/60 shadow-sm shrink-0">
                 <div className="flex items-center gap-5">
                   <div className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
+                    <Zap className="w-5 h-5 text-[var(--color-caleo-primary)] fill-blue-950 shrink-0" />
                     <h1 className="font-extrabold text-lg text-primary tracking-tight">
                       {sessionTenantLoaded
                         ? (sessionTenantName || currentUser?.storeName || 'Toko Anda')
@@ -1122,7 +1122,7 @@ export default function App() {
                       type="text"
                       placeholder="Cari menu..."
                       onClick={() => triggerToast("Gunakan pintasan navigasi di sidebar untuk berpindah tab.", 'info')}
-                      className="bg-[#eff4ff] border-none rounded-full px-5 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[#012749]"
+                      className="bg-[#eff4ff] border-none rounded-full px-5 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
                     />
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
                   </div>
@@ -1182,7 +1182,7 @@ export default function App() {
               {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
               {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
               {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
-              <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+              <span className="font-extrabold text-xs text-[var(--color-caleo-primary)] tracking-tight">{toastMessage}</span>
             </div>
           </div>
         )}
@@ -1227,7 +1227,7 @@ export default function App() {
             {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
             {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
             {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
-            <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+            <span className="font-extrabold text-xs text-[var(--color-caleo-primary)] tracking-tight">{toastMessage}</span>
           </div>
         </div>
       )}
@@ -1247,7 +1247,7 @@ export default function App() {
         <header className="flex justify-between items-center w-full px-8 py-4 bg-white/60 backdrop-blur-xl rounded-sm border border-white/60 shadow-sm shrink-0">
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
+              <Zap className="w-5 h-5 text-[var(--color-caleo-primary)] fill-blue-950 shrink-0" />
               <h1 className="font-extrabold text-lg text-primary tracking-tight">
                 {sessionTenantName || currentUser?.storeName || 'Toko Anda'}
               </h1>
@@ -1269,7 +1269,7 @@ export default function App() {
                 type="text" 
                 placeholder="Cari menu..." 
                 onClick={() => triggerToast("🔍 Gunakan pintasan navigasi di sidebar untuk berpindah tab.", 'info')}
-                className="bg-[#eff4ff] border-none rounded-full px-5 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[#012749]"
+                className="bg-[#eff4ff] border-none rounded-full px-5 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
             </div>

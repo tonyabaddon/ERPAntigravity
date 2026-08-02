@@ -68,10 +68,10 @@ export default function AkuntansiScreen({ currentUser, showToast }: Props) {
       return (
         <div className="p-8 max-w-2xl">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
               <BookOpenCheck className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-extrabold text-[#012749]">Akuntansi</h1>
+            <h1 className="text-xl font-extrabold text-[var(--color-caleo-primary)]">Akuntansi</h1>
           </div>
           <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6 text-[13px] text-[#43474e]">
             Setup saldo awal belum dilakukan. Owner perlu menyelesaikan wizard pertama kali.
@@ -103,11 +103,11 @@ export default function AkuntansiScreen({ currentUser, showToast }: Props) {
       {/* Header */}
       <div className="p-8 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
             <BookOpenCheck className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-[#012749]">Akuntansi MSME</h1>
+            <h1 className="text-2xl font-extrabold text-[var(--color-caleo-primary)]">Akuntansi MSME</h1>
             <p className="text-[12px] text-[#43474e]">
               Saldo awal di-set per{' '}
               <strong>{config.opening_balance_date ?? '—'}</strong>
@@ -126,7 +126,7 @@ export default function AkuntansiScreen({ currentUser, showToast }: Props) {
               onClick={() => setActiveTab(t.key)}
               className={`px-4 py-3 text-[13px] whitespace-nowrap transition-colors inline-flex items-center gap-2 ${
                 activeTab === t.key
-                  ? 'font-extrabold border-b-2 border-emerald-600 text-[#012749]'
+                  ? 'font-extrabold border-b-2 border-emerald-600 text-[var(--color-caleo-primary)]'
                   : 'font-bold text-gray-500 hover:text-gray-700'
               }`}
             >

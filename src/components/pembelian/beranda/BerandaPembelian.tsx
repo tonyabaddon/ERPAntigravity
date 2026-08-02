@@ -70,7 +70,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
         <p className="text-sm font-semibold text-red-600">{fetchError}</p>
         <button
           onClick={reload}
-          className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:opacity-90"
+          className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:opacity-90"
         >
           Coba Lagi
         </button>
@@ -87,7 +87,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold" style={{ color: '#012749' }}>Beranda Pembelian</h2>
+          <h2 className="text-base font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Beranda Pembelian</h2>
           <div className="text-xs text-gray-500">
             Snapshot utang ke supplier
             {lastUpdated && <span className="ml-2 text-gray-400">• Update {lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>}
@@ -140,7 +140,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
       <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-200 bg-gray-50/80 flex items-center justify-between">
           <div>
-            <div className="text-sm font-bold" style={{ color: '#012749' }}>Outstanding per Supplier</div>
+            <div className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Outstanding per Supplier</div>
             <div className="text-[11px] text-gray-500">Diurutkan berdasarkan total outstanding terbesar</div>
           </div>
           <div className="text-[11px] text-gray-500">{per_supplier.length} supplier</div>
@@ -166,7 +166,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                 return (
                   <tr key={s.supplier_id} className={`hover:bg-slate-50 border-b border-gray-100 ${overdueRow ? 'bg-rose-50/30' : ''}`}>
                     <td className="px-5 py-4">
-                      <div className="font-bold text-sm" style={{ color: '#012749' }}>{s.supplier_name}</div>
+                      <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{s.supplier_name}</div>
                     </td>
                     <td className="px-5 py-4 text-center text-sm">{s.tagihan_count}</td>
                     <td className="px-5 py-4">
@@ -178,13 +178,13 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                         <div className="text-[11px] font-bold text-amber-700 mt-0.5">⏰ {days === 0 ? 'Jatuh tempo hari ini' : `${days} hari lagi`}</div>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-right text-sm font-extrabold" style={{ color: overdueRow ? '#b91c1c' : '#012749' }}>
+                    <td className="px-5 py-4 text-right text-sm font-extrabold" style={{ color: overdueRow ? '#b91c1c' : 'var(--color-caleo-primary)' }}>
                       {formatIDR(s.outstanding)}
                     </td>
                     <td className="px-5 py-4 text-right">
                       <button onClick={() => onOpenPembayaran(s.supplier_id)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold rounded-sm text-white hover:opacity-90"
-                        style={{ background: '#012749' }}>
+                        style={{ background: 'var(--color-caleo-primary)' }}>
                         Bayar <ChevronRight className="w-3 h-3" />
                       </button>
                     </td>

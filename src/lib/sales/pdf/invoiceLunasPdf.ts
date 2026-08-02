@@ -36,7 +36,7 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
 const BLACK_RGB: [number, number, number] = [0, 0, 0];
 const BLACK_HEX = '#000000';
-const NAVY_HEX = '#012749';
+const NAVY_HEX = 'var(--color-caleo-primary)';
 const GREEN_HEX = '#2d8a4e';
 // 10% opacity green over white ≈ #e7f3ec — jsPDF doesn't support alpha
 // natively for fills, so we use a pre-mixed pastel.
@@ -63,7 +63,7 @@ export async function generateInvoiceLunasPdf(
   const dm = printMode === 'dot_matrix';
   const headerFill = dm ? BLACK_RGB : NAVY_RGB;
   const totalAccent = dm ? BLACK_HEX : GREEN_HEX;
-  const dividerColor = dm ? '#000000' : '#012749';
+  const dividerColor = dm ? '#000000' : 'var(--color-caleo-primary)';
 
   // ----- 1. Header -----
   const issueDate = new Date().toISOString();

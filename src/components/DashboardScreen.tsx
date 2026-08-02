@@ -60,7 +60,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
           <span className="text-xs font-bold text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full select-none">
             Sistem Integrasi Aktif
           </span>
-          <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-2">
+          <h2 className="text-[var(--color-caleo-primary)] font-extrabold text-2xl tracking-tight mt-2">
             {/* `storeName === null` = loading (bootstrap RPC in flight);
                 render nbsp to keep layout height stable without flashing
                 the 'Toko Anda' fallback. */}
@@ -112,7 +112,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
         <div className="bg-white p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h4 className="text-lg font-bold text-[#012749]">Detak Jantung Log Aktivitas AI</h4>
+              <h4 className="text-lg font-bold text-[var(--color-caleo-primary)]">Detak Jantung Log Aktivitas AI</h4>
               <p className="text-xs text-[#43474e]">Aktivitas asisten AI dan status sinkronisasi e-commerce terkini.</p>
             </div>
             <span className="text-xs font-bold text-[#2d8a4e] flex items-center gap-1.5 bg-emerald-50 px-3 py-1 rounded-full">
@@ -141,7 +141,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-[#012749]">
+                  <p className="text-sm font-bold text-[var(--color-caleo-primary)]">
                     {item.sender === 'ai' ? 'Pesan AI' : 'Sistem'}
                   </p>
                   <p className="text-xs text-[#43474e] line-clamp-2">{item.text}</p>

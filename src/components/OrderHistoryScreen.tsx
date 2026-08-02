@@ -444,7 +444,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
               tab === t.id
-                ? 'bg-[#012749] text-white border-[#012749]'
+                ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                 : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -518,7 +518,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
           <p className="text-sm font-semibold text-red-600 mb-3">{fetchError}</p>
           <button
             onClick={() => { setFetchError(null); setLoading(true); salesEntriesService.fetchAll().then(({ orders: o, kasir: k }) => { setOrders(o); setKasir(k); }).catch((err) => { setFetchError('Gagal memuat riwayat pesanan.'); showToast('Gagal memuat riwayat pesanan.', 'warning'); console.error(err); }).finally(() => setLoading(false)); }}
-            className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:opacity-90"
+            className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:opacity-90"
           >
             Coba Lagi
           </button>
@@ -553,7 +553,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                 >
                   <div className="flex-1 min-w-0">
                     <div
-                      className="font-bold text-sm text-[#012749] underline underline-offset-2 cursor-pointer hover:opacity-80 inline-block"
+                      className="font-bold text-sm text-[var(--color-caleo-primary)] underline underline-offset-2 cursor-pointer hover:opacity-80 inline-block"
                       onClick={e => { e.stopPropagation(); if (entry.customer_id) onOpenCustomer(entry.customer_id); }}
                     >
                       {entry.customer_name}
@@ -912,7 +912,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       </span>
                       <button
                         onClick={() => setInvoiceOrder(order)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-white text-[#012749] text-xs font-bold rounded-sm border border-[#c7d7f5] hover:bg-blue-50"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-white text-[var(--color-caleo-primary)] text-xs font-bold rounded-sm border border-[#c7d7f5] hover:bg-blue-50"
                       >
                         📄 Lihat Invoice
                       </button>

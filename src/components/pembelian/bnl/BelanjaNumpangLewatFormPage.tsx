@@ -168,7 +168,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
         <span className="text-gray-800 font-semibold">{editing ? `Edit ${editing.pi_number}` : 'Buat Baru'}</span>
       </div>
 
-      <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>
+      <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
         {editing ? `Edit ${editing.pi_number}` : 'Buat Belanja Numpang Lewat'}
       </h1>
       <p className="text-xs text-gray-500">Pembelian pass-through — barang langsung jual ke customer, tidak nambah stok.</p>
@@ -275,7 +275,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                 <td className="py-3 px-2"><NumberInput value={it.sell_price}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, sell_price: n } : p))}
                   className="w-full text-sm text-right py-1 px-2 rounded-sm border border-gray-200" /></td>
-                <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{formatIDR(it.qty * it.unit_cost)}</td>
+                <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">
                   <button type="button" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500">
                     <X className="w-4 h-4" />
@@ -291,7 +291,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                   </div>
                   <button type="button" onClick={addItemFromSku} disabled={!draftSku}
                     className="inline-flex items-center gap-1 text-sm font-semibold text-white px-3 py-2 rounded-sm disabled:opacity-50"
-                    style={{ background: '#012749' }}>
+                    style={{ background: 'var(--color-caleo-primary)' }}>
                     <Plus className="w-4 h-4" /> Tambah
                   </button>
                 </div>
@@ -347,7 +347,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded-sm p-4">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Beli</div>
-            <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(subtotal)}</div>
+            <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(subtotal)}</div>
           </div>
           <div className="bg-indigo-50 rounded-sm p-4">
             <div className="text-[11px] text-indigo-600 uppercase font-semibold">Estimasi Jual</div>
@@ -364,7 +364,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
         <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
         <button onClick={() => handleSubmit(false)} disabled={saving}
           className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
-          style={{ background: '#012749' }}>
+          style={{ background: 'var(--color-caleo-primary)' }}>
           {saving ? 'Menyimpan...' : (editing ? 'Update PI' : 'Simpan')}
         </button>
       </div>
@@ -379,7 +379,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setDuplicateWarning(null)} className="text-sm px-3 py-2 rounded-sm border border-gray-200">Batal</button>
               <button onClick={() => { setDuplicateWarning(null); handleSubmit(true); }}
-                className="text-sm px-3 py-2 rounded-sm text-white font-semibold" style={{ background: '#012749' }}>Lanjut</button>
+                className="text-sm px-3 py-2 rounded-sm text-white font-semibold" style={{ background: 'var(--color-caleo-primary)' }}>Lanjut</button>
             </div>
           </div>
         </div>

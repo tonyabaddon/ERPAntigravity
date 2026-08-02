@@ -21,10 +21,10 @@ export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAdd
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[#e5eeff] shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">🏦 Rekening Aktif</div>
+          <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🏦 Rekening Aktif</div>
           <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{accounts.length} rekening terdaftar</div>
         </div>
-        <button onClick={onAddAccount} className="bg-slate-50 border border-[#e5eeff] text-[#012749] px-3 py-1.5 rounded-sm text-[10px] font-extrabold">+ Tambah</button>
+        <button onClick={onAddAccount} className="bg-slate-50 border border-[#e5eeff] text-[var(--color-caleo-primary)] px-3 py-1.5 rounded-sm text-[10px] font-extrabold">+ Tambah</button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {accounts.map(a => {
@@ -40,7 +40,7 @@ export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAdd
                   {uploaded ? '✓' : '⚠️'}
                 </span>
               </div>
-              <div className="text-xs font-bold text-[#012749] mt-1.5">{a.account_label}</div>
+              <div className="text-xs font-bold text-[var(--color-caleo-primary)] mt-1.5">{a.account_label}</div>
               {!uploaded && <button onClick={() => onUpload(a)} className="mt-2 w-full bg-white border border-amber-300 text-amber-700 text-[10px] font-extrabold py-1 rounded">Upload PDF →</button>}
             </div>
           );

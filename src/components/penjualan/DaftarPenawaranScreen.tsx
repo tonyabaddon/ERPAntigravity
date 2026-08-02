@@ -130,11 +130,11 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-extrabold text-[#012749]">Daftar Penawaran</h1>
+            <h1 className="text-lg font-extrabold text-[var(--color-caleo-primary)]">Daftar Penawaran</h1>
             <p className="text-xs text-slate-500 mt-0.5">Sales Order ke customer. Belum commit · stok belum bergerak.</p>
           </div>
           <button onClick={() => navigate('penjualanBaru', { mode: 'quote' })}
-            className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90">
+            className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90">
             + Sales Order Baru
           </button>
         </div>
@@ -158,7 +158,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
           </div>
           <div className="bg-white border border-slate-200 rounded-sm p-3">
             <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Conversion Rate</div>
-            <div className="text-lg font-extrabold text-[#012749] mt-1">{counts.rate}%</div>
+            <div className="text-lg font-extrabold text-[var(--color-caleo-primary)] mt-1">{counts.rate}%</div>
             <div className="text-[11px] text-slate-500">{counts.converted} dari {counts.converted + counts.closed} decided</div>
           </div>
         </div>
@@ -171,7 +171,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               const count = t === 'all' ? rows.length : rows.filter((r) => r.status === t).length;
               return (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-sm ${tab === t ? 'bg-white text-[#012749] shadow-sm' : 'text-slate-600 hover:bg-white/50'}`}>
+                  className={`px-3 py-1.5 text-xs font-bold rounded-sm ${tab === t ? 'bg-white text-[var(--color-caleo-primary)] shadow-sm' : 'text-slate-600 hover:bg-white/50'}`}>
                   {label} ({count})
                 </button>
               );
@@ -204,12 +204,12 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                 <tbody>
                   {filtered.map((r) => (
                     <tr key={r.id} className={`border-t border-slate-100 ${r.status === 'CONVERTED' ? 'bg-emerald-50/30' : r.status === 'CLOSED' ? 'bg-slate-50/50' : ''}`}>
-                      <td className="px-4 py-3 font-bold text-[#012749]">{r.so_number}</td>
+                      <td className="px-4 py-3 font-bold text-[var(--color-caleo-primary)]">{r.so_number}</td>
                       <td className="px-4 py-3">
                         <div className="font-semibold">{r.customer_name}</div>
                         <div className="text-[11px] text-slate-500">{r.customer_phone ?? '—'} · {r.channel}</div>
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[#012749]">{formatRp(Number(r.subtotal))}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[var(--color-caleo-primary)]">{formatRp(Number(r.subtotal))}</td>
                       <td className="px-4 py-3 text-slate-500">{new Date(r.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -272,7 +272,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
             {/* Modal header */}
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-base font-extrabold text-[#012749]">{viewSo.so_number}</span>
+                <span className="text-base font-extrabold text-[var(--color-caleo-primary)]">{viewSo.so_number}</span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                   viewSo.status === 'OPEN' ? 'bg-amber-100 text-amber-800'
                   : viewSo.status === 'CONVERTED' ? 'bg-emerald-100 text-emerald-800'
@@ -327,14 +327,14 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                           <td className="px-3 py-2 font-semibold text-slate-700">{item.name}</td>
                           <td className="px-3 py-2 text-right text-slate-600">{item.qty}</td>
                           <td className="px-3 py-2 text-right text-slate-600">{formatRp(item.unit_price)}</td>
-                          <td className="px-3 py-2 text-right font-bold text-[#012749]">{formatRp(item.subtotal)}</td>
+                          <td className="px-3 py-2 text-right font-bold text-[var(--color-caleo-primary)]">{formatRp(item.subtotal)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {/* Subtotal row */}
-                <div className="flex justify-between text-xs font-bold text-[#012749] px-1 mt-2">
+                <div className="flex justify-between text-xs font-bold text-[var(--color-caleo-primary)] px-1 mt-2">
                   <span>TOTAL PENAWARAN</span>
                   <span>{formatRp(Number(viewSo.subtotal))}</span>
                 </div>
@@ -376,7 +376,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               <div className="flex gap-2">
                 <button
                   onClick={() => openPrintSo(viewSo, 'normal')}
-                  className="px-3 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90"
+                  className="px-3 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
                 >
                   🖨️ Cetak A4
                 </button>

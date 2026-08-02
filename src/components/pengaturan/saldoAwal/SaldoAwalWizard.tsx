@@ -150,7 +150,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <div>
-            <h2 className="text-[15px] font-extrabold text-[#012749]">Saldo Awal — Onboarding</h2>
+            <h2 className="text-[15px] font-extrabold text-[var(--color-caleo-primary)]">Saldo Awal — Onboarding</h2>
             <p className="text-[12px] text-slate-500 mt-0.5">
               Step {step} dari 4 — {STEP_LABELS[step]}
             </p>
@@ -173,7 +173,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
             value={cutoverDate}
             max={wibDateString()}
             onChange={(e) => setCutoverDate(e.target.value)}
-            className="border border-slate-200 rounded-sm px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
+            className="border border-slate-200 rounded-sm px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
           />
           <span className="text-[11px] text-slate-500">
             Jurnal Umum Saldo Awal akan diposting per tanggal ini (cutover − 1 hari di backend)
@@ -187,7 +187,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
               {i > 0 && (
                 <div
                   className={`h-0.5 flex-1 ${
-                    s <= step ? 'bg-[#012749]' : 'bg-slate-200'
+                    s <= step ? 'bg-[var(--color-caleo-primary)]' : 'bg-slate-200'
                   }`}
                 />
               )}
@@ -195,7 +195,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 transition-colors ${
                     s === step
-                      ? 'bg-[#012749] text-white border-[#012749]'
+                      ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                       : s < step
                       ? 'bg-emerald-500 text-white border-emerald-500'
                       : 'bg-white text-slate-400 border-slate-300'
@@ -205,7 +205,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                 </div>
                 <span
                   className={`text-[10px] font-semibold ${
-                    s === step ? 'text-[#012749]' : s < step ? 'text-emerald-600' : 'text-slate-400'
+                    s === step ? 'text-[var(--color-caleo-primary)]' : s < step ? 'text-emerald-600' : 'text-slate-400'
                   }`}
                 >
                   {STEP_LABELS[s]}
@@ -312,7 +312,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                 type="button"
                 onClick={handleNext}
                 disabled={saving}
-                className="px-5 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-sm hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-5 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {saving ? 'Menyimpan draft…' : 'Berikutnya →'}
               </button>

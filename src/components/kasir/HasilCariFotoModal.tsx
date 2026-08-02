@@ -27,7 +27,7 @@ export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlob
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Hasil Cari by Foto</p>
-            <h3 className="text-base font-extrabold text-[#012749] mt-0.5">Top {results.length} produk paling mirip</h3>
+            <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mt-0.5">Top {results.length} produk paling mirip</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center">
             <span className="material-symbols-outlined text-base text-slate-600">close</span>
@@ -69,10 +69,10 @@ export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlob
                     {isBest && <span className="text-[9px] font-extrabold bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase">Best match</span>}
                     {lowStock && <span className="text-[9px] font-extrabold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full uppercase">Tipis</span>}
                   </div>
-                  <h4 className="text-sm font-extrabold text-[#012749] mt-1">{r.name}</h4>
+                  <h4 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mt-1">{r.name}</h4>
                   <p className="text-[10.5px] font-mono text-slate-500">{r.sku}</p>
                   <p className="text-[11px] text-slate-600 mt-1">
-                    <span className="font-bold text-[#012749]">Rp {new Intl.NumberFormat('id-ID').format(r.price)}</span>
+                    <span className="font-bold text-[var(--color-caleo-primary)]">Rp {new Intl.NumberFormat('id-ID').format(r.price)}</span>
                     {warehouseEntries.map(([w, q]) => (
                       <React.Fragment key={w}>
                         <span className="mx-1.5 text-slate-400">·</span>
@@ -95,7 +95,7 @@ export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlob
           })}
         </div>
         <div className="mt-5 pt-4 border-t border-slate-200 text-center">
-          <button onClick={onClose} className="text-[11.5px] font-bold text-[#012749] hover:underline inline-flex items-center gap-1">
+          <button onClick={onClose} className="text-[11.5px] font-bold text-[var(--color-caleo-primary)] hover:underline inline-flex items-center gap-1">
             <span className="material-symbols-outlined text-base">search</span>
             Tidak ada yang cocok? Cari manual via teks
           </button>

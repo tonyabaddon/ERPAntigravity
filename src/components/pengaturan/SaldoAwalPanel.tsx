@@ -220,7 +220,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           <button
             type="button"
             onClick={() => setWizardOpen(true)}
-            className="px-4 py-2 bg-[#012749] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
+            className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
           >
             Lanjutkan Wizard
           </button>
@@ -255,7 +255,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="px-5 py-2.5 bg-[#012749] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
+          className="px-5 py-2.5 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
         >
           Buat Saldo Awal
         </button>

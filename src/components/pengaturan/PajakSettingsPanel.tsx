@@ -94,7 +94,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
       {/* Detail UMKM */}
       {settings.pajak_mode === 'FINAL_UMKM' && (
         <section className="border border-slate-200 rounded-sm p-5">
-          <h3 className="font-bold text-sm text-[#012749] mb-3">🌱 Detail UMKM (PP 55/2022)</h3>
+          <h3 className="font-bold text-sm text-[var(--color-caleo-primary)] mb-3">🌱 Detail UMKM (PP 55/2022)</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Jenis Badan Usaha</label>
@@ -119,7 +119,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
             <div className="bg-blue-50 border border-blue-200 rounded-sm px-4 py-3 mt-4 flex items-start gap-3">
               <div className="text-2xl">⏰</div>
               <div className="text-xs text-slate-700">
-                <div className="font-bold text-[#012749]">Otomatis expires: {new Date(settings.pajak_umkm_expires_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                <div className="font-bold text-[var(--color-caleo-primary)]">Otomatis expires: {new Date(settings.pajak_umkm_expires_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                 <div className="mt-1">Kamu masih punya <strong className="text-emerald-700">{timeUntil(settings.pajak_umkm_expires_at)}</strong> sebelum harus pindah ke skema umum.</div>
                 <div className="mt-2 text-[11px] text-slate-500">⚠️ 90 hari sebelum expiry, kamu akan diingatkan untuk siap-siap pindah skema.</div>
               </div>
@@ -141,7 +141,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
 
       {/* NPWP / NIK */}
       <section className="border border-slate-200 rounded-sm p-5">
-        <h3 className="font-bold text-sm text-[#012749] mb-3">🆔 NPWP / NIK <span className="text-[10px] text-slate-500 italic">(Regulasi DJP Juli 2024)</span></h3>
+        <h3 className="font-bold text-sm text-[var(--color-caleo-primary)] mb-3">🆔 NPWP / NIK <span className="text-[10px] text-slate-500 italic">(Regulasi DJP Juli 2024)</span></h3>
         <div className="space-y-2">
           <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-sm cursor-pointer hover:bg-slate-50">
             <input type="radio" checked={settings.pajak_nik_as_npwp} onChange={() => save({ pajak_nik_as_npwp: true })} className="w-4 h-4" />
@@ -172,7 +172,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
       {/* Detail PKP (collapsed when not selected) */}
       {settings.pajak_mode === 'PKP' && (
         <section className="border border-slate-200 rounded-sm p-5">
-          <h3 className="font-bold text-sm text-[#012749] mb-3">📊 Detail PKP (PMK 131/2024)</h3>
+          <h3 className="font-bold text-sm text-[var(--color-caleo-primary)] mb-3">📊 Detail PKP (PMK 131/2024)</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Terdaftar PKP Sejak</label>

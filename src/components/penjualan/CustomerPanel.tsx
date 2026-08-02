@@ -63,7 +63,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
           className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-sm outline-none ${
             isSelected
               ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-              : 'bg-white border-slate-300 focus:border-[#012749] focus:ring-2 focus:ring-[#012749]/30'
+              : 'bg-white border-slate-300 focus:border-[var(--color-caleo-primary)] focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30'
           }`}
         />
       </div>
@@ -99,9 +99,9 @@ export default function CustomerPanel(props: CustomerPanelProps) {
 
       {/* Selected customer chip (navy-themed to match mockup palette) */}
       {isSelected && selected && (
-        <div className="mt-2 bg-[#012749]/5 border border-[#012749]/30 rounded-sm px-4 py-3 flex justify-between items-center">
+        <div className="mt-2 bg-[var(--color-caleo-primary)]/5 border border-[var(--color-caleo-primary)]/30 rounded-sm px-4 py-3 flex justify-between items-center">
           <div>
-            <div className="font-bold text-[#012749] text-sm">{selected.name}</div>
+            <div className="font-bold text-[var(--color-caleo-primary)] text-sm">{selected.name}</div>
             <div className="text-[11px] text-slate-600 mt-0.5">
               📞 {selected.wa_number ?? '—'} · 🏢 {selected.company || '—'}
             </div>
@@ -114,7 +114,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
             <button
               type="button"
               onClick={onClearSelection}
-              className="text-[#012749] text-[11px] font-bold bg-white px-3 py-1 rounded-sm border border-[#012749]/30 hover:bg-[#012749]/5 flex items-center gap-1"
+              className="text-[var(--color-caleo-primary)] text-[11px] font-bold bg-white px-3 py-1 rounded-sm border border-[var(--color-caleo-primary)]/30 hover:bg-[var(--color-caleo-primary)]/5 flex items-center gap-1"
             >
               <X className="w-3 h-3" /> Ganti
             </button>

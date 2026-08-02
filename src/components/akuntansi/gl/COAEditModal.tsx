@@ -90,7 +90,7 @@ export default function COAEditModal({
           {/* ── Header ── */}
           <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-[#012749]">
+              <h3 className="text-base font-bold text-[var(--color-caleo-primary)]">
                 Edit COA · <span className="font-mono">{account.account_code}</span>
               </h3>
               <p className="text-xs text-gray-600 mt-0.5">
@@ -178,7 +178,7 @@ export default function COAEditModal({
                   checked={isActive}
                   onChange={e => setIsActive(e.target.checked)}
                   disabled={isSystemAccount}
-                  className="w-4 h-4 rounded border-[#c7d7f5] text-[#012749] focus:ring-[#c7d7f5] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-4 h-4 rounded border-[#c7d7f5] text-[var(--color-caleo-primary)] focus:ring-[#c7d7f5] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-xs font-bold text-gray-700">Aktif</span>
               </label>
@@ -193,14 +193,14 @@ export default function COAEditModal({
           {/* ── Footer ── */}
           <div className="px-6 py-4 border-t border-gray-200 flex items-center gap-2 justify-end">
             <button
-              className="px-4 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] font-bold text-[#012749] hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 rounded-sm border border-[#c7d7f5] bg-white text-[13px] font-bold text-[var(--color-caleo-primary)] hover:bg-gray-50 transition-colors"
               onClick={onClose}
               disabled={saving}
             >
               Batal
             </button>
             <button
-              className="px-4 py-2 rounded-sm bg-[#012749] text-white text-[13px] font-bold hover:bg-[#0a1a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-sm bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold hover:bg-[#0a1a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSave}
               disabled={saving || !isNameValid}
             >

@@ -68,10 +68,10 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
   };
 
   return (
-    <div data-testid="new-customer-form" className="mt-3 border-2 border-[#012749]/30 rounded-sm p-4 bg-[#012749]/5">
+    <div data-testid="new-customer-form" className="mt-3 border-2 border-[var(--color-caleo-primary)]/30 rounded-sm p-4 bg-[var(--color-caleo-primary)]/5">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-sm font-extrabold text-[#012749]">Customer Baru</div>
+          <div className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Customer Baru</div>
           <div className="text-[11px] text-slate-600">Akan tersimpan ke daftar Pelanggan.</div>
         </div>
         <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-700 text-sm">×</button>
@@ -97,7 +97,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
       </div>
 
       {showTierField && tenantSettings && (
-        <div className="mt-3 pt-3 border-t border-[#012749]/20">
+        <div className="mt-3 pt-3 border-t border-[var(--color-caleo-primary)]/20">
           <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Tipe Harga default</label>
           <div className="flex gap-1.5 flex-wrap">
             {getActiveTiers(tenantSettings).map((t) => {
@@ -111,7 +111,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
                   className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
                     active
                       ? t.slot === 1
-                        ? 'bg-[#012749] text-white'
+                        ? 'bg-[var(--color-caleo-primary)] text-white'
                         : 'bg-purple-600 text-white'
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                   }`}
@@ -125,7 +125,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
         </div>
       )}
 
-      <div className="mt-3 pt-3 border-t border-[#012749]/20">
+      <div className="mt-3 pt-3 border-t border-[var(--color-caleo-primary)]/20">
         <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
           <input type="checkbox" checked={requestTempo} onChange={(e) => setRequestTempo(e.target.checked)} className="rounded" />
           Ajukan TEMPO (kredit) untuk customer ini
@@ -161,7 +161,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
 
       <div className="mt-3 flex justify-end gap-2">
         <button type="button" onClick={onCancel} disabled={submitting} className="px-3 py-1.5 text-xs font-semibold rounded-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
-        <button type="button" onClick={onSubmit} disabled={!canSubmit} className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50">
+        <button type="button" onClick={onSubmit} disabled={!canSubmit} className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50">
           {submitting ? 'Menyimpan…' : '✓ Simpan & Pilih'}
         </button>
       </div>

@@ -47,7 +47,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Cari Produk via Foto</p>
-            <h3 className="text-base font-extrabold text-[#012749] mt-0.5">Pilih sumber foto produk</h3>
+            <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mt-0.5">Pilih sumber foto produk</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center">
             <span className="material-symbols-outlined text-base text-slate-600">close</span>
@@ -65,7 +65,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
           </div>
         )}
         {isSearching && !coldStart && (
-          <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 mb-4 text-center text-[12px] text-[#012749] font-bold">Mencari…</div>
+          <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 mb-4 text-center text-[12px] text-[var(--color-caleo-primary)] font-bold">Mencari…</div>
         )}
         <div className="grid grid-cols-2 gap-3 mb-3">
           <button

@@ -191,11 +191,11 @@ export default function PinPad({
     <div className={containerCls}>
       {(title || subtitle || showDemoHint) && (
         <div className="text-center mb-4">
-          <span className="inline-block rounded-full bg-[#e5eeff] text-[#012749] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1">
+          <span className="inline-block rounded-full bg-[#e5eeff] text-[var(--color-caleo-primary)] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1">
             Approval Sync
           </span>
           {title && (
-            <h3 className={`mt-2 font-extrabold text-[#012749] ${compact ? 'text-base' : 'text-lg'}`}>
+            <h3 className={`mt-2 font-extrabold text-[var(--color-caleo-primary)] ${compact ? 'text-base' : 'text-lg'}`}>
               {title}
             </h3>
           )}
@@ -218,7 +218,7 @@ export default function PinPad({
           <span
             key={i}
             className={`${dotSize} rounded-full transition-colors ${
-              i < pin.length ? 'bg-[#012749]' : 'bg-slate-300'
+              i < pin.length ? 'bg-[var(--color-caleo-primary)]' : 'bg-slate-300'
             }`}
           />
         ))}
@@ -239,7 +239,7 @@ export default function PinPad({
               aria-label={k.ariaLabel ?? `Tekan ${k.label}`}
               className="aspect-square rounded-sm border border-[#e5eeff] bg-white hover:bg-blue-50 active:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <span className={`font-extrabold text-[#012749] ${buttonCls}`}>{k.label}</span>
+              <span className={`font-extrabold text-[var(--color-caleo-primary)] ${buttonCls}`}>{k.label}</span>
             </button>
           ) : (
             <div key={idx} aria-hidden="true" />
@@ -271,7 +271,7 @@ export default function PinPad({
               className={`px-4 py-2 rounded-full text-white text-xs font-extrabold disabled:opacity-50 ${
                 trailingAction.tone === 'emerald' || !trailingAction.tone
                   ? 'bg-[#2d8a4e] hover:bg-emerald-700'
-                  : 'bg-[#012749] hover:opacity-90'
+                  : 'bg-[var(--color-caleo-primary)] hover:opacity-90'
               }`}
             >
               {trailingAction.label}

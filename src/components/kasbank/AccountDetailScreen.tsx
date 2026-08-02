@@ -385,7 +385,7 @@ export default function AccountDetailScreen({
       <div className="p-8">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[13px] text-[#012749] font-bold hover:underline mb-4"
+          className="inline-flex items-center gap-1.5 text-[13px] text-[var(--color-caleo-primary)] font-bold hover:underline mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Kas &amp; Bank
@@ -478,7 +478,7 @@ export default function AccountDetailScreen({
           onClick={() => setActiveTab('riwayat')}
           className={`px-4 py-3 text-[13px] font-extrabold whitespace-nowrap transition-colors ${
             activeTab === 'riwayat'
-              ? 'border-b-2 border-emerald-600 text-[#012749]'
+              ? 'border-b-2 border-emerald-600 text-[var(--color-caleo-primary)]'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -495,7 +495,7 @@ export default function AccountDetailScreen({
             onClick={() => setActiveTab('belum-cocok')}
             className={`px-4 py-3 text-[13px] font-extrabold whitespace-nowrap transition-colors ${
               activeTab === 'belum-cocok'
-                ? 'border-b-2 border-emerald-600 text-[#012749]'
+                ? 'border-b-2 border-emerald-600 text-[var(--color-caleo-primary)]'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -659,7 +659,7 @@ export default function AccountDetailScreen({
                 onClick={() => handlePreset(key)}
                 className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                   activePreset === key
-                    ? 'bg-[#012749] text-white'
+                    ? 'bg-[var(--color-caleo-primary)] text-white'
                     : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
                 }`}
               >
@@ -821,7 +821,7 @@ export default function AccountDetailScreen({
                 onClick={() => handlePreset(key)}
                 className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                   activePreset === key
-                    ? 'bg-[#012749] text-white'
+                    ? 'bg-[var(--color-caleo-primary)] text-white'
                     : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
                 }`}
               >

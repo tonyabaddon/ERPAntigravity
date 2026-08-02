@@ -152,7 +152,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
           {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
         </select>
       </td>
-      <td className="py-3 text-right text-sm font-bold" style={{ color: '#012749' }}>
+      <td className="py-3 text-right text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
         {formatIDR((it.qty * it.master_unit_cost) - (it.discount_amount_rp ?? 0))}
       </td>
     </tr>
@@ -346,7 +346,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
         <ChevronRight className="w-3 h-3" /><span className="text-gray-800 font-semibold">Buat Baru</span>
       </div>
 
-      <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>Buat Tagihan (Terima Barang + Faktur)</h1>
+      <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>Buat Tagihan (Terima Barang + Faktur)</h1>
       <p className="text-xs text-gray-500">Step 2 dari alur Pembelian Stok: catat barang datang &amp; faktur supplier. Stok otomatis bertambah.</p>
 
       {/* 1. Pesanan picker */}
@@ -432,7 +432,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
                 <td colSpan={modulOn ? 7 : 6} className="py-2 text-right text-xs font-semibold text-gray-500">
                   SUBTOTAL (setelah diskon item)
                 </td>
-                <td className="py-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{formatIDR(subtotalAfterLine)}</td>
+                <td className="py-2 text-right text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(subtotalAfterLine)}</td>
               </tr>
               {modulOn && (
                 <tr>
@@ -449,7 +449,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
               )}
               <tr>
                 <td colSpan={modulOn ? 7 : 6} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL TAGIHAN</td>
-                <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(totalFinal)}</td>
+                <td className="py-3 text-right text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(totalFinal)}</td>
               </tr>
             </tfoot>
           </table>
@@ -529,7 +529,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
         <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
         <button onClick={handleSubmit} disabled={saving || !pesanan}
           className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
-          style={{ background: '#012749' }}>
+          style={{ background: 'var(--color-caleo-primary)' }}>
           {saving ? 'Menyimpan...' : 'Simpan Tagihan'}
         </button>
       </div>

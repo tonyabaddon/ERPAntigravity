@@ -72,7 +72,7 @@ export default function TempoWriteOffApprovalRequestRow({
             {snap?.customer_name ?? '—'}
             {snap?.invoice_short && <span className="text-slate-400 font-mono ml-2">{snap.invoice_short}</span>}
           </div>
-          <div className="text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(snap?.amount)}</div>
+          <div className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{fmtRp(snap?.amount)}</div>
           {snap?.reason && (
             <div className="text-xs text-slate-700 italic max-w-md">
               "{snap.reason}"

@@ -207,7 +207,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           <span className="text-[10px] font-black tracking-widest text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3.5 py-1 rounded-full">
             Infrastruktur Backend
           </span>
-          <h2 className="text-xl font-black text-[#012749] tracking-tight mt-2.5">
+          <h2 className="text-xl font-black text-[var(--color-caleo-primary)] tracking-tight mt-2.5">
             Manajemen Inventaris Stok &amp; Harga
           </h2>
           <p className="text-xs text-slate-500 font-semibold mt-1">

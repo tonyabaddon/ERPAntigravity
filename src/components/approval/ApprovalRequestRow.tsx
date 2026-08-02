@@ -277,7 +277,7 @@ export default function ApprovalRequestRow({
             <span className="inline-block rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5">
               {typeLabel}
             </span>
-            <span className="text-xs font-bold text-[#012749]">
+            <span className="text-xs font-bold text-[var(--color-caleo-primary)]">
               {actorName ?? request.requestedBy}
             </span>
             <span className="ml-auto inline-flex items-center gap-2">

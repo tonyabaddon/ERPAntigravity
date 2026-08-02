@@ -107,7 +107,7 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
   return (
     <div className="bg-white rounded-sm border border-slate-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-extrabold text-[#012749]">Pre-order ter-fulfill (7 hari terakhir)</h3>
+        <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Pre-order ter-fulfill (7 hari terakhir)</h3>
         <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Notify customer manual</span>
       </div>
       {loading ? (

@@ -193,7 +193,7 @@ export default function YearEndCloseModal({
                 loadSnapshot(newYear);
               }}
               disabled={loading || submitting}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>{y}</option>

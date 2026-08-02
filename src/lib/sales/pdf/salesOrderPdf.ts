@@ -62,7 +62,7 @@ export async function generateSalesOrderPdf(
   const headerFill = dm ? BLACK_RGB : NAVY_RGB;
   const headerTextColor = dm ? '#ffffff' : '#ffffff';
   const totalAccent = dm ? BLACK_HEX : GREEN_HEX;
-  const dividerColor = dm ? '#000000' : '#012749';
+  const dividerColor = dm ? '#000000' : 'var(--color-caleo-primary)';
 
   // ----- 1. Header -----
   const issueDate = new Date().toISOString();

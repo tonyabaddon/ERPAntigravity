@@ -165,11 +165,11 @@ export default function COAManagementTab({
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749] shrink-0">
+          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
             <List className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-[#012749]">Chart of Accounts</h3>
+            <h3 className="text-base font-bold text-[var(--color-caleo-primary)]">Chart of Accounts</h3>
             <p className="text-xs text-gray-600">
               {accountCount} akun · 59 SAK EMKM standard
             </p>
@@ -183,8 +183,8 @@ export default function COAManagementTab({
             <button
               className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
                 onlyActive
-                  ? 'bg-[#c7d7f5] text-[#012749]'
-                  : 'text-gray-600 hover:text-[#012749]'
+                  ? 'bg-[#c7d7f5] text-[var(--color-caleo-primary)]'
+                  : 'text-gray-600 hover:text-[var(--color-caleo-primary)]'
               }`}
               onClick={() => setOnlyActive(true)}
             >
@@ -193,8 +193,8 @@ export default function COAManagementTab({
             <button
               className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
                 !onlyActive
-                  ? 'bg-[#c7d7f5] text-[#012749]'
-                  : 'text-gray-600 hover:text-[#012749]'
+                  ? 'bg-[#c7d7f5] text-[var(--color-caleo-primary)]'
+                  : 'text-gray-600 hover:text-[var(--color-caleo-primary)]'
               }`}
               onClick={() => setOnlyActive(false)}
             >
@@ -262,7 +262,7 @@ export default function COAManagementTab({
                         >
                           {/* Left: code + indent */}
                           <div
-                            className={`font-mono text-[13px] font-bold text-[#012749] whitespace-nowrap ${
+                            className={`font-mono text-[13px] font-bold text-[var(--color-caleo-primary)] whitespace-nowrap ${
                               isInactive ? 'text-gray-500' : ''
                             }`}
                             style={{ paddingLeft: `${depth * 16}px` }}
@@ -299,7 +299,7 @@ export default function COAManagementTab({
                             </div>
                             {isOwner && (
                               <button
-                                className="p-1.5 rounded-sm hover:bg-[#eff4ff] transition-colors text-[#012749]"
+                                className="p-1.5 rounded-sm hover:bg-[#eff4ff] transition-colors text-[var(--color-caleo-primary)]"
                                 onClick={() => handleEditClick(account)}
                                 title="Edit akun"
                               >

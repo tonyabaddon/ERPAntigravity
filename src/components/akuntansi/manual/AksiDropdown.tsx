@@ -258,7 +258,7 @@ export default function AksiDropdown({
         aria-expanded={isOpen}
         className="btn-primary w-full inline-flex items-center justify-center gap-1.5"
         style={{
-          background: '#012749',
+          background: 'var(--color-caleo-primary)',
           color: 'white',
           borderRadius: '9999px',
           fontSize: '12px',

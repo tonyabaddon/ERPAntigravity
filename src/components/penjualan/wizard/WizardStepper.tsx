@@ -21,12 +21,12 @@ export default function WizardStepper({ currentStep, completedSteps, onJumpBack 
         const isCurrent = currentStep === s;
         const canClick = isCompleted && !isCurrent;
         const dotClass = isCurrent
-          ? 'bg-[#012749] text-white'
+          ? 'bg-[var(--color-caleo-primary)] text-white'
           : isCompleted
             ? 'bg-[#2d8a4e] text-white'
             : 'bg-slate-200 text-slate-500';
         const labelClass = isCurrent
-          ? 'text-[#012749] font-semibold'
+          ? 'text-[var(--color-caleo-primary)] font-semibold'
           : isCompleted
             ? 'text-slate-700 font-semibold'
             : 'text-slate-500';

@@ -61,7 +61,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>{pi.pi_number}</h1>
+            <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{pi.pi_number}</h1>
             <PiStatusBadge pi={pi} />
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-800">⚡ Pass-through</span>
           </div>
@@ -176,14 +176,14 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
                 <td className="py-3 text-center font-semibold">{it.qty}</td>
                 <td className="py-3 text-right">{formatIDR(it.unit_cost)}</td>
                 <td className="py-3 text-right text-indigo-700">{formatIDR(it.sell_price)}</td>
-                <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{formatIDR(it.subtotal)}</td>
+                <td className="py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(it.subtotal)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr>
               <td colSpan={4} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL BELI</td>
-              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(pi.total)}</td>
+              <td className="py-3 text-right text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(pi.total)}</td>
             </tr>
           </tfoot>
         </table>
@@ -192,7 +192,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-gray-50 rounded-sm border border-gray-200 p-4">
           <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Dibayar Ke Grosir</div>
-          <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(pi.total)}</div>
+          <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(pi.total)}</div>
         </div>
         <div className="bg-indigo-50 rounded-sm border border-indigo-200 p-4">
           <div className="text-[11px] text-indigo-600 uppercase font-semibold">Pendapatan dari Order</div>

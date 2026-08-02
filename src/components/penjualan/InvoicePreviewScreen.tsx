@@ -164,7 +164,7 @@ export default function InvoicePreviewScreen({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-emerald-600">✓</span>
-              <h1 className="text-lg font-extrabold text-[#012749]">Penjualan Tersimpan</h1>
+              <h1 className="text-lg font-extrabold text-[var(--color-caleo-primary)]">Penjualan Tersimpan</h1>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {transaction?.invoice_number
@@ -189,7 +189,7 @@ export default function InvoicePreviewScreen({
           </button>
           <button
             onClick={onCatatLagi}
-            className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90"
+            className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
           >
             + Catat Penjualan Lagi
           </button>
@@ -215,7 +215,7 @@ export default function InvoicePreviewScreen({
             <div className="text-xs text-slate-500 max-w-md mx-auto">{loadError}</div>
             <button
               onClick={onLihatDaftar}
-              className="mt-4 px-4 py-2 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90"
+              className="mt-4 px-4 py-2 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
             >
               Buka Daftar Pesanan
             </button>
@@ -243,7 +243,7 @@ export default function InvoicePreviewScreen({
               <div className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Cetak</div>
               <button
                 onClick={() => onCetak('normal')}
-                className="w-full px-4 py-3 text-sm font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 text-sm font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 flex items-center justify-center gap-2"
               >
                 🖨️ Printer Biasa (A4 / A5)
               </button>

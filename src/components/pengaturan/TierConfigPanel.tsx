@@ -81,7 +81,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
   return (
     <div className="bg-white rounded-sm border border-gray-200 p-6 space-y-4">
       <div>
-        <h2 className="text-base font-extrabold text-[#012749]">Tingkat Harga</h2>
+        <h2 className="text-base font-extrabold text-[var(--color-caleo-primary)]">Tingkat Harga</h2>
         <p className="text-[11px] text-slate-500 mt-1">
           Owner bisa set 2-4 tingkat harga per SKU. Tier 1 &amp; 2 wajib; Tier 3 &amp; 4 opsional (kosongkan = off).
         </p>
@@ -133,7 +133,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="px-4 py-2 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50"
+          className="px-4 py-2 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? 'Menyimpan…' : 'Simpan'}
         </button>

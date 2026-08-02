@@ -109,7 +109,7 @@ export default function Step2Items(props: Props) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Cari nama / SKU…"
-            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+            className="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)]"
           />
         </div>
 
@@ -134,7 +134,7 @@ export default function Step2Items(props: Props) {
                     type="button"
                     onClick={() => props.onAddItem(s)}
                     disabled={!hasStock && false /* allow pre-order add */}
-                    className="px-3 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90"
+                    className="px-3 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
                   >
                     + Tambah
                   </button>
@@ -155,7 +155,7 @@ export default function Step2Items(props: Props) {
             <button
               type="button"
               onClick={() => setShowNewProductForm(true)}
-              className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90"
+              className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90"
             >
               + Produk Baru
             </button>
@@ -295,7 +295,7 @@ export default function Step2Items(props: Props) {
             <div className="border-t border-slate-200 my-1.5"></div>
             <div className="flex justify-between text-sm">
               <span className="font-bold text-slate-700">Total Pesanan</span>
-              <span className="font-extrabold text-[#012749] text-lg">{formatRp(totalAll)}</span>
+              <span className="font-extrabold text-[var(--color-caleo-primary)] text-lg">{formatRp(totalAll)}</span>
             </div>
           </div>
         )}

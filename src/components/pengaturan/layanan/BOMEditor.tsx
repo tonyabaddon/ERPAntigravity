@@ -65,7 +65,7 @@ export default function BOMEditor({
               {value.map((item, idx) => (
                 <tr key={idx} className="border-t border-slate-100">
                   <td className="px-3 py-2">
-                    <div className="font-semibold text-[#012749]">
+                    <div className="font-semibold text-[var(--color-caleo-primary)]">
                       {item.component_name ?? item.component_sku}
                     </div>
                     <div className="text-[11px] text-slate-500">
@@ -109,7 +109,7 @@ export default function BOMEditor({
       <button
         type="button"
         onClick={() => setPickerOpen(true)}
-        className="text-[13px] font-semibold text-[#012749] hover:opacity-80"
+        className="text-[13px] font-semibold text-[var(--color-caleo-primary)] hover:opacity-80"
       >
         + Tambah Komponen dari Master Stok
       </button>

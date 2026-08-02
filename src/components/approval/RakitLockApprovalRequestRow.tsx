@@ -131,7 +131,7 @@ export default function RakitLockApprovalRequestRow({
             <span className="inline-block rounded-full bg-orange-200 text-orange-800 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5">
               Rakit Lock
             </span>
-            <span className="text-xs font-bold text-[#012749]">{request.requestedBy.slice(0, 8)}…</span>
+            <span className="text-xs font-bold text-[var(--color-caleo-primary)]">{request.requestedBy.slice(0, 8)}…</span>
             <span className="ml-auto text-xs text-slate-500">
               {new Date(request.requestedAt).toLocaleString('id-ID')}
             </span>

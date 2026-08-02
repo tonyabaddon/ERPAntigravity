@@ -52,7 +52,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>{pmb.pembayaran_number}</h1>
+            <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{pmb.pembayaran_number}</h1>
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isVoided ? 'bg-gray-200 text-gray-600' : 'bg-green-100 text-green-800'}`}>
               {isVoided ? 'VOIDED' : '● Lunas'}
             </span>
@@ -135,7 +135,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
                     <span className="text-gray-400">—</span>
                   )}
                 </td>
-                <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{formatIDR(it.amount)}</td>
+                <td className="py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(it.amount)}</td>
                 <td className="py-3 text-right">
                   {it.tagihan_id && onOpenTagihan && (
                     <button onClick={() => onOpenTagihan(it.tagihan_id!)}
@@ -150,7 +150,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
           <tfoot>
             <tr>
               <td className="py-3 text-right text-xs font-semibold text-gray-500">SUBTOTAL</td>
-              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(pmb.amount_total)}</td>
+              <td className="py-3 text-right text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(pmb.amount_total)}</td>
               <td></td>
             </tr>
           </tfoot>

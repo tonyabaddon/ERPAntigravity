@@ -27,7 +27,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(1,39,73,0.4)' }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} className="bg-white rounded-sm p-6 w-full max-w-lg">
-        <h3 className="text-base font-black text-[#012749] mb-1">Pecah {fmt(totalAmount)} ke beberapa target</h3>
+        <h3 className="text-base font-black text-[var(--color-caleo-primary)] mb-1">Pecah {fmt(totalAmount)} ke beberapa target</h3>
         <p className="text-[11px] text-slate-500 font-semibold mb-4">Total alokasi harus sama dengan jumlah bank line.</p>
         {rows.map((r, i) => (
           <div key={i} className="flex gap-2 mb-2">
@@ -50,7 +50,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
             <button onClick={() => deleteRow(i)} className="text-red-600 px-2">×</button>
           </div>
         ))}
-        <button onClick={addRow} className="text-[10px] font-extrabold text-[#012749] mb-3">+ Tambah target</button>
+        <button onClick={addRow} className="text-[10px] font-extrabold text-[var(--color-caleo-primary)] mb-3">+ Tambah target</button>
         <div className={`text-[11px] font-extrabold mb-4 ${Math.abs(remaining) < 50 ? 'text-emerald-700' : 'text-red-700'}`}>
           Sisa: {fmt(remaining)} {Math.abs(remaining) < 50 ? '✓' : '— harus 0 sebelum Apply'}
         </div>
@@ -59,7 +59,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
           <button
             onClick={() => onApply(rows)}
             disabled={Math.abs(remaining) >= 50 || rows.length === 0}
-            className="px-4 py-2 rounded-full text-xs font-bold bg-[#012749] text-white disabled:opacity-50"
+            className="px-4 py-2 rounded-full text-xs font-bold bg-[var(--color-caleo-primary)] text-white disabled:opacity-50"
           >
             Terapkan
           </button>

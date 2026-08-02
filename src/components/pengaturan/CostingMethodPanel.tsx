@@ -35,7 +35,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
 
   return (
     <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
-      <h3 className="text-base font-extrabold text-[#012749] mb-3">Metode Costing Toko</h3>
+      <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mb-3">Metode Costing Toko</h3>
       <div className="space-y-2 mb-4">
         <label className="flex items-start gap-3 p-3 rounded-sm border border-slate-200 hover:bg-slate-50 cursor-pointer">
           <input
@@ -48,7 +48,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
           />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-extrabold text-[#012749]">FIFO</span>
+              <span className="text-sm font-extrabold text-[var(--color-caleo-primary)]">FIFO</span>
               <span className="text-[9px] font-extrabold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
                 Default
               </span>
@@ -69,7 +69,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
             className="mt-0.5"
           />
           <div>
-            <span className="text-sm font-extrabold text-[#012749]">Average</span>
+            <span className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Average</span>
             <p className="text-[11px] text-slate-600 mt-1">
               Rata-rata tertimbang dari semua lot. Lebih sederhana, tapi HPP &quot;blurry&quot; — gak
               mencerminkan harga lot tertentu.

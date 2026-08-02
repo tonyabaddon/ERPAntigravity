@@ -27,7 +27,7 @@ export function SalesLandingScreen() {
         <p className="text-sm font-semibold text-red-600 mb-2">{fetchError}</p>
         <button
           onClick={() => { setFetchError(null); fetchDashboardStats().then(setStats).catch(err => { captureError(err, { feature: 'sales_landing', action: 'fetch_dashboard_stats' }); setFetchError('Gagal memuat data sales.'); }); }}
-          className="text-xs font-bold text-[#012749] underline"
+          className="text-xs font-bold text-[var(--color-caleo-primary)] underline"
         >
           Coba lagi
         </button>
@@ -52,9 +52,9 @@ export function SalesLandingScreen() {
       </div>
       <div className="grid grid-cols-2 gap-4 mb-6">
         <button onClick={() => navigate('penjualanBaru')}
-          className="border-2 border-[#012749] bg-[#012749]/5 rounded-sm p-6 text-left hover:bg-[#012749]/10 transition">
+          className="border-2 border-[var(--color-caleo-primary)] bg-[var(--color-caleo-primary)]/5 rounded-sm p-6 text-left hover:bg-[var(--color-caleo-primary)]/10 transition">
           <div className="text-3xl mb-2">🧾</div>
-          <div className="text-base font-extrabold text-[#012749]">+ Sales Invoice</div>
+          <div className="text-base font-extrabold text-[var(--color-caleo-primary)]">+ Sales Invoice</div>
           <div className="text-xs text-slate-600 mt-1">
             Catat penjualan yang sudah commit — customer bayar sekarang (LUNAS / DP) atau TEMPO. Stok bergerak, invoice resmi keluar.
           </div>

@@ -273,7 +273,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
         <ChevronRight className="w-3 h-3" /><span className="text-gray-800 font-semibold">Catat Baru</span>
       </div>
 
-      <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>Catat Pembayaran ke Supplier</h1>
+      <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>Catat Pembayaran ke Supplier</h1>
       <p className="text-xs text-gray-500">1 Pembayaran bisa nutup banyak Tagihan sekaligus. Boleh bayar sebagian (partial).</p>
 
       {/* 1. Supplier */}
@@ -454,7 +454,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
               <div className="flex justify-end pt-2 border-t border-gray-200">
                 <div className="text-right">
                   <div className="text-[11px] font-semibold text-gray-500">SUBTOTAL ({selectedCount} baris)</div>
-                  <div className="text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(runningTotal)}</div>
+                  <div className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(runningTotal)}</div>
                 </div>
               </div>
             </div>
@@ -536,7 +536,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-sm p-4">
               <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal ({selectedCount} baris)</div>
-              <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(runningTotal)}</div>
+              <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(runningTotal)}</div>
             </div>
             <div className="bg-amber-50 rounded-sm p-4">
               <div className="text-[11px] text-amber-700 uppercase font-semibold">Diskon</div>
@@ -554,7 +554,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
         <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
         <button onClick={handleSubmit} disabled={saving || !supplier || selectedCount === 0}
           className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
-          style={{ background: '#012749' }}>
+          style={{ background: 'var(--color-caleo-primary)' }}>
           {saving ? 'Menyimpan...' : 'Catat Pembayaran'}
         </button>
       </div>

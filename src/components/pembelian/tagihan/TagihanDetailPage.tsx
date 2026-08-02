@@ -152,7 +152,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>{tgh.pi_number}</h1>
+            <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{tgh.pi_number}</h1>
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusBadgeCls(eff)}`}>{statusLabel(eff)}</span>
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">📦 Stok</span>
           </div>
@@ -244,7 +244,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         <div className="grid grid-cols-3 gap-4 mb-3">
           <div className="bg-gray-50 rounded-sm p-3">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Tagihan</div>
-            <div className="text-lg font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(tgh.total)}</div>
+            <div className="text-lg font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(tgh.total)}</div>
           </div>
           <div className="bg-green-50 rounded-sm p-3">
             <div className="text-[11px] text-green-700 uppercase font-semibold">Sudah Dibayar</div>
@@ -327,7 +327,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
                           : '—'}
                       </td>
                     )}
-                    <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{formatIDR(it.subtotal)}</td>
+                    <td className="py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(it.subtotal)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -350,7 +350,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
                 )}
                 <tr>
                   <td colSpan={colCount - 1} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL TAGIHAN</td>
-                  <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(tgh.total)}</td>
+                  <td className="py-3 text-right text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(tgh.total)}</td>
                 </tr>
               </tfoot>
             </table>

@@ -78,7 +78,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
   return (
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-[#e5eeff]">
-        <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">📦 Pembelian dari Supplier Bulan Ini</div>
+        <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📦 Pembelian dari Supplier Bulan Ini</div>
         <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Klik ▶ untuk lihat per-barang & sales order yang membeli</div>
       </div>
       <div className="p-4 space-y-3">
@@ -98,11 +98,11 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
             <div key={po.id} className="rounded-sm border overflow-hidden" style={{ background: bgColor, borderColor }}>
               <div onClick={toggle} className="p-4 flex justify-between items-start cursor-pointer">
                 <div>
-                  <div className="text-xs font-bold text-[#012749]">{isOpen ? '▼' : '▶'} {po.po_number} · {po.supplier_name}</div>
+                  <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{isOpen ? '▼' : '▶'} {po.po_number} · {po.supplier_name}</div>
                   <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Terima {fmtDate(po.received_at)} · Tempo {po.payment_due_at ? fmtDate(po.payment_due_at) : '—'}</div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-right"><div className="text-[10px] font-bold text-slate-500">Bayar</div><div className="text-sm font-black text-[#012749]">{fmt(po.total)}</div></div>
+                  <div className="text-right"><div className="text-[10px] font-bold text-slate-500">Bayar</div><div className="text-sm font-black text-[var(--color-caleo-primary)]">{fmt(po.total)}</div></div>
                   <div style={{ width: 140 }} className="text-right">
                     <div className={`text-[10px] font-bold ${labelColor}`}>Laku {pct}%</div>
                     <div className="h-1.5 mt-1 bg-slate-200 rounded-full overflow-hidden"><div className="h-full" style={{ width: pct + '%', background: barColor }} /></div>
@@ -114,8 +114,8 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
                   {po.items.map(it => (
                     <div key={it.sku}>
                       <div className="flex justify-between items-center mb-2">
-                        <div><span className="text-xs font-bold text-[#012749]">{it.name}</span><span className="text-[10px] text-slate-500 font-semibold ml-2">({it.sku})</span></div>
-                        <div className="text-[11px] font-bold"><span className="text-emerald-700">{it.qty_sold} laku</span> / <span className="text-[#012749]">{it.qty_received}</span></div>
+                        <div><span className="text-xs font-bold text-[var(--color-caleo-primary)]">{it.name}</span><span className="text-[10px] text-slate-500 font-semibold ml-2">({it.sku})</span></div>
+                        <div className="text-[11px] font-bold"><span className="text-emerald-700">{it.qty_sold} laku</span> / <span className="text-[var(--color-caleo-primary)]">{it.qty_received}</span></div>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {it.consumed_by.map((c, idx) => (

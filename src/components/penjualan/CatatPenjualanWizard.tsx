@@ -1109,7 +1109,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       {/* Header — white per mockup. Date/user pills dropped; replaced with Batal link. */}
       <div className="bg-white border border-slate-200 rounded-t-lg px-6 py-4 flex items-center justify-between">
         <div>
-          <h1 className={`text-lg font-extrabold ${mode === 'quote' ? 'text-amber-800' : 'text-[#012749]'}`}>
+          <h1 className={`text-lg font-extrabold ${mode === 'quote' ? 'text-amber-800' : 'text-[var(--color-caleo-primary)]'}`}>
             {mode === 'quote' && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wider mr-2">QUOTE MODE</span>}
             {mode === 'quote' ? 'Sales Order' : 'Sales Invoice'}
           </h1>
@@ -1143,7 +1143,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
         {/* Context recap bar — show on Steps 2 & 3 once Step 1 is complete. */}
         {currentStep > 1 && customer && (
-          <div className="px-6 py-3 bg-[#012749]/5 border-b border-slate-100 flex items-center justify-between text-xs">
+          <div className="px-6 py-3 bg-[var(--color-caleo-primary)]/5 border-b border-slate-100 flex items-center justify-between text-xs">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-slate-600">🏪 <strong>{channelDef.label}</strong></span>
               <span className="text-slate-400">·</span>
@@ -1160,7 +1160,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                     📦 {cart.length} item{rakitLines.length > 0 ? ` + ${rakitLines.length} jasa` : ''}
                   </span>
                   <span className="text-slate-400">·</span>
-                  <span className="font-bold text-[#012749]">
+                  <span className="font-bold text-[var(--color-caleo-primary)]">
                     {formatIDR(Math.round(subtotalAfterLineDiscount))}
                   </span>
                 </>
@@ -1169,7 +1169,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
             <button
               type="button"
               onClick={() => { setCurrentStep(1); }}
-              className="text-[#012749] font-semibold hover:underline"
+              className="text-[var(--color-caleo-primary)] font-semibold hover:underline"
             >
               Ubah
             </button>
@@ -1330,7 +1330,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                   type="button"
                   onClick={onLanjut}
                   disabled={currentStep === 1 ? !canAdvanceStep1 : !canAdvanceStep2}
-                  className="px-5 py-2 text-sm font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2 text-sm font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentStep === 1 ? 'Lanjut ke Pesanan →' : 'Lanjut ke Pembayaran →'}
                 </button>

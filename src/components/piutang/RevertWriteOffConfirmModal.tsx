@@ -56,7 +56,7 @@ export default function RevertWriteOffConfirmModal({
           <div className="text-xs space-y-1">
             <div><span className="text-gray-500">Customer:</span> <span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div><span className="text-gray-500">Invoice:</span> <span className="font-mono">{row.order.id.slice(0, 8)}</span></div>
-            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: '#012749' }}>{formatIDR(row.order.total)}</span></div>
+            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(row.order.total)}</span></div>
             {row.order.write_off_reason && (
               <div><span className="text-gray-500">Alasan tulis-off:</span> <span className="italic">{row.order.write_off_reason}</span></div>
             )}

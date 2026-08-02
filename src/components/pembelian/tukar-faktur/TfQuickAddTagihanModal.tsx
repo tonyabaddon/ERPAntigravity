@@ -55,7 +55,7 @@ export default function TfQuickAddTagihanModal({
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl border border-gray-200">
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-extrabold" style={{ color: '#012749' }}>
+            <h3 className="text-base font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
               Tambah Tagihan Cepat
             </h3>
             <div className="text-[11px] text-gray-500 mt-0.5">
@@ -142,7 +142,7 @@ export default function TfQuickAddTagihanModal({
             <button
               onClick={handleSave}
               className="inline-flex items-center gap-1 text-sm font-semibold text-white px-4 py-2 rounded-sm"
-              style={{ background: '#012749' }}
+              style={{ background: 'var(--color-caleo-primary)' }}
             >
               <Check className="w-4 h-4" /> Simpan & Add ke TF
             </button>

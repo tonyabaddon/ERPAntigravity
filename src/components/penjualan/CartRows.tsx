@@ -327,7 +327,7 @@ function CartRow({
           />
         </div>
       )}
-      <div className="font-extrabold text-[#012749] min-w-[90px] text-right text-[13px] pt-1">
+      <div className="font-extrabold text-[var(--color-caleo-primary)] min-w-[90px] text-right text-[13px] pt-1">
         {formatRp(modulDiskonOn ? lineAfterDiscount : item.subtotal)}
       </div>
       <button type="button" onClick={() => onRemove(item._key)} className="text-slate-300 hover:text-rose-500 text-lg leading-none pt-1">✕</button>

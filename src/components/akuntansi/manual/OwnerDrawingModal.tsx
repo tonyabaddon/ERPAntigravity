@@ -263,7 +263,7 @@ export default function OwnerDrawingModal({
               value={selectedPersonalId}
               onChange={(e) => setSelectedPersonalId(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
             >
               <option value="">— Tidak track destination —</option>
               {personalAccounts.map((a) => (
@@ -291,7 +291,7 @@ export default function OwnerDrawingModal({
               onBlur={handleAmountBlur}
               placeholder="Rp 0"
               disabled={saving}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
             />
           </div>
 
@@ -305,7 +305,7 @@ export default function OwnerDrawingModal({
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
             />
             {isFuture && (
               <p className="text-[11px] text-amber-700 mt-1">
@@ -325,7 +325,7 @@ export default function OwnerDrawingModal({
               disabled={saving}
               rows={2}
               placeholder="Mis. bayar SPP anak"
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60 resize-none"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60 resize-none"
             />
           </div>
 
@@ -352,7 +352,7 @@ export default function OwnerDrawingModal({
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="bg-[#012749] text-white rounded-full text-xs font-bold px-4 py-2 hover:bg-[#01365e] disabled:opacity-50 inline-flex items-center gap-1.5"
+            className="bg-[var(--color-caleo-primary)] text-white rounded-full text-xs font-bold px-4 py-2 hover:bg-[#01365e] disabled:opacity-50 inline-flex items-center gap-1.5"
           >
             <Save className="w-3.5 h-3.5" />
             {saving ? 'Menyimpan...' : 'Catat Tarik Pribadi'}

@@ -158,7 +158,7 @@ export default function RekeningBankCard({ showToast }: Props) {
     >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
             <CreditCard size={20} />
           </div>
           <div>
@@ -172,7 +172,7 @@ export default function RekeningBankCard({ showToast }: Props) {
           <button
             type="button"
             onClick={openCreate}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#012749] text-white rounded-full text-xs font-bold hover:bg-[#01365e]"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[var(--color-caleo-primary)] text-white rounded-full text-xs font-bold hover:bg-[#01365e]"
           >
             <Plus size={14} /> Tambah Rekening
           </button>
@@ -186,7 +186,7 @@ export default function RekeningBankCard({ showToast }: Props) {
           {showForm && (
             <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-4 mb-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-sm font-bold text-[#012749]">
+                <div className="text-sm font-bold text-[var(--color-caleo-primary)]">
                   {editingId ? 'Edit Rekening' : 'Rekening Baru'}
                 </div>
                 <button type="button" onClick={cancelForm} className="text-gray-500 hover:text-gray-700">
@@ -254,7 +254,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                   type="button"
                   onClick={handleSave}
                   disabled={busyId !== null}
-                  className="px-5 py-2 bg-[#012749] text-white rounded-full text-xs font-bold disabled:opacity-50 hover:bg-[#01365e]"
+                  className="px-5 py-2 bg-[var(--color-caleo-primary)] text-white rounded-full text-xs font-bold disabled:opacity-50 hover:bg-[#01365e]"
                 >
                   {busyId !== null ? 'Menyimpan…' : 'Simpan'}
                 </button>
@@ -281,7 +281,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                     type="button"
                     onClick={() => handleToggleActive(account)}
                     disabled={busyId === account.id}
-                    className="text-[#012749] disabled:opacity-50"
+                    className="text-[var(--color-caleo-primary)] disabled:opacity-50"
                     title={account.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                   >
                     {account.is_active
@@ -289,7 +289,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                       : <ToggleLeft size={28} color="#9ca3af" />}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-[#012749] truncate">
+                    <div className="text-sm font-bold text-[var(--color-caleo-primary)] truncate">
                       {account.bank_name}
                       <span className="text-xs font-normal text-gray-600 ml-2">#{account.sort_order}</span>
                     </div>
@@ -301,7 +301,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                     type="button"
                     onClick={() => openEdit(account)}
                     disabled={busyId === account.id || showForm}
-                    className="text-[#012749] hover:bg-[#eff4ff] p-2 rounded-sm disabled:opacity-30"
+                    className="text-[var(--color-caleo-primary)] hover:bg-[#eff4ff] p-2 rounded-sm disabled:opacity-30"
                     title="Edit"
                   >
                     <Edit2 size={16} />

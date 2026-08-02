@@ -93,7 +93,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
     <div className="p-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+        <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
           <BookOpenCheck className="w-5 h-5" />
         </div>
         <div>
@@ -117,7 +117,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
               <div
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-sm text-[12px] font-bold transition-all ${
                   isActive
-                    ? 'bg-[#012749] text-white'
+                    ? 'bg-[var(--color-caleo-primary)] text-white'
                     : isDone
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     : 'bg-white border border-[#e5eeff] text-[#43474e]'
@@ -146,7 +146,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
       {step === 1 && (
         <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div>
@@ -166,7 +166,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
             type="date"
             value={balanceDate}
             onChange={e => setBalanceDate(e.target.value)}
-            className="border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 w-full max-w-xs"
+            className="border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 w-full max-w-xs"
           />
           <p className="text-[11px] text-[#43474e] mt-2">
             Default: 31 Mei 2025 (sebelum kasir mulai Juni 2025).
@@ -176,7 +176,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           <button
             onClick={() => setStep(2)}
             disabled={!balanceDate}
-            className="mt-5 rounded-full text-xs font-bold px-3.5 py-2 bg-[#012749] text-white hover:bg-[#01365e] disabled:opacity-50 flex items-center gap-1.5"
+            className="mt-5 rounded-full text-xs font-bold px-3.5 py-2 bg-[var(--color-caleo-primary)] text-white hover:bg-[#01365e] disabled:opacity-50 flex items-center gap-1.5"
           >
             Lanjut <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -219,7 +219,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
                       <NumberInput
                         value={a.amount}
                         onChange={n => updateAmount(i, n)}
-                        className="border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 w-36 text-right font-bold"
+                        className="border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 w-36 text-right font-bold"
                       />
                     </td>
                   </tr>
@@ -245,13 +245,13 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           <div className="mt-5 flex gap-2">
             <button
               onClick={() => setStep(1)}
-              className="rounded-full text-xs font-bold px-3.5 py-2 border border-[#c7d7f5] bg-white text-[#012749] hover:bg-[#eff4ff] flex items-center gap-1.5"
+              className="rounded-full text-xs font-bold px-3.5 py-2 border border-[#c7d7f5] bg-white text-[var(--color-caleo-primary)] hover:bg-[#eff4ff] flex items-center gap-1.5"
             >
               <ChevronLeft className="w-3.5 h-3.5" /> Kembali
             </button>
             <button
               onClick={() => setStep(3)}
-              className="rounded-full text-xs font-bold px-3.5 py-2 bg-[#012749] text-white hover:bg-[#01365e] flex items-center gap-1.5"
+              className="rounded-full text-xs font-bold px-3.5 py-2 bg-[var(--color-caleo-primary)] text-white hover:bg-[#01365e] flex items-center gap-1.5"
             >
               Balance Check <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -318,13 +318,13 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           <div className="mt-5 flex gap-2">
             <button
               onClick={() => setStep(2)}
-              className="rounded-full text-xs font-bold px-3.5 py-2 border border-[#c7d7f5] bg-white text-[#012749] hover:bg-[#eff4ff] flex items-center gap-1.5"
+              className="rounded-full text-xs font-bold px-3.5 py-2 border border-[#c7d7f5] bg-white text-[var(--color-caleo-primary)] hover:bg-[#eff4ff] flex items-center gap-1.5"
             >
               <ChevronLeft className="w-3.5 h-3.5" /> Kembali
             </button>
             <button
               onClick={() => setStep(4)}
-              className="rounded-full text-xs font-bold px-3.5 py-2 bg-[#012749] text-white hover:bg-[#01365e] flex items-center gap-1.5"
+              className="rounded-full text-xs font-bold px-3.5 py-2 bg-[var(--color-caleo-primary)] text-white hover:bg-[#01365e] flex items-center gap-1.5"
             >
               Konfirmasi <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -342,11 +342,11 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           <div className="border border-[#c7d7f5] bg-white rounded-sm p-4 text-[13px] space-y-1.5 mb-4">
             <div className="flex justify-between">
               <span className="text-[#43474e]">Tanggal saldo awal</span>
-              <strong className="text-[#012749]">{balanceDate}</strong>
+              <strong className="text-[var(--color-caleo-primary)]">{balanceDate}</strong>
             </div>
             <div className="flex justify-between">
               <span className="text-[#43474e]">Total Debit = Credit</span>
-              <strong className="text-[#012749]">Rp {fmt(totalBalanced)}</strong>
+              <strong className="text-[var(--color-caleo-primary)]">Rp {fmt(totalBalanced)}</strong>
             </div>
             {!isBalanced && (
               <div className="flex justify-between pt-1 border-t border-[#e5eeff]">
@@ -367,7 +367,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
             <button
               onClick={() => setStep(3)}
               disabled={submitting}
-              className="rounded-full text-xs font-bold px-3.5 py-2 border border-[#c7d7f5] bg-white text-[#012749] hover:bg-[#eff4ff] flex items-center gap-1.5 disabled:opacity-50"
+              className="rounded-full text-xs font-bold px-3.5 py-2 border border-[#c7d7f5] bg-white text-[var(--color-caleo-primary)] hover:bg-[#eff4ff] flex items-center gap-1.5 disabled:opacity-50"
             >
               <ChevronLeft className="w-3.5 h-3.5" /> Kembali
             </button>

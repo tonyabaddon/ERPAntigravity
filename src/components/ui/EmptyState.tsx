@@ -60,7 +60,7 @@ export default function EmptyState({
         <button
           type="button"
           onClick={action.onClick}
-          className="mt-4 px-4 py-2 rounded-sm bg-[#012749] text-white text-xs font-bold hover:opacity-90"
+          className="mt-4 px-4 py-2 rounded-sm bg-[var(--color-caleo-primary)] text-white text-xs font-bold hover:opacity-90"
         >
           {action.label}
         </button>

@@ -44,7 +44,7 @@ export default function OrderPicker({ value, onChange }: OrderPickerProps) {
       <div className="border-2 border-indigo-300 bg-indigo-50/40 rounded-sm p-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-bold text-sm" style={{ color: '#012749' }}>{shortOrderRef(value.id)}</div>
+            <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{shortOrderRef(value.id)}</div>
             {value.customer_name && <div className="text-xs text-gray-600 mt-0.5">{value.customer_name}</div>}
           </div>
           <button type="button" onClick={() => onChange(null)}

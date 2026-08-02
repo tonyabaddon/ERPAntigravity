@@ -187,7 +187,7 @@ export default function Step3Payment(props: Props) {
               value={props.notes}
               onChange={(e) => props.onNotesChange(e.target.value)}
               placeholder="Mis: Penawaran berlaku selama harga komponen tidak naik. Garansi pabrik 1 tahun. Ongkir dihitung saat di-convert jadi invoice."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)]"
             />
             <p className="text-[11px] text-slate-500 mt-1.5 italic">Note ini tampil di PDF Penawaran dan di Daftar Penawaran.</p>
           </div>
@@ -238,12 +238,12 @@ export default function Step3Payment(props: Props) {
                 onClick={() => props.onPaymentTypeChange('FULL')}
                 className={`px-4 py-3 rounded-sm border-2 text-left transition ${
                   props.paymentType === 'FULL'
-                    ? 'bg-[#012749]/5 border-[#012749] text-[#012749]'
+                    ? 'bg-[var(--color-caleo-primary)]/5 border-[var(--color-caleo-primary)] text-[var(--color-caleo-primary)]'
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
                 <div className="font-bold text-sm">LUNAS</div>
-                <div className={`text-[11px] ${props.paymentType === 'FULL' ? 'text-[#012749]/80' : 'text-slate-500'}`}>Bayar penuh sekarang</div>
+                <div className={`text-[11px] ${props.paymentType === 'FULL' ? 'text-[var(--color-caleo-primary)]/80' : 'text-slate-500'}`}>Bayar penuh sekarang</div>
               </button>
               <button
                 type="button"
@@ -360,7 +360,7 @@ export default function Step3Payment(props: Props) {
                   disabled={isTempo}
                   className={`px-3 py-2 text-xs font-semibold rounded-sm border ${
                     props.method === m.code
-                      ? 'bg-[#012749]/5 border-[#012749] text-[#012749]'
+                      ? 'bg-[var(--color-caleo-primary)]/5 border-[var(--color-caleo-primary)] text-[var(--color-caleo-primary)]'
                       : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
@@ -403,7 +403,7 @@ export default function Step3Payment(props: Props) {
               onChange={(e) => props.onOngkirAmountChange(Number(e.target.value || 0))}
               disabled={!props.ongkirOn}
               placeholder="0"
-              className="w-full text-right px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749] disabled:bg-slate-100 disabled:text-slate-400"
+              className="w-full text-right px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)] disabled:bg-slate-100 disabled:text-slate-400"
             />
           </div>
 
@@ -415,7 +415,7 @@ export default function Step3Payment(props: Props) {
               value={props.deliveryAddress}
               onChange={(e) => props.onDeliveryAddressChange(e.target.value)}
               placeholder="Mis: Jl. Merdeka No. 12, Jakarta Utara"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)]"
             />
           </div>
 
@@ -427,7 +427,7 @@ export default function Step3Payment(props: Props) {
               value={props.notes}
               onChange={(e) => props.onNotesChange(e.target.value)}
               placeholder="Mis: kirim Selasa, jangan hari libur"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)]"
             />
           </div>
 
@@ -456,7 +456,7 @@ export default function Step3Payment(props: Props) {
               ? `− Diskon Order (${props.orderDiscountValue}%)`
               : '− Diskon Order';
             return (
-              <div className="bg-[#012749] text-white rounded-sm p-4 space-y-1.5">
+              <div className="bg-[var(--color-caleo-primary)] text-white rounded-sm p-4 space-y-1.5">
                 <div className="flex justify-between text-xs opacity-80">
                   <span>Subtotal pesanan</span>
                   <span>{formatRp(grossSubtotal)}</span>

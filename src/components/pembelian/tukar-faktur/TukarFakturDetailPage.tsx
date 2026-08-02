@@ -137,7 +137,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>
+            <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
               {tf.tf_number}
             </h1>
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[tf.status]}`}>
@@ -177,7 +177,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
             <button
               onClick={() => onBayar(tf.id)}
               className="inline-flex items-center gap-2 text-sm font-bold text-white px-3 py-2 rounded-sm"
-              style={{ background: '#012749' }}
+              style={{ background: 'var(--color-caleo-primary)' }}
             >
               <CreditCard className="w-4 h-4" /> Bayar Tukar Faktur
             </button>
@@ -375,7 +375,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
                         <span className="font-bold text-gray-700">{fmtDate(t.payment_due_at)}</span>
                       )}
                     </td>
-                    <td className="py-3 text-right text-sm font-bold" style={{ color: '#012749' }}>
+                    <td className="py-3 text-right text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
                       {formatIDR(Number(t.total))}
                     </td>
                     <td
@@ -394,7 +394,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
                 <td colSpan={3} className="py-3 text-right text-xs font-semibold text-gray-500">
                   TOTAL
                 </td>
-                <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>
+                <td className="py-3 text-right text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
                   {formatIDR(tf.total_amount)}
                 </td>
                 <td className="py-3 text-right text-sm font-bold text-sky-700">
@@ -546,7 +546,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="text-sm font-bold" style={{ color: '#012749' }}>
+          <h2 className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
             Edit Header {tf.tf_number}
           </h2>
           <button onClick={onClose}>
@@ -599,7 +599,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
             onClick={handleSave}
             disabled={saving}
             className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
-            style={{ background: '#012749' }}
+            style={{ background: 'var(--color-caleo-primary)' }}
           >
             {saving ? 'Menyimpan...' : 'Simpan'}
           </button>

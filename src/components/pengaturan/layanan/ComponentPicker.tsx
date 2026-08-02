@@ -42,7 +42,7 @@ export default function ComponentPicker({ onPick, onClose }: Props) {
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="text-[14px] font-bold text-[#012749]">
+          <h3 className="text-[14px] font-bold text-[var(--color-caleo-primary)]">
             Pilih Komponen dari Stok
           </h3>
           <button
@@ -58,7 +58,7 @@ export default function ComponentPicker({ onPick, onClose }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nama atau SKU…"
-            className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+            className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
           />
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-2">
@@ -81,7 +81,7 @@ export default function ComponentPicker({ onPick, onClose }: Props) {
                 }}
                 className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-sm border-b border-slate-100 last:border-0"
               >
-                <div className="text-[13px] font-semibold text-[#012749]">
+                <div className="text-[13px] font-semibold text-[var(--color-caleo-primary)]">
                   {item.name}
                 </div>
                 <div className="text-[11px] text-slate-500">

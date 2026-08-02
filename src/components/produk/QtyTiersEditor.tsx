@@ -116,7 +116,7 @@ export default function QtyTiersEditor({
       data-testid="qty-tiers-editor"
     >
       <div>
-        <h3 className="text-sm font-bold text-[#012749]">Harga Volume (opsional)</h3>
+        <h3 className="text-sm font-bold text-[var(--color-caleo-primary)]">Harga Volume (opsional)</h3>
         <p className="text-[11px] text-slate-500 mt-1">
           Beli banyak lebih murah. Max 5 tier. Kosongkan semua kalau nggak dipakai.
         </p>
@@ -160,7 +160,7 @@ export default function QtyTiersEditor({
           type="button"
           onClick={addRow}
           disabled={rows.length >= 5}
-          className="text-xs font-semibold text-[#012749] hover:opacity-80 disabled:opacity-40"
+          className="text-xs font-semibold text-[var(--color-caleo-primary)] hover:opacity-80 disabled:opacity-40"
         >
           + Tambah tier volume
         </button>
@@ -179,7 +179,7 @@ export default function QtyTiersEditor({
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="px-4 py-2 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50"
+          className="px-4 py-2 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? 'Menyimpan...' : 'Simpan'}
         </button>

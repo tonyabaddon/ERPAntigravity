@@ -82,7 +82,7 @@ export default function PesananDetailPage({
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>{pesanan.pesanan_number}</h1>
+            <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{pesanan.pesanan_number}</h1>
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isVoided ? 'bg-gray-200 text-gray-600' : STATUS_BADGE[pesanan.status]}`}>
               {isVoided ? 'VOID' : pesanan.status}
             </span>
@@ -106,7 +106,7 @@ export default function PesananDetailPage({
             <>
               <button onClick={() => onCreateTagihan(pesanan)}
                 className="inline-flex items-center gap-2 text-sm font-bold text-white px-3 py-2 rounded-sm"
-                style={{ background: '#012749' }}>
+                style={{ background: 'var(--color-caleo-primary)' }}>
                 <Package className="w-4 h-4" /> Buat Tagihan
               </button>
               <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-sm border border-red-200 hover:bg-red-50">
@@ -210,7 +210,7 @@ export default function PesananDetailPage({
                     </div>
                   </td>
                   <td className="py-3 text-right">{formatIDR(it.unit_cost)}</td>
-                  <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{formatIDR(it.subtotal)}</td>
+                  <td className="py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(it.subtotal)}</td>
                 </tr>
               );
             })}
@@ -218,7 +218,7 @@ export default function PesananDetailPage({
           <tfoot>
             <tr>
               <td colSpan={4} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL</td>
-              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(pesanan.total)}</td>
+              <td className="py-3 text-right text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(pesanan.total)}</td>
             </tr>
           </tfoot>
         </table>

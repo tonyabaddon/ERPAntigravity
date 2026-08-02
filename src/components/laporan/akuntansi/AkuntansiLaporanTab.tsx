@@ -42,7 +42,7 @@ export default function AkuntansiLaporanTab(props: AkuntansiLaporanTabProps): Re
               onClick={() => setActiveSubTab(t.key)}
               className={`px-4 py-2.5 rounded-full text-[13px] font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
                 activeSubTab === t.key
-                  ? 'bg-[#012749] text-white'
+                  ? 'bg-[var(--color-caleo-primary)] text-white'
                   : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
               }`}
             >

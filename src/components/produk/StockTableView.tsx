@@ -258,7 +258,7 @@ export default function StockTableView({
             <span className="material-symbols-outlined text-3xl">edit_note</span>
           </div>
           <div>
-            <h3 className="text-lg font-extrabold text-[#012749] leading-tight">Modifikasi Cepat / Edit Satu per Satu</h3>
+            <h3 className="text-lg font-extrabold text-[var(--color-caleo-primary)] leading-tight">Modifikasi Cepat / Edit Satu per Satu</h3>
             <p className="text-xs text-[#43474e] mt-1">Klik Edit untuk mengubah spesifikasi. Harga &amp; stok bisa langsung diedit di tabel.</p>
           </div>
         </div>
@@ -279,7 +279,7 @@ export default function StockTableView({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Cari SKU atau nama barang..."
-              className="w-full pl-12 pr-4 py-3 bg-[#eff4ff] rounded-full border-none focus:ring-2 focus:ring-[#012749]/15 text-xs font-bold text-slate-800 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-[#eff4ff] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-bold text-slate-800 outline-none"
             />
             <Search className="w-4 h-4 text-[#43474e]/60 absolute left-4 top-1/2 -translate-y-1/2" />
           </div>
@@ -287,7 +287,7 @@ export default function StockTableView({
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              className="pl-6 pr-12 py-3 bg-[#eff4ff] rounded-full border-none focus:ring-2 focus:ring-[#012749]/10 text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
+              className="pl-6 pr-12 py-3 bg-[#eff4ff] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/10 text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
             >
               {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
@@ -318,7 +318,7 @@ export default function StockTableView({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-[#012749] truncate">{item.name}</p>
+                  <p className="text-sm font-bold text-[var(--color-caleo-primary)] truncate">{item.name}</p>
                   {specEntries.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {specEntries.slice(0, 6).map(([k, v]) => (
@@ -337,7 +337,7 @@ export default function StockTableView({
                     onClick={() => onRequestPriceChange(item, 'price')}
                     disabled={isEditing || !currentUser}
                     title={currentUser ? 'Klik untuk ajukan perubahan harga jual' : 'Login diperlukan untuk ubah harga'}
-                    className="w-full pl-9 pr-3 py-2.5 bg-white rounded-sm border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 text-xs font-extrabold text-[#012749] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed relative cursor-pointer transition-colors"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white rounded-sm border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 text-xs font-extrabold text-[var(--color-caleo-primary)] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed relative cursor-pointer transition-colors"
                   >
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#43474e]">Rp</span>
                     {new Intl.NumberFormat('id-ID').format(item.price)}
@@ -607,7 +607,7 @@ export default function StockTableView({
       >
         <div className="bg-white rounded-sm max-w-md w-full mx-4 p-4 shadow-2xl">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-[#012749]">Harga Volume — {editingVolSku}</h3>
+            <h3 className="text-sm font-bold text-[var(--color-caleo-primary)]">Harga Volume — {editingVolSku}</h3>
             <button
               type="button"
               onClick={() => setEditingVolSku(null)}

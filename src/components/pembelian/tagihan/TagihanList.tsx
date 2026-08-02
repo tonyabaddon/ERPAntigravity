@@ -100,10 +100,10 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold" style={{ color: '#012749' }}>Tagihan (Faktur Beli Stok)</h2>
+          <h2 className="text-base font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Tagihan (Faktur Beli Stok)</h2>
           <div className="text-xs text-gray-500">Step 2: catat saat barang datang + faktur diterima. Otomatis nambah stok.</div>
         </div>
-        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background: '#012749' }}>
+        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background: 'var(--color-caleo-primary)' }}>
           <Plus className="w-4 h-4" /> Buat Tagihan
         </button>
       </div>
@@ -148,7 +148,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                 return (
                   <tr key={t.id} className="hover:bg-slate-50 border-b border-gray-100">
                     <td className="px-5 py-4">
-                      <div className="font-bold text-sm" style={{ color: '#012749' }}>{t.pi_number}</div>
+                      <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{t.pi_number}</div>
                       <div className="text-xs text-gray-500">{fmtDate(t.purchase_date)}</div>
                     </td>
                     <td className="px-5 py-4 text-sm font-semibold">{t.supplier?.name ?? '—'}</td>

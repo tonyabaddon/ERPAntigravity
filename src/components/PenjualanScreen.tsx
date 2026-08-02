@@ -59,7 +59,7 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center gap-3 px-2">
-        <div className="w-10 h-10 bg-[#012749] rounded-sm flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 bg-[var(--color-caleo-primary)] rounded-sm flex items-center justify-center shrink-0">
           <ShoppingCart className="w-5 h-5 text-emerald-400" />
         </div>
         <div>

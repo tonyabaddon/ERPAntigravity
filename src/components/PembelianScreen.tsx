@@ -331,8 +331,8 @@ export default function PembelianScreen({
                   onClick={() => { setFilter({ preset: key }); setCustomPopoverOpen(false); }}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
                     active
-                      ? 'bg-[#012749] text-white shadow'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:border-[#012749] hover:text-[#012749]'
+                      ? 'bg-[var(--color-caleo-primary)] text-white shadow'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:border-[var(--color-caleo-primary)] hover:text-[var(--color-caleo-primary)]'
                   }`}
                 >
                   {text}
@@ -345,8 +345,8 @@ export default function PembelianScreen({
                 aria-label="Pilih rentang tanggal custom"
                 className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-1.5 transition ${
                   filter.preset === 'custom'
-                    ? 'bg-[#012749] text-white shadow'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#012749] hover:text-[#012749]'
+                    ? 'bg-[var(--color-caleo-primary)] text-white shadow'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[var(--color-caleo-primary)] hover:text-[var(--color-caleo-primary)]'
                 }`}
               >
                 <Calendar className="w-4 h-4" /> Custom <ChevronDown className="w-3.5 h-3.5" />
@@ -1060,14 +1060,14 @@ function CustomPopover({ initial, onCancel, onApply }: CustomPopoverProps) {
           <label className="text-xs font-semibold text-gray-500 block mb-1">Dari</label>
           <input
             type="date" value={from} onChange={e => setFrom(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
           />
         </div>
         <div>
           <label className="text-xs font-semibold text-gray-500 block mb-1">Sampai</label>
           <input
             type="date" value={to} onChange={e => setTo(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
           />
         </div>
       </div>
@@ -1079,7 +1079,7 @@ function CustomPopover({ initial, onCancel, onApply }: CustomPopoverProps) {
         <button
           onClick={() => canApply && onApply(from, to)}
           disabled={!canApply}
-          className="text-sm font-semibold text-white bg-[#012749] hover:bg-[#013865] disabled:opacity-40 disabled:cursor-not-allowed px-4 py-1.5 rounded-sm"
+          className="text-sm font-semibold text-white bg-[var(--color-caleo-primary)] hover:bg-[#013865] disabled:opacity-40 disabled:cursor-not-allowed px-4 py-1.5 rounded-sm"
         >
           Terapkan
         </button>

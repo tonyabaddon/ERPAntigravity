@@ -33,14 +33,14 @@ export default function PromoProdukCard({ onNavigateToPengaturan }: Props) {
   return (
     <div className="bg-white rounded-sm border border-slate-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-extrabold text-[#012749]">🏷 Promo Produk</h3>
+        <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">🏷 Promo Produk</h3>
       </div>
 
       <div className="space-y-1.5 text-sm">
         <div className="flex items-center gap-2">
           <span className="w-6 text-center">✅</span>
           <span className="text-slate-700">
-            <span className="font-bold text-[#012749]">{summary.total_active}</span> SKU sedang promo
+            <span className="font-bold text-[var(--color-caleo-primary)]">{summary.total_active}</span> SKU sedang promo
           </span>
         </div>
 

@@ -60,7 +60,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
           onClick={e => e.stopPropagation()}
         >
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-5 py-3 bg-[#012749] text-white print:hidden">
+          <div className="flex items-center justify-between px-5 py-3 bg-[var(--color-caleo-primary)] text-white print:hidden">
             <div className="flex items-center gap-2 font-bold text-sm">
               <FileText className="w-4 h-4" />
               Invoice {orderId}
@@ -84,9 +84,9 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
               ) : (
                 <>
                   {/* Invoice header */}
-                  <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[#012749]">
+                  <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[var(--color-caleo-primary)]">
                     <div>
-                      <div className="text-xl font-black text-[#012749] tracking-tight">{store?.nama_toko ?? 'Toko Anda'}</div>
+                      <div className="text-xl font-black text-[var(--color-caleo-primary)] tracking-tight">{store?.nama_toko ?? 'Toko Anda'}</div>
                       <div className="text-[11px] text-gray-500 font-sans mt-1 flex items-center gap-1.5 flex-wrap">
                         {store?.alamat_lengkap || 'Alamat belum diisi'}
                         <span className="print:hidden text-[9px] bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
@@ -96,7 +96,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-black text-[#012749] tracking-widest uppercase">Invoice</div>
+                      <div className="text-2xl font-black text-[var(--color-caleo-primary)] tracking-widest uppercase">Invoice</div>
                       <div className="text-xs font-mono font-bold text-gray-700 mt-1">{orderId}</div>
                       <div className="text-[10px] text-gray-400 font-sans mt-0.5">Tanggal: {formatDate(order.created_at)}</div>
                     </div>
@@ -121,7 +121,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   {/* Line items */}
                   <table className="w-full text-xs font-sans border-collapse mb-4">
                     <thead>
-                      <tr className="bg-[#012749] text-white">
+                      <tr className="bg-[var(--color-caleo-primary)] text-white">
                         <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">No.</th>
                         <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">Produk / SKU</th>
                         <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Qty</th>
@@ -154,7 +154,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                       <div className="flex justify-between py-1 text-gray-500 border-b border-gray-100">
                         <span>Ongkos Kirim</span><span>{formatIDR((order.shipping_fee ?? 0))}</span>
                       </div>
-                      <div className="flex justify-between py-2 font-black text-[#012749] text-sm border-t-2 border-[#012749] mt-1">
+                      <div className="flex justify-between py-2 font-black text-[var(--color-caleo-primary)] text-sm border-t-2 border-[var(--color-caleo-primary)] mt-1">
                         <span>TOTAL</span><span>{formatIDR(order.total)}</span>
                       </div>
                     </div>

@@ -243,7 +243,7 @@ export default function LockSubmissionModal({
       <div className="bg-white rounded-sm shadow-2xl max-w-3xl w-full p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-extrabold text-lg text-[#012749]">
+            <h2 className="font-extrabold text-lg text-[var(--color-caleo-primary)]">
               {mode === 'owner-amend' ? '✏️ Edit Biaya Final (Owner)' : '🔒 Submit Lock untuk Approval'}
             </h2>
             <p className="text-xs text-slate-500 mt-1">

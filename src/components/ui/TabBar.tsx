@@ -28,7 +28,7 @@ export default function TabBar<T extends string>({ tabs, active, onChange }: Tab
             onClick={() => onChange(tab.id)}
             className={`px-5 py-3 text-sm border-b-2 transition-colors cursor-pointer ${
               isActive
-                ? 'font-bold text-[#012749] border-[#2d8a4e]'
+                ? 'font-bold text-[var(--color-caleo-primary)] border-[#2d8a4e]'
                 : 'font-semibold text-[#0b1c30]/50 border-transparent hover:text-[#0b1c30]'
             }`}
           >
