@@ -24,6 +24,7 @@
     "audit:spacing-off-scale": "tsx scripts/audit-spacing-off-scale.ts",
     "audit:radius-non-canonical": "tsx scripts/audit-radius-non-canonical.ts",
     "audit:hardcoded-empty-state": "tsx scripts/audit-hardcoded-empty-state.ts",
+    "audit:slog-any-error": "tsx scripts/audit-slog-any-error.ts",
     "build:design-system": "tsx scripts/build-design-system.tsx"
   },
   "dependencies": {

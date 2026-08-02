@@ -64,7 +64,7 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 
 	rows, err := r.db.QueryContext(ctx, eligibleInvoicesQuery())
 	if err != nil {
-		log.ErrorContext(ctx, "eligibility query failed", slog.Any("error", err))
+		log.ErrorContext(ctx, "eligibility query failed", slog.String("error", err.Error()))
 		return
 	}
 	defer rows.Close()
@@ -92,7 +92,7 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 			&customerName, &tokoName, &customerPhone, &invoiceRef,
 			&jumlah, &dueDate, &templateH3, &templateH3Plus,
 		); err != nil {
-			log.ErrorContext(ctx, "row scan failed", slog.Any("error", err))
+			log.ErrorContext(ctx, "row scan failed", slog.String("error", err.Error()))
 			continue
 		}
 
@@ -123,7 +123,7 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 			log.ErrorContext(ctx, "template build failed",
 				slog.String("invoice_id", invoiceID),
 				slog.String("rule_type", ruleType),
-				slog.Any("error", buildErr))
+				slog.String("error", buildErr.Error()))
 			r.recordSent(ctx, tenantID, invoiceID, customerID, ruleType, "", "FAILED", buildErr.Error())
 			failedCount++
 			continue
@@ -154,7 +154,7 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 			log.WarnContext(ctx, "piutang reminder WA session offline",
 				slog.String("invoice_id", invoiceID),
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", sendErr))
+				slog.String("error", sendErr.Error()))
 
 		default:
 			r.recordSent(ctx, tenantID, invoiceID, customerID, ruleType, msg, "FAILED", sendErr.Error())
@@ -162,12 +162,12 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 			log.ErrorContext(ctx, "piutang reminder send failed",
 				slog.String("invoice_id", invoiceID),
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", sendErr))
+				slog.String("error", sendErr.Error()))
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		log.ErrorContext(ctx, "rows iteration error", slog.Any("error", err))
+		log.ErrorContext(ctx, "rows iteration error", slog.String("error", err.Error()))
 	}
 
 	log.InfoContext(ctx, "cron pass done",
@@ -192,7 +192,7 @@ func (r *ReminderPoller) recordSent(ctx context.Context, tenantID, invoiceID, cu
 		slog.ErrorContext(ctx, "piutang_reminder_sent audit insert failed",
 			slog.String("invoice_id", invoiceID),
 			slog.String("status", status),
-			slog.Any("error", err))
+			slog.String("error", err.Error()))
 	}
 }
 

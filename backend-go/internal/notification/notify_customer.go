@@ -72,12 +72,12 @@ func (n *Notifier) NotifyCustomer(ctx context.Context, tenantID, convID, phone, 
 			log.InfoContext(ctx, "wa quota exceeded, skipping send")
 			return err
 		}
-		log.ErrorContext(ctx, "quota check failed", slog.Any("error", err))
+		log.ErrorContext(ctx, "quota check failed", slog.String("error", err.Error()))
 		return err
 	}
 
 	if err := n.sender.SendText(ctx, phone, msg); err != nil {
-		log.ErrorContext(ctx, "wa send failed", slog.Any("error", err))
+		log.ErrorContext(ctx, "wa send failed", slog.String("error", err.Error()))
 		return errors.Join(ErrSendFailed, err)
 	}
 
@@ -88,7 +88,7 @@ func (n *Notifier) NotifyCustomer(ctx context.Context, tenantID, convID, phone, 
 	if convID != "" {
 		if err := n.inserter.InsertMessage(ctx, convID, "AI", msg); err != nil {
 			// Audit failure is logged but does NOT fail the send — customer received message.
-			log.WarnContext(ctx, "audit insert failed post-send", slog.Any("error", err))
+			log.WarnContext(ctx, "audit insert failed post-send", slog.String("error", err.Error()))
 		}
 	}
 

@@ -59,7 +59,7 @@ func (n *Notifier) fetchPrefs(ctx context.Context, tenantID string) *notificatio
 	}
 	if err != nil {
 		n.logger.WarnContext(ctx, "notification_prefs fetch failed",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 		return nil
 	}
 	if !start.Valid || !end.Valid {
@@ -126,7 +126,7 @@ func (n *Notifier) tryConsolidate(ctx context.Context, tenantID, msg string, win
 	`, tenantID, tenantID, msg)
 	if err != nil {
 		n.logger.WarnContext(ctx, "consolidation append failed, sending immediately",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 		return false
 	}
 	rows, _ := tag.RowsAffected()
@@ -156,7 +156,7 @@ func (n *Notifier) tryConsolidate(ctx context.Context, tenantID, msg string, win
 	`, tenantID, string(p), scheduledFor)
 	if err != nil {
 		n.logger.WarnContext(ctx, "consolidation job insert failed, sending immediately",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 		return false
 	}
 	n.logger.InfoContext(ctx, "broadcast consolidation job created",
@@ -228,7 +228,7 @@ func (n *Notifier) BroadcastToStaff(ctx context.Context, tenantID string, filter
 	// --- Existing per-recipient send loop ---
 	recipients, err := n.resolver.GetActiveRecipients(ctx, tenantID, filter)
 	if err != nil {
-		log.ErrorContext(ctx, "recipient resolver failed", slog.Any("error", err))
+		log.ErrorContext(ctx, "recipient resolver failed", slog.String("error", err.Error()))
 		return err
 	}
 	if len(recipients) == 0 {
@@ -246,7 +246,7 @@ func (n *Notifier) BroadcastToStaff(ctx context.Context, tenantID string, filter
 			log.ErrorContext(ctx, "broadcast send failed for recipient",
 				slog.String("phone_hash", hashPhone(r.Phone)),
 				slog.String("role", r.Role),
-				slog.Any("error", err))
+				slog.String("error", err.Error()))
 			continue
 		}
 		sentCount++

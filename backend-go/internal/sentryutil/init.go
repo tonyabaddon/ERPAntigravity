@@ -127,7 +127,7 @@ func Init() bool {
 	})
 	if err != nil {
 		slog.Error("[SENTRY] init failed — error tracking disabled",
-			slog.Any("error", err))
+			slog.String("error", err.Error()))
 		return false
 	}
 

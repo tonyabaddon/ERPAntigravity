@@ -95,7 +95,7 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 			// Dedup conflict (ON CONFLICT DO NOTHING) yields sql.ErrNoRows — that's expected, skip.
 			// Any other error is a real DB problem — log it but continue (avoid aborting the whole batch).
 			if !errors.Is(err, sql.ErrNoRows) {
-				slog.ErrorContext(ctx, "[RECON] InsertBankLine failed", slog.String("bank_account_id", bankAccountID), slog.String("txn_date", e.TxnDate), slog.Any("error", err))
+				slog.ErrorContext(ctx, "[RECON] InsertBankLine failed", slog.String("bank_account_id", bankAccountID), slog.String("txn_date", e.TxnDate), slog.String("error", err.Error()))
 			}
 			continue
 		}

@@ -82,7 +82,7 @@ func (p *RequestPoller) runOnce(ctx context.Context) {
 		ORDER BY o.tenant_id, o.updated_at
 	`)
 	if err != nil {
-		log.ErrorContext(ctx, "query failed", slog.Any("error", err))
+		log.ErrorContext(ctx, "query failed", slog.String("error", err.Error()))
 		return
 	}
 	defer rows.Close()
@@ -92,7 +92,7 @@ func (p *RequestPoller) runOnce(ctx context.Context) {
 	for rows.Next() {
 		var orderID, tenantID, customerID, customerNama, tokoNama, waNumber, invoiceRef string
 		if err := rows.Scan(&orderID, &tenantID, &customerID, &customerNama, &tokoNama, &waNumber, &invoiceRef); err != nil {
-			log.ErrorContext(ctx, "row scan failed", slog.Any("error", err))
+			log.ErrorContext(ctx, "row scan failed", slog.String("error", err.Error()))
 			continue
 		}
 
@@ -104,7 +104,7 @@ func (p *RequestPoller) runOnce(ctx context.Context) {
 		if buildErr != nil {
 			log.ErrorContext(ctx, "template build failed",
 				slog.String("order_id", orderID),
-				slog.Any("error", buildErr))
+				slog.String("error", buildErr.Error()))
 			failedCount++
 			continue
 		}
@@ -116,7 +116,7 @@ func (p *RequestPoller) runOnce(ctx context.Context) {
 			if stampErr := p.stampRequested(ctx, orderID); stampErr != nil {
 				log.ErrorContext(ctx, "stamp feedback_requested_at failed",
 					slog.String("order_id", orderID),
-					slog.Any("error", stampErr))
+					slog.String("error", stampErr.Error()))
 			}
 			sentCount++
 			log.InfoContext(ctx, "feedback request sent",
@@ -135,19 +135,19 @@ func (p *RequestPoller) runOnce(ctx context.Context) {
 			log.WarnContext(ctx, "feedback request skipped — WA offline",
 				slog.String("order_id", orderID),
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", sendErr))
+				slog.String("error", sendErr.Error()))
 
 		default:
 			failedCount++
 			log.ErrorContext(ctx, "feedback request send failed",
 				slog.String("order_id", orderID),
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", sendErr))
+				slog.String("error", sendErr.Error()))
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		log.ErrorContext(ctx, "rows iteration error", slog.Any("error", err))
+		log.ErrorContext(ctx, "rows iteration error", slog.String("error", err.Error()))
 	}
 
 	log.InfoContext(ctx, "cron pass done",

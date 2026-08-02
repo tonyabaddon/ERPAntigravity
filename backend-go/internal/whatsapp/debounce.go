@@ -234,7 +234,7 @@ func (h *DebounceHandler) flushBuffer(pb *phoneBuffer, phone, reason string) {
 
 	joined := joinTexts(texts)
 	if err := h.flushFn(context.Background(), phone, joined, texts); err != nil {
-		slog.Error("[DEBOUNCE] action=flush_err", slog.String("phone", phone), slog.Any("error", err))
+		slog.Error("[DEBOUNCE] action=flush_err", slog.String("phone", phone), slog.String("error", err.Error()))
 	}
 }
 

@@ -19,7 +19,7 @@ func escalateToFounder(ctx context.Context, prospectMsg, prospectPhone string) {
 	if err := notification.SendOpsEmail(ctx, subject, body); err != nil {
 		slog.WarnContext(ctx, "[caleobot] escalateToFounder email failed",
 			slog.String("prospect_phone", prospectPhone),
-			slog.Any("error", err),
+			slog.String("error", err.Error()),
 		)
 	}
 }
