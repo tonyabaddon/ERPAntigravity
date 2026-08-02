@@ -277,11 +277,11 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                   : `H-${r.daysToDue}`;
                 return (
                   <tr key={r.order.id} className={`${rowBg} border-b border-gray-100 hover:brightness-95`}>
-                    <td className="px-5 py-3">
+                    <td className="px-4 py-3">
                       <div className="font-semibold text-sm">{r.customer?.name ?? r.order.customer_name}</div>
                       <div className="text-[11px] text-gray-500">{r.customer?.wa_number ?? r.order.customer_phone ?? '—'}</div>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-4 py-3">
                       <div className="font-mono text-[11px] text-gray-700">{r.order.id.slice(0, 8)}</div>
                       <div className="text-[11px] text-gray-500">Dibuat {fmtDate(r.order.created_at)}</div>
                       {r.order.status === 'INVOICE_WRITTEN_OFF' && (
@@ -291,7 +291,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                       )}
                     </td>
                     {/* F-11: show sisa outstanding (post-partial). Fall back to total when nothing paid yet. */}
-                    <td className="px-5 py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
+                    <td className="px-4 py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
                       {formatIDR(outstandingOf(r))}
                       {(r.order.piutang_paid_amount ?? 0) > 0 && (
                         <div className="text-[10px] font-medium text-gray-500 mt-0.5">
@@ -299,16 +299,16 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-4 py-3 text-right">
                       <div className="text-sm font-semibold">{fmtDate(r.order.due_date)}</div>
                       <div className="text-[11px] text-gray-500">{daysLabel}</div>
                     </td>
-                    <td className="px-5 py-3 text-center">
+                    <td className="px-4 py-3 text-center">
                       <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeClass}`}>
                         {badgeLabel}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-4 py-3 text-right">
                       <div className="flex flex-col items-end gap-1">
                         {/* Per-row reminder badge */}
                         {reminderMap[r.order.id] && (
@@ -536,11 +536,11 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
           <h2 className="text-sm font-bold text-gray-900">Catat Bayar — Invoice {row.order.id.slice(0, 8)}</h2>
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           <div className="bg-gray-50 rounded-sm px-3 py-3 text-[13px] space-y-1">
             <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Total Invoice</span><span className="font-semibold">{formatIDR(row.order.total)}</span></div>
@@ -620,7 +620,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
             )}
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button onClick={onClose} disabled={saving} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50 disabled:opacity-50">Batal</button>
           <button onClick={handleConfirm} disabled={saving || !amountValid}
             className="text-sm font-semibold text-white bg-green-600 px-4 py-2 rounded-sm hover:bg-green-700 disabled:opacity-50">
@@ -640,7 +640,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
 
 function Th({ children, align }: { children: React.ReactNode; align?: 'left' | 'right' | 'center' }) {
   return (
-    <th className={`px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide text-${align ?? 'left'}`}>
+    <th className={`px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide text-${align ?? 'left'}`}>
       {children}
     </th>
   );

@@ -45,7 +45,7 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="px-5 py-3 bg-amber-500 text-white flex justify-between items-center">
+        <div className="px-4 py-3 bg-amber-500 text-white flex justify-between items-center">
           <div className="font-extrabold text-[14px]">💰 Tandai Lunas — {transaction.invoice_number}</div>
           <button onClick={onClose}><X className="w-4 h-4" /></button>
         </div>

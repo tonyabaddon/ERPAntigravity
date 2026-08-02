@@ -155,14 +155,14 @@ export function SuspendTenantModal({ open, tenant, onClose, onSuccess }: Props) 
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting || !isReasonValid}
-              className="bg-caleo-danger text-white font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="bg-caleo-danger text-white font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
             >
               {submitting ? 'Menyimpan…' : 'Konfirmasi Suspend'}
             </button>

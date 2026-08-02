@@ -115,12 +115,12 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
           <h2 className="text-sm font-bold text-gray-900">Terima Barang — {po.po_number}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
         </div>
 
-        <div className="px-5 py-4 space-y-4">
+        <div className="px-4 py-4 space-y-4">
           <div className="bg-indigo-50 border border-indigo-200 rounded-sm px-3 py-2 text-xs text-indigo-700">
             Stok akan bertambah sesuai <strong>Qty Baik</strong> yang diterima. Barang rusak tidak masuk stok dan akan ditrack untuk retur.
           </div>
@@ -227,7 +227,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
           <button onClick={handleConfirm} disabled={saving} className="text-sm font-semibold text-white bg-indigo-600 px-4 py-2 rounded-sm hover:bg-indigo-700 disabled:opacity-50">
             {saving ? 'Memproses...' : 'Konfirmasi Terima Barang'}

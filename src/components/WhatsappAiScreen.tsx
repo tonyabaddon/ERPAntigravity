@@ -376,7 +376,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                     <p className="text-[10px] text-gray-400">Menghubungkan ke backend Cloud Run...</p>
                     <button
                       onClick={() => handleCheckConnection('')}
-                      className="bg-[var(--color-caleo-primary)] hover:bg-[#2d8a4e] text-white px-5 py-2 rounded-full text-[10px] font-bold transition-all cursor-pointer shadow-md"
+                      className="bg-[var(--color-caleo-primary)] hover:bg-[#2d8a4e] text-white px-4 py-2 rounded-full text-[10px] font-bold transition-all cursor-pointer shadow-md"
                     >
                       Refresh Status
                     </button>
@@ -720,7 +720,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
 
                 <button
                   type="submit"
-                  className="bg-[#2d8a4e] text-white px-5 py-2.5 rounded-full text-xs font-extrabold shadow-md hover:bg-emerald-700 hover:scale-[1.03] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                  className="bg-[#2d8a4e] text-white px-4 py-2.5 rounded-full text-xs font-extrabold shadow-md hover:bg-emerald-700 hover:scale-[1.03] transition-all cursor-pointer flex items-center gap-1 shrink-0"
                 >
                   <Plus className="w-4 h-4" /> Tambah
                 </button>

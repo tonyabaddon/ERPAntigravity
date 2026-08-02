@@ -68,7 +68,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
 
   return (
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm flex flex-col overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#e5eeff]">
+      <div className="px-4 py-4 border-b border-[#e5eeff]">
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📋 Order Penjualan</div>
           <span className="text-[10px] text-slate-500 font-bold">{paired}/{orders.length} · {pct}%</span>

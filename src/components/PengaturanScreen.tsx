@@ -597,7 +597,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('notification-templates')}
-              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-4 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">📋 Semua Template Notifikasi</div>
@@ -609,7 +609,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('piutang-wa-reminder')}
-              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-4 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">💬 Template WA Reminder Piutang</div>
@@ -621,7 +621,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('notification-cron')}
-              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-4 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">🕗 Notifikasi Terjadwal</div>
@@ -633,7 +633,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('notification-prefs')}
-              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-4 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">🌙 Preferensi Notifikasi</div>
@@ -645,7 +645,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('customer-feedback')}
-              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-4 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">⭐ Feedback Customer</div>

@@ -117,7 +117,7 @@ export function DamageFlagModal({
       aria-modal="true"
     >
       <div className="w-full max-w-md rounded-sm bg-white shadow-lg" style={{ fontSize: '14px' }}>
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
             <h2 className="font-semibold text-gray-800">Flag Barang Rusak</h2>
@@ -132,7 +132,7 @@ export function DamageFlagModal({
           </button>
         </div>
 
-        <div className="space-y-4 px-5 py-4">
+        <div className="space-y-4 px-4 py-4">
           <div className="rounded bg-gray-50 px-3 py-2 text-sm text-gray-700">
             <div className="font-medium">
               {skuName ?? sku} <span className="text-gray-400">({sku})</span>
@@ -200,7 +200,7 @@ export function DamageFlagModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-5 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-3">
           <button
             type="button"
             className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"

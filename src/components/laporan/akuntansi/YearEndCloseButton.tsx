@@ -277,14 +277,14 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
               <button
                 onClick={() => setModalOpen(false)}
                 disabled={submitting}
-                className="px-5 py-2 rounded-full text-[13px] font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-full text-[13px] font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!confirmed || !preview || submitting || previewLoading}
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-[13px] font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
                   background: '#92400e',
                   color: '#fff',

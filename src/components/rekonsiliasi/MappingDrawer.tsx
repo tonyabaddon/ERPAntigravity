@@ -122,14 +122,14 @@ export default function MappingDrawer({
 
         {/* Multi-allocation balance bar */}
         {multiAllocation && (
-          <div className={`px-5 py-2 border-b border-[#e5eeff] flex items-center justify-between text-[11px] font-bold ${overTarget ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+          <div className={`px-4 py-2 border-b border-[#e5eeff] flex items-center justify-between text-[11px] font-bold ${overTarget ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
             <span>Dipilih: {fmt(selectedTotal)}</span>
             <span className="text-slate-500 font-semibold">Target: {fmt(target)}</span>
           </div>
         )}
 
         {/* Search */}
-        <div className="px-5 py-3 border-b border-[#e5eeff]">
+        <div className="px-4 py-3 border-b border-[#e5eeff]">
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}

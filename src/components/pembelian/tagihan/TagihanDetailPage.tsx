@@ -400,13 +400,13 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-sm border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 bg-red-50">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
           <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {tagihan.pi_number}
           </h2>
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           <p className="text-xs text-gray-600">
             Void akan menandai Tagihan ini sebagai dibatalkan. Stok yang sudah ditambahkan tidak otomatis dikurangi — adjust manual jika perlu.
           </p>
@@ -418,7 +418,7 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
             <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
           <button onClick={handleConfirm} disabled={!valid || saving} className="text-sm font-semibold text-white bg-red-600 px-4 py-2 rounded-sm hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Memproses...' : 'Void'}

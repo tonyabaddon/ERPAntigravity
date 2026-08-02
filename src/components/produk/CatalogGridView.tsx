@@ -35,7 +35,7 @@ export default function CatalogGridView({ stockList, onAdd, onEdit, hideToolbar 
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <button onClick={onAdd}
-                  className="px-5 py-3 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider">
+                  className="px-4 py-3 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider">
             + Tambah Barang
           </button>
         </div>

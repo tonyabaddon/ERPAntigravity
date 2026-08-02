@@ -207,7 +207,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="border rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors hover:bg-gray-50"
+              className="border rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors hover:bg-gray-50"
               style={{ color: '#0B2545', borderColor: '#ECEEF1' }}
             >
               Batal
@@ -215,7 +215,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="text-white font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="text-white font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
               style={{ background: '#DC2626' }}
               data-testid="hapus-permanen-btn"
             >

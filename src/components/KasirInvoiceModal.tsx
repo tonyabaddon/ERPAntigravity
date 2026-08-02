@@ -57,7 +57,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
           onClick={e => e.stopPropagation()}
         >
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-5 py-3 bg-[var(--color-caleo-primary)] text-white print:hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-caleo-primary)] text-white print:hidden">
             <div className="flex items-center gap-2 font-bold text-sm">
               <FileText className="w-4 h-4" />
               Invoice {transaction.invoice_number}

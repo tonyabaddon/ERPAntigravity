@@ -636,7 +636,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="px-5 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-bold cursor-pointer hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-bold cursor-pointer hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Menyimpan…' : 'Tambahkan Produk'}
           </button>

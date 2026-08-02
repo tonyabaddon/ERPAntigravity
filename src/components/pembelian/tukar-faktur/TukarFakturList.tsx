@@ -134,14 +134,14 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
               <tr>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">TF</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
-                <th className="text-center px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Faktur</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Total</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Dibayar</th>
-                <th className="text-center px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
-                <th className="text-center px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">TF</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Faktur</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Total</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Dibayar</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Status</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -156,23 +156,23 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
                       dueSoon ? 'border-l-4 border-l-amber-400' : ''
                     }`}
                   >
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>
                         {tf.tf_number}
                       </div>
                       <div className="text-xs text-gray-500">{fmtDate(tf.tukar_date)}</div>
                     </td>
-                    <td className="px-5 py-4 text-sm font-semibold">{tf.supplier?.name ?? '—'}</td>
-                    <td className="px-5 py-4 text-center text-sm">{tf.tagihans?.length ?? 0}</td>
-                    <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(tf.total_amount)}</td>
+                    <td className="px-4 py-4 text-sm font-semibold">{tf.supplier?.name ?? '—'}</td>
+                    <td className="px-4 py-4 text-center text-sm">{tf.tagihans?.length ?? 0}</td>
+                    <td className="px-4 py-4 text-right text-sm font-bold">{formatIDR(tf.total_amount)}</td>
                     <td
-                      className={`px-5 py-4 text-right text-sm ${
+                      className={`px-4 py-4 text-right text-sm ${
                         Number(tf.paid_amount) > 0 ? 'font-bold text-sky-700' : 'text-gray-400'
                       }`}
                     >
                       {formatIDR(tf.paid_amount)}
                     </td>
-                    <td className="px-5 py-4 text-center">
+                    <td className="px-4 py-4 text-center">
                       <div className={`text-xs font-bold ${dueSoon ? 'text-amber-700' : 'text-gray-700'}`}>
                         {fmtDate(tf.payment_due_at)}
                       </div>
@@ -194,14 +194,14 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-center">
+                    <td className="px-4 py-4 text-center">
                       <span
                         className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[tf.status]}`}
                       >
                         {STATUS_LABEL[tf.status]}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-right whitespace-nowrap">
+                    <td className="px-4 py-4 text-right whitespace-nowrap">
                       <button
                         onClick={() => onOpenDetail(tf.tf_number)}
                         className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
@@ -217,12 +217,12 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
               <tfoot className="bg-gray-50/80 border-t-2 border-gray-300">
                 <tr>
                   <td
-                    className="px-5 py-3 text-[11px] font-bold uppercase text-gray-500"
+                    className="px-4 py-3 text-[11px] font-bold uppercase text-gray-500"
                     colSpan={3}
                   >
                     Subtotal Outstanding ({outstandingList.length} TF)
                   </td>
-                  <td className="px-5 py-3 text-right text-sm font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
+                  <td className="px-4 py-3 text-right text-sm font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
                     {formatIDR(totalOutstanding)}
                   </td>
                   <td colSpan={4}></td>

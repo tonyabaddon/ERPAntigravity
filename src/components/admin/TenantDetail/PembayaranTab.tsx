@@ -398,7 +398,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
       <div className="space-y-4 font-caleo" data-testid="pembayaran-tab">
         {/* Coverage summary strip */}
         <div
-          className="border rounded-sm px-5 py-4 flex flex-wrap gap-5 items-center"
+          className="border rounded-sm px-4 py-4 flex flex-wrap gap-5 items-center"
           style={{ background: '#ffffff', borderColor: C.surface }}
           data-testid="coverage-summary"
         >

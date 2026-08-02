@@ -347,7 +347,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="button"
           onClick={handleSave}
           disabled={submitting || !!featureError}
-          className="text-[13px] font-extrabold px-5 py-2 rounded-full bg-caleo-gold text-caleo-navy disabled:opacity-50"
+          className="text-[13px] font-extrabold px-4 py-2 rounded-full bg-caleo-gold text-caleo-navy disabled:opacity-50"
           data-testid={`edit-save-${plan.code}`}
         >
           {submitting ? 'Menyimpan…' : 'Simpan'}

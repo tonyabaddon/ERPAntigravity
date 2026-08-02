@@ -129,14 +129,14 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
               <tr>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Pesanan</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Total</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase w-48">Dibayar</th>
-                <th className="text-center px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Pesanan</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Total</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase w-48">Dibayar</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Status</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -147,18 +147,18 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                 const eff = effectiveStatus(t);
                 return (
                   <tr key={t.id} className="hover:bg-slate-50 border-b border-gray-100">
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{t.pi_number}</div>
                       <div className="text-xs text-gray-500">{fmtDate(t.purchase_date)}</div>
                     </td>
-                    <td className="px-5 py-4 text-sm font-semibold">{t.supplier?.name ?? '—'}</td>
-                    <td className="px-5 py-4 text-sm">
+                    <td className="px-4 py-4 text-sm font-semibold">{t.supplier?.name ?? '—'}</td>
+                    <td className="px-4 py-4 text-sm">
                       <span className="text-indigo-700 font-semibold">
                         {t.pesanan?.pesanan_number ?? (t.pesanan_id ? `PSN-${t.pesanan_id.slice(0, 8).toUpperCase()}` : '—')}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(t.total)}</td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4 text-right text-sm font-bold">{formatIDR(t.total)}</td>
+                    <td className="px-4 py-4">
                       <div className="text-[11px] text-gray-600 mb-1">
                         <span className="font-semibold text-green-700">{formatIDR(paid)}</span>
                         <span className="text-gray-400"> / </span>
@@ -169,11 +169,11 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                       </div>
                       {outstanding > 0 && <div className="text-[10px] text-gray-400 mt-0.5">Sisa {formatIDR(outstanding)}</div>}
                     </td>
-                    <td className="px-5 py-4 text-center">
+                    <td className="px-4 py-4 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusBadge(eff)}`}>{statusLabel(eff)}</span>
                     </td>
-                    <td className="px-5 py-4 text-xs text-gray-600">{fmtDate(t.payment_due_at)}</td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-4 py-4 text-xs text-gray-600">{fmtDate(t.payment_due_at)}</td>
+                    <td className="px-4 py-4 text-right">
                       <div className="inline-flex gap-1">
                         {eff !== 'LUNAS' && eff !== 'VOID' && onOpenPembayaran && (
                           <button onClick={() => onOpenPembayaran(t.supplier_id)}

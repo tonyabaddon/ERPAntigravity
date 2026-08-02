@@ -84,7 +84,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="px-5 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-bold disabled:opacity-50"
+        className="px-4 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-bold disabled:opacity-50"
       >
         {saving ? 'Menyimpan…' : 'Simpan'}
       </button>

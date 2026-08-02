@@ -138,7 +138,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
 
       {/* Per-supplier table */}
       <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-200 bg-gray-50/80 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-gray-200 bg-gray-50/80 flex items-center justify-between">
           <div>
             <div className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Outstanding per Supplier</div>
             <div className="text-[11px] text-gray-500">Diurutkan berdasarkan total outstanding terbesar</div>
@@ -151,11 +151,11 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
           <table className="w-full">
             <thead className="border-b border-gray-200">
               <tr>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
-                <th className="text-center px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT Terdekat</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Outstanding</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT Terdekat</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Outstanding</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -165,11 +165,11 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                 const dueSoonRow = days !== null && days >= 0 && days <= 7;
                 return (
                   <tr key={s.supplier_id} className={`hover:bg-slate-50 border-b border-gray-100 ${overdueRow ? 'bg-rose-50/30' : ''}`}>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{s.supplier_name}</div>
                     </td>
-                    <td className="px-5 py-4 text-center text-sm">{s.tagihan_count}</td>
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4 text-center text-sm">{s.tagihan_count}</td>
+                    <td className="px-4 py-4">
                       <div className="text-xs text-gray-600">{fmtDate(s.due_soonest)}</div>
                       {overdueRow && (
                         <div className="text-[11px] font-bold text-rose-700 mt-0.5">⚠ Terlambat {Math.abs(days!)} hari</div>
@@ -178,10 +178,10 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                         <div className="text-[11px] font-bold text-amber-700 mt-0.5">⏰ {days === 0 ? 'Jatuh tempo hari ini' : `${days} hari lagi`}</div>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-right text-sm font-extrabold" style={{ color: overdueRow ? '#b91c1c' : 'var(--color-caleo-primary)' }}>
+                    <td className="px-4 py-4 text-right text-sm font-extrabold" style={{ color: overdueRow ? '#b91c1c' : 'var(--color-caleo-primary)' }}>
                       {formatIDR(s.outstanding)}
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-4 py-4 text-right">
                       <button onClick={() => onOpenPembayaran(s.supplier_id)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold rounded-sm text-white hover:opacity-90"
                         style={{ background: 'var(--color-caleo-primary)' }}>
