@@ -1,5 +1,6 @@
 // src/components/rekonsiliasi/MappingDrawer.tsx
 import React, { useEffect, useState } from 'react';
+import EmptyState from '../ui/EmptyState';
 
 export interface DrawerCandidate {
   id: string;
@@ -206,7 +207,7 @@ export default function MappingDrawer({
               </div>
             );
           })}
-          {filtered.length === 0 && <div className="text-center text-xs text-slate-400 font-semibold py-6">Tidak ada kandidat.</div>}
+          {filtered.length === 0 && <EmptyState message="Tidak ada kandidat." inline />}
         </div>
 
         {/* Footer */}

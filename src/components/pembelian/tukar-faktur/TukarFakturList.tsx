@@ -6,6 +6,8 @@ import { Plus, Search } from 'lucide-react';
 import { tukarFakturService } from '../../../lib/tukarFakturService';
 import type { DbTukarFaktur, TukarFakturStatus } from '../../../types';
 import { formatIDR } from '../../../lib/formatIDR';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -125,11 +127,9 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
 
       <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
+          <LoadingState label="Memuat..." />
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">
-            Belum ada Tukar Faktur — semua Tagihan dibayar langsung.
-          </div>
+          <EmptyState message="Belum ada Tukar Faktur — semua Tagihan dibayar langsung." />
         ) : (
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">

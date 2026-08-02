@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { formatIDR } from '../../lib/formatIDR';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import LoadingState from '../ui/LoadingState';
+import ErrorState from '../ui/ErrorState';
+import EmptyState from '../ui/EmptyState';
 
 interface LayananRow {
   service_catalog_id: string;
@@ -133,18 +136,14 @@ export default function LayananSection({ days }: Props) {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-caleo-13 text-slate-500">
-          Memuat…
-        </div>
+        <LoadingState label="Memuat…" />
       ) : error ? (
-        <div className="text-caleo-13 text-amber-700 bg-amber-50 border border-amber-200 rounded px-4 py-3">
-          Gagal memuat: {error}
-        </div>
+        <ErrorState message={`Gagal memuat: ${error}`} inline />
       ) : rows.length === 0 ? (
-        <div className="text-center py-8 text-caleo-13 text-slate-500 border border-dashed border-slate-300 rounded">
-          Belum ada layanan yang terjual dalam periode ini. Setup service
-          catalog di Pengaturan → 🛠 Layanan lalu attach ke pesanan.
-        </div>
+        <EmptyState
+          message="Belum ada layanan yang terjual dalam periode ini."
+          hint="Setup service catalog di Pengaturan → Layanan lalu attach ke pesanan."
+        />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-caleo-13">

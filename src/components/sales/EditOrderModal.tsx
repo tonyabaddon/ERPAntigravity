@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import type { Order, OrderItem } from '../../lib/sales/types';
 import { formatIDR } from '../../lib/formatIDR';
 import { captureError } from '../../lib/captureError';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   order: Order;
@@ -161,7 +162,7 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Items</div>
           {items.length === 0 ? (
-            <div style={{ fontSize: 12, color: '#9ca3af', fontStyle: 'italic' }}>Tidak ada item.</div>
+            <EmptyState message="Tidak ada item." inline />
           ) : (
             <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
               <thead>

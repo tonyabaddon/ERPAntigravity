@@ -8,6 +8,8 @@ import { getSaldoAwalState, reverseSaldoAwal } from '../../lib/saldoAwal/api';
 import { formatIDR } from '../../lib/formatIDR';
 import SaldoAwalWizard from './saldoAwal/SaldoAwalWizard';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -59,9 +61,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (snapshot === undefined) {
-    return (
-      <div className="py-10 text-center text-caleo-13 text-slate-400">Memuat status Saldo Awal…</div>
-    );
+    return <LoadingState label="Memuat status Saldo Awal…" />;
   }
 
   // ── Posted state ──────────────────────────────────────────────────────────
@@ -242,24 +242,11 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
   // ── Empty / reversed state ─────────────────────────────────────────────────
   return (
     <>
-      <div className="border border-slate-200 rounded p-8 text-center space-y-4">
-        <div className="w-14 h-14 bg-slate-100 rounded flex items-center justify-center mx-auto text-2xl">
-          📒
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-slate-800">Belum ada Saldo Awal</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Masukkan data neraca per tanggal cutover agar laporan Neraca, Laba Rugi, dan Piutang Aging mencerminkan kondisi sebenarnya.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setWizardOpen(true)}
-          className="px-4 py-2.5 bg-[var(--color-caleo-primary)] text-white text-caleo-13 font-bold rounded hover:opacity-90"
-        >
-          Buat Saldo Awal
-        </button>
-      </div>
+      <EmptyState
+        message="Belum ada Saldo Awal."
+        hint="Masukkan data neraca per tanggal cutover agar laporan Neraca, Laba Rugi, dan Piutang Aging mencerminkan kondisi sebenarnya."
+        action={{ label: 'Buat Saldo Awal', onClick: () => setWizardOpen(true) }}
+      />
 
       {wizardOpen && (
         <SaldoAwalWizard

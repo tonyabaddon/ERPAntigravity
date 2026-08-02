@@ -8,6 +8,8 @@ import { adminToast } from '../../lib/adminToast';
 import { SalesRepCreateModal } from './SalesRepCreateModal';
 import { SalesRepDeactivateModal } from './SalesRepDeactivateModal';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import EmptyState from '../ui/EmptyState';
+import ErrorState from '../ui/ErrorState';
 
 // ─── Skeleton rows ────────────────────────────────────────────────────────────
 
@@ -112,19 +114,12 @@ export function SalesRepsList() {
 
       {/* Error inline retry */}
       {error && !loading && (
-        <div
-          className="border rounded px-4 py-3 text-caleo-13 flex items-center justify-between"
-          style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
-          data-testid="salesreps-error"
-        >
-          <span>Gagal memuat sales rep: {error}</span>
-          <button
-            onClick={() => fetchSalesReps()}
-            className="ml-4 px-3 py-1 rounded border font-medium text-xs hover:opacity-80"
-            style={{ borderColor: '#991b1b', color: '#991b1b' }}
-          >
-            Coba lagi
-          </button>
+        <div data-testid="salesreps-error">
+          <ErrorState
+            message={`Gagal memuat sales rep: ${error}`}
+            onRetry={() => fetchSalesReps()}
+            inline
+          />
         </div>
       )}
 
@@ -132,12 +127,11 @@ export function SalesRepsList() {
       {loading ? (
         <SkeletonRows />
       ) : rows.length === 0 ? (
-        <div
-          className="border rounded px-4 py-8 text-center text-caleo-13"
-          style={{ borderColor: '#ECEEF1', color: '#9DB2CE' }}
-          data-testid="salesreps-empty"
-        >
-          Belum ada sales rep. Klik "Tambah Sales Rep" untuk menambahkan.
+        <div data-testid="salesreps-empty">
+          <EmptyState
+            message="Belum ada sales rep."
+            hint='Klik "Tambah Sales Rep" untuk menambahkan.'
+          />
         </div>
       ) : (
         <div className="border rounded overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
