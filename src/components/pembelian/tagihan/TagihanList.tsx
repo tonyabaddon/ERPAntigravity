@@ -4,6 +4,8 @@
 // JT, Aksi (Bayar shortcut for non-LUNAS, Detail).
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
 import { wibDateString } from '../../../lib/format';
@@ -123,8 +125,8 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
       </div>
 
       <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
-        {loading ? <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
-         : filtered.length === 0 ? <div className="p-8 text-center text-sm text-gray-500">Belum ada Tagihan.</div>
+        {loading ? <LoadingState label="Memuat..." />
+         : filtered.length === 0 ? <EmptyState message="Belum ada Tagihan." />
          : (
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">

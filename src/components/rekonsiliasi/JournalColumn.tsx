@@ -4,6 +4,9 @@ import {
   fetchUnreconciledJournalLines,
   type UnreconciledJournalLine,
 } from '../../lib/akuntansi/journalReconService';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
+import ErrorState from '../ui/ErrorState';
 
 interface Props {
   /** COA account UUID for the linked bank account. When null, shows a prompt. */
@@ -111,36 +114,28 @@ export default function JournalColumn({
       <div className="p-3 overflow-y-auto" style={{ maxHeight: 540 }}>
         {/* No COA linked */}
         {!coaAccountId && (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="text-2xl mb-2">🔗</div>
-            <div className="text-xs font-bold text-slate-500">
-              Tidak ada akun COA yang terhubung
-            </div>
-            <div className="text-caleo-10 text-slate-400 font-semibold mt-1">
-              Hubungkan akun bank ke Chart of Accounts di Kasbank → Pengaturan
-            </div>
-          </div>
+          <EmptyState
+            message="Tidak ada akun COA yang terhubung"
+            hint="Hubungkan akun bank ke Chart of Accounts di Kasbank → Pengaturan"
+          />
         )}
 
         {/* Loading */}
         {coaAccountId && loading && (
-          <div className="text-center py-8 text-xs text-slate-400 font-semibold">Memuat…</div>
+          <LoadingState label="Memuat…" />
         )}
 
         {/* Error */}
         {coaAccountId && !loading && error && (
-          <div className="text-center py-8 text-xs text-rose-500 font-semibold">{error}</div>
+          <ErrorState message={error} />
         )}
 
         {/* Empty */}
         {coaAccountId && !loading && !error && lines.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="text-2xl mb-2">✓</div>
-            <div className="text-xs font-bold text-emerald-600">Semua sudah cocok</div>
-            <div className="text-caleo-10 text-slate-400 font-semibold mt-1">
-              Tidak ada journal entry yang belum dicocokkan
-            </div>
-          </div>
+          <EmptyState
+            message="Semua sudah cocok"
+            hint="Tidak ada journal entry yang belum dicocokkan"
+          />
         )}
 
         {/* Lines list */}
