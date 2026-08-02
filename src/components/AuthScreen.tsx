@@ -374,7 +374,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-300 blur-3xl rounded-full"></div>
         </div>
 
-        <div className="w-full max-w-[520px] bg-white rounded-[2rem] shadow-2xl p-8 md:p-12 flex flex-col gap-6 relative z-10 border border-[#e5eeff]">
+        <div className="w-full max-w-[520px] bg-white rounded-[2rem] shadow-2xl p-8 md:p-12 flex flex-col gap-6 relative z-10 border border-[var(--color-caleo-mist)]">
           {view === 'signIn' ? (
             <div className="flex flex-col gap-6 animate-fadeIn">
               <div className="space-y-2">
@@ -387,7 +387,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
               <form onSubmit={handleSignInSubmit} className="space-y-5">
                 <div className="space-y-1.5 animate-slideUp">
                   <label className="text-xs font-bold text-[#0b1c30] tracking-wider uppercase block px-2">Alamat Email</label>
-                  <div className="flex items-center bg-[#eff4ff] rounded-full px-6 py-3 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
+                  <div className="flex items-center bg-[var(--color-caleo-cloud)] rounded-full px-6 py-3 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
                     <Mail className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
                     <input
                       type="email"
@@ -409,7 +409,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
                 <div className="space-y-1.5 transition-all duration-300">
                   <label className="text-xs font-bold text-[#0b1c30] tracking-wider uppercase block px-2">Kode OTP</label>
-                  <div className="flex items-center bg-[#eff4ff] rounded-full px-6 py-3 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
+                  <div className="flex items-center bg-[var(--color-caleo-cloud)] rounded-full px-6 py-3 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
                     <Lock className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
                     <input
                       type="text"
@@ -466,7 +466,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#0b1c30] block px-2">Nama Lengkap</label>
-                    <div className="flex bg-[#eff4ff] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
+                    <div className="flex bg-[var(--color-caleo-cloud)] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
                       <input
                         type="text"
                         required
@@ -480,7 +480,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#0b1c30] block px-2">Nama Bisnis</label>
-                    <div className="flex bg-[#eff4ff] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
+                    <div className="flex bg-[var(--color-caleo-cloud)] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
                       <input
                         type="text"
                         required
@@ -495,7 +495,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#0b1c30] block px-2">Email Bisnis Utama</label>
-                  <div className="flex items-center bg-[#eff4ff] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
+                  <div className="flex items-center bg-[var(--color-caleo-cloud)] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
                     <Mail className="w-4 h-4 text-gray-400 mr-2.5 shrink-0" />
                     <input
                       type="email"
@@ -518,7 +518,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#0b1c30] block px-2">Verifikasi Kode OTP</label>
-                  <div className="flex items-center bg-[#eff4ff] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
+                  <div className="flex items-center bg-[var(--color-caleo-cloud)] rounded-full px-6 py-2.5 border-2 border-transparent focus-within:border-[#2d8a4e] transition-all">
                     <ShieldCheck className="w-4 h-4 text-gray-400 mr-2.5 shrink-0" />
                     <input
                       type="text"

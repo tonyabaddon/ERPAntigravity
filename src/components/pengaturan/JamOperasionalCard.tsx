@@ -112,7 +112,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
+    <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
       <div className="flex items-start gap-3 mb-4">
         <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-primary)] flex items-center justify-center shrink-0">
           <Clock className="w-5 h-5 text-emerald-400" />

@@ -76,8 +76,8 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
   }, [year, month]);
 
   return (
-    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm overflow-hidden">
-      <div className="px-4 py-4 border-b border-[#e5eeff]">
+    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[var(--color-caleo-mist)] shadow-sm overflow-hidden">
+      <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📦 Pembelian dari Supplier Bulan Ini</div>
         <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Klik ▶ untuk lihat per-barang & sales order yang membeli</div>
       </div>
@@ -110,7 +110,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
                 </div>
               </div>
               {isOpen && (
-                <div className="border-t border-[#e5eeff] bg-white/60 p-4 space-y-3">
+                <div className="border-t border-[var(--color-caleo-mist)] bg-white/60 p-4 space-y-3">
                   {po.items.map(it => (
                     <div key={it.sku}>
                       <div className="flex justify-between items-center mb-2">

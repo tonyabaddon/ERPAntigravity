@@ -33,7 +33,7 @@ export default function ClassificationModal({ open, bankLineSummary, onApply, on
             <div
               key={o.kind}
               onClick={() => setPicked(o.kind)}
-              className={`p-3 rounded-sm border cursor-pointer ${picked === o.kind ? 'border-[var(--color-caleo-primary)] bg-blue-50' : 'border-[#e5eeff]'}`}
+              className={`p-3 rounded-sm border cursor-pointer ${picked === o.kind ? 'border-[var(--color-caleo-primary)] bg-blue-50' : 'border-[var(--color-caleo-mist)]'}`}
             >
               <div className="flex items-center gap-2">
                 <input type="radio" checked={picked === o.kind} readOnly />
@@ -49,7 +49,7 @@ export default function ClassificationModal({ open, bankLineSummary, onApply, on
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Notes (opsional)"
-          className="w-full mb-4 px-3 py-2 border border-[#e5eeff] rounded-sm text-xs"
+          className="w-full mb-4 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs"
         />
         <div className="flex gap-2 justify-end">
           <button onClick={onClose} className="px-4 py-2 rounded-full text-xs font-bold bg-slate-100">Batal</button>

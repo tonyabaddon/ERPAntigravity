@@ -150,7 +150,7 @@ export function ActionPanel({
   }
 
   return (
-    <div style={{ background: '#fafbff', padding: '14px 24px 14px 60px', borderBottom: '1px solid #e5eeff' }}>
+    <div style={{ background: '#fafbff', padding: '14px 24px 14px 60px', borderBottom: '1px solid var(--color-caleo-mist)' }}>
       {isVerifyStage && (
         <>
           <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>

@@ -56,7 +56,7 @@ export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction, re
     : '';
 
   return (
-    <div style={{ background: 'white', borderBottom: '1px solid #e5eeff' }}>
+    <div style={{ background: 'white', borderBottom: '1px solid var(--color-caleo-mist)' }}>
       <div onClick={onToggle} style={{ padding: '14px 24px 14px 60px', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -81,7 +81,7 @@ export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction, re
               )}
               <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>#{order.id.slice(0, 8)}</span>
               {showTypeBadge && (
-                <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 999, background: '#eff4ff', color: 'var(--color-primary)', fontWeight: 600, marginLeft: 8, border: '1px solid #c7d7f5' }}>{typeLabel}</span>
+                <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 999, background: 'var(--color-caleo-cloud)', color: 'var(--color-primary)', fontWeight: 600, marginLeft: 8, border: '1px solid var(--color-caleo-mist-dark)' }}>{typeLabel}</span>
               )}
               {order.stuck && (
                 <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 6, background: '#fee2e2', color: '#b91c1c', fontWeight: 700, marginLeft: 8, border: '1px solid #fecaca' }}>stuck</span>
@@ -92,7 +92,7 @@ export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction, re
               <span style={{ color: '#9ca3af' }}>·</span>
               {payment && (
                 <>
-                  <span style={{ background: '#eff4ff', color: 'var(--color-primary)', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #c7d7f5' }}>{payment}</span>
+                  <span style={{ background: 'var(--color-caleo-cloud)', color: 'var(--color-primary)', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid var(--color-caleo-mist-dark)' }}>{payment}</span>
                   <span style={{ color: '#9ca3af' }}>·</span>
                 </>
               )}
@@ -106,7 +106,7 @@ export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction, re
           {action && (
             <QuickActionPill label={action.label} onClick={() => onQuickAction(action.label, action.toSubStage)} />
           )}
-          <span style={{ color: '#c7d7f5', fontSize: 12 }}>{expanded ? '▾' : '›'}</span>
+          <span style={{ color: 'var(--color-caleo-mist-dark)', fontSize: 12 }}>{expanded ? '▾' : '›'}</span>
         </div>
       </div>
     </div>

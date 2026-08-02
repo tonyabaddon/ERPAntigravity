@@ -246,7 +246,7 @@ export default function OwnerDrawingModal({
             <label className="block font-bold mb-1" style={{ color: '#1e3d60' }}>
               Dari akun bisnis *
             </label>
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
               {accountLabel(sourceAccount)}
               <span className="ml-2 font-mono text-gray-500 text-[11px]">
                 Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
@@ -345,7 +345,7 @@ export default function OwnerDrawingModal({
           <button
             onClick={() => !saving && onClose()}
             disabled={saving}
-            className="border border-[#c7d7f5] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[#eff4ff] disabled:opacity-50"
+            className="border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[var(--color-caleo-cloud)] disabled:opacity-50"
           >
             Batal
           </button>

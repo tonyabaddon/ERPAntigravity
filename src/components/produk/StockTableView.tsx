@@ -251,7 +251,7 @@ export default function StockTableView({
 
   return (
     <>
-    <section className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl">
+    <section className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-sm bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0">
@@ -279,7 +279,7 @@ export default function StockTableView({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Cari SKU atau nama barang..."
-              className="w-full pl-12 pr-4 py-3 bg-[#eff4ff] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-bold text-slate-800 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-bold text-slate-800 outline-none"
             />
             <Search className="w-4 h-4 text-[#43474e]/60 absolute left-4 top-1/2 -translate-y-1/2" />
           </div>
@@ -287,7 +287,7 @@ export default function StockTableView({
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              className="pl-6 pr-12 py-3 bg-[#eff4ff] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/10 text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
+              className="pl-6 pr-12 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/10 text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
             >
               {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
@@ -311,7 +311,7 @@ export default function StockTableView({
 
           return (
             <div key={`${item.sku}-${index}`}>
-              <div className={`flex flex-col md:flex-row items-stretch md:items-center gap-4 p-5 rounded-sm transition-all duration-300 border ${isEditing ? 'bg-blue-50 border-blue-200 rounded-b-none' : 'bg-[#eff4ff]/60 hover:bg-white hover:shadow-xl border-transparent hover:border-slate-100'} group`}>
+              <div className={`flex flex-col md:flex-row items-stretch md:items-center gap-4 p-5 rounded-sm transition-all duration-300 border ${isEditing ? 'bg-blue-50 border-blue-200 rounded-b-none' : 'bg-[var(--color-caleo-cloud)]/60 hover:bg-white hover:shadow-xl border-transparent hover:border-slate-100'} group`}>
                 <div className="w-28 shrink-0">
                   <div className="text-[10px] font-mono font-bold text-slate-500">{item.category}</div>
                   <div className="text-[9px] font-mono text-slate-400">#{item.sku.slice(0, 8)}</div>
@@ -450,7 +450,7 @@ export default function StockTableView({
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => isEditing ? cancelEdit(item.sku) : startEdit(item)}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-black border cursor-pointer transition-all ${isEditing ? 'border-slate-300 bg-slate-100 text-slate-600' : 'border-[#c7d7f5] bg-[#eff4ff] text-[#1e3d60] hover:bg-blue-100'}`}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-black border cursor-pointer transition-all ${isEditing ? 'border-slate-300 bg-slate-100 text-slate-600' : 'border-[var(--color-caleo-mist-dark)] bg-[var(--color-caleo-cloud)] text-[#1e3d60] hover:bg-blue-100'}`}
                   >
                     {isEditing
                       ? <span className="flex items-center gap-1"><ChevronUp className="w-3 h-3" />Tutup</span>

@@ -103,7 +103,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
 
   if (loading) {
     return (
-      <div className="rounded-sm border border-[#c7d7f5] bg-white p-8 text-center">
+      <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white p-8 text-center">
         <Droplet className="w-8 h-8 mx-auto text-gray-400 mb-2 animate-pulse" />
         <p className="text-sm text-gray-600">Memuat Cash Flow Matrix...</p>
       </div>
@@ -114,7 +114,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
 
   if (!data || (data.uangMasuk.length === 0 && data.uangKeluar.length === 0)) {
     return (
-      <div className="rounded-sm border border-[#c7d7f5] bg-white p-8 text-center">
+      <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white p-8 text-center">
         <Droplet className="w-8 h-8 mx-auto text-gray-400 mb-2" />
         <p className="text-sm text-gray-600">Belum ada cash flow di 6 bulan terakhir</p>
       </div>
@@ -135,7 +135,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
   // ── Render main table ──────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200 flex items-baseline justify-between">
         <div>
@@ -153,7 +153,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
               viewMode === 'net'
                 ? 'bg-[var(--color-caleo-primary)] text-white'
-                : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
+                : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
             }`}
           >
             Net
@@ -163,7 +163,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
               viewMode === 'gross-in'
                 ? 'bg-[var(--color-caleo-primary)] text-white'
-                : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
+                : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
             }`}
           >
             Gross IN
@@ -173,7 +173,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
               viewMode === 'gross-out'
                 ? 'bg-[var(--color-caleo-primary)] text-white'
-                : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
+                : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
             }`}
           >
             Gross OUT
@@ -185,11 +185,11 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
       <div className="p-6 overflow-x-auto">
         <table className="w-full text-[12px]">
           {/* ── thead ── */}
-          <thead style={{ background: '#eff4ff' }}>
+          <thead style={{ background: 'var(--color-caleo-cloud)' }}>
             <tr className="text-[10px] uppercase font-extrabold text-gray-600">
               <th
                 className="text-left py-2 px-3 sticky left-0"
-                style={{ background: '#eff4ff' }}
+                style={{ background: 'var(--color-caleo-cloud)' }}
               >
                 Kategori
               </th>

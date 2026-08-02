@@ -202,7 +202,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-[#e5eeff] shadow-lg">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-lg">
         <div>
           <span className="text-[10px] font-black tracking-widest text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3.5 py-1 rounded-full">
             Infrastruktur Backend
@@ -240,19 +240,19 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
       </div>
 
       {/* Tab pills */}
-      <div className="bg-white rounded-sm border border-[#e5eeff] p-4 shadow-sm">
+      <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-4 shadow-sm">
         {activeTab === 'katalog' && (
           <div className="flex flex-col lg:flex-row gap-3 mb-3">
             <input
               value={katalogSearch}
               onChange={e => setKatalogSearch(e.target.value)}
               placeholder="Cari nama atau SKU…"
-              className="flex-1 px-4 py-2 bg-[#eff4ff] rounded-full text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-300"
+              className="flex-1 px-4 py-2 bg-[var(--color-caleo-cloud)] rounded-full text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-300"
             />
             <select
               value={katalogCategory}
               onChange={e => setKatalogCategory(e.target.value)}
-              className="px-4 py-2 bg-[#eff4ff] rounded-full text-xs font-black"
+              className="px-4 py-2 bg-[var(--color-caleo-cloud)] rounded-full text-xs font-black"
             >
               {katalogCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>

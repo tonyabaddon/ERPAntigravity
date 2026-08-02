@@ -402,7 +402,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-primary)' }}>Daftar Pesanan</h2>
-      <div style={{ background: 'white', borderRadius: 24, boxShadow: '0 2px 12px rgba(1,39,73,0.06)', border: '1px solid #e5eeff', overflow: 'hidden' }}>
+      <div style={{ background: 'white', borderRadius: 24, boxShadow: '0 2px 12px rgba(1,39,73,0.06)', border: '1px solid var(--color-caleo-mist)', overflow: 'hidden' }}>
         <TypeTabs active={typeTab} counts={totalCounts} onChange={setTypeTab} />
         <StageStrip active={stage} counts={stageCounts} onChange={setStage} />
         {loadingOrders && (

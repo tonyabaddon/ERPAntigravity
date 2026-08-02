@@ -59,7 +59,7 @@ export function PdfPreviewModal({ blob, filename, onClose }: Props) {
           display: 'flex', flexDirection: 'column', width: '80%', maxWidth: 960, maxHeight: '92vh',
         }}
       >
-        <div style={{ padding: '12px 20px', borderBottom: '1px solid #e5eeff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--color-caleo-mist)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-primary)' }}>Pratinjau PDF</div>
             <div style={{ fontSize: 11, color: '#9ca3af' }}>{filename}</div>
@@ -79,7 +79,7 @@ export function PdfPreviewModal({ blob, filename, onClose }: Props) {
             {iframeError}
           </div>
         )}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #e5eeff', display: 'flex', gap: 12, justifyContent: 'flex-end', background: '#fafbff' }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--color-caleo-mist)', display: 'flex', gap: 12, justifyContent: 'flex-end', background: '#fafbff' }}>
           <button
             onClick={onClose}
             style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid #e5e7eb', background: 'white', color: '#374151', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}

@@ -48,7 +48,7 @@ export function RiwayatPersetujuanPanel({ orderId }: Props) {
           const isExpanded = expandedIdx === i;
           return (
             <div key={i} style={{
-              background: 'white', borderRadius: 8, border: '1px solid #e5eeff',
+              background: 'white', borderRadius: 8, border: '1px solid var(--color-caleo-mist)',
               padding: 8, fontSize: 12,
             }}>
               <div

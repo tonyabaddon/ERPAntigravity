@@ -219,7 +219,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200 flex items-baseline justify-between">
         <div>
@@ -234,21 +234,21 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
         <div className="flex gap-2">
           <button
             onClick={() => showToast('Export PDF hadir di Phase 4', 'info')}
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors"
+            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
           >
             <FileDown className="w-3.5 h-3.5" />
             PDF
           </button>
           <button
             onClick={() => showToast('Export Excel hadir di Phase 4', 'info')}
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors"
+            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
           >
             <Grid className="w-3.5 h-3.5" />
             Excel
           </button>
           <button
             onClick={() => showToast('Export CSV hadir di Phase 4', 'info')}
-            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors"
+            className="inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
             CSV
@@ -265,7 +265,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
           </label>
           <div
             className="rounded-sm p-2 flex flex-wrap gap-1.5"
-            style={{ border: '1px solid #c7d7f5', background: '#fafbff' }}
+            style={{ border: '1px solid var(--color-caleo-mist-dark)', background: '#fafbff' }}
           >
             {selectedAccounts.map(acc => {
               const color = getAccountTypeColor(acc.account_type);
@@ -294,7 +294,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             {/* Account picker dropdown */}
             {showAccountPicker && (
               <div
-                className="col-span-4 fixed mt-8 bg-white border border-[#c7d7f5] rounded-sm shadow-lg p-3 z-50 max-h-64 overflow-y-auto"
+                className="col-span-4 fixed mt-8 bg-white border border-[var(--color-caleo-mist-dark)] rounded-sm shadow-lg p-3 z-50 max-h-64 overflow-y-auto"
                 style={{ width: '280px' }}
               >
                 {loadingAccounts ? (
@@ -337,7 +337,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Periode
           </label>
           <select
-            className="w-full border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="w-full border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
             value={periodPreset}
             onChange={e => handlePeriodPreset(e.target.value as PeriodPreset)}
           >
@@ -353,7 +353,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Arah
           </label>
           <select
-            className="w-full border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="w-full border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
             value={direction}
             onChange={e => setDirection(e.target.value as DirectionFilter)}
           >
@@ -369,7 +369,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Kategori
           </label>
           <select
-            className="w-full border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="w-full border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
             value={category}
             onChange={e => setCategory(e.target.value)}
           >
@@ -414,7 +414,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
       {/* ── Table ── */}
       <div className="border-t border-gray-200 relative">
         <table className="w-full text-[12px]">
-          <thead style={{ background: '#eff4ff' }}>
+          <thead style={{ background: 'var(--color-caleo-cloud)' }}>
             <tr className="text-[10px] uppercase font-extrabold text-gray-600">
               <th className="text-left py-2 px-3">Tanggal</th>
               <th className="text-left py-2 px-3">Akun</th>
@@ -471,7 +471,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             )}
           </tbody>
           {rows.length > 0 && (
-            <tfoot className="border-t-2" style={{ background: '#eff4ff', borderColor: '#1e40af' }}>
+            <tfoot className="border-t-2" style={{ background: 'var(--color-caleo-cloud)', borderColor: '#1e40af' }}>
               <tr className="font-extrabold" style={{ color: '#1e3d60' }}>
                 <td colSpan={4} className="py-3 px-3 text-right">
                   TOTAL

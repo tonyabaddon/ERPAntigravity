@@ -18,13 +18,13 @@ function accountColor(bank: string) {
 
 export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAddAccount, onUpload }: Props) {
   return (
-    <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[#e5eeff] shadow-sm">
+    <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[var(--color-caleo-mist)] shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🏦 Rekening Aktif</div>
           <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{accounts.length} rekening terdaftar</div>
         </div>
-        <button onClick={onAddAccount} className="bg-slate-50 border border-[#e5eeff] text-[var(--color-caleo-primary)] px-3 py-1.5 rounded-sm text-[10px] font-extrabold">+ Tambah</button>
+        <button onClick={onAddAccount} className="bg-slate-50 border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)] px-3 py-1.5 rounded-sm text-[10px] font-extrabold">+ Tambah</button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {accounts.map(a => {

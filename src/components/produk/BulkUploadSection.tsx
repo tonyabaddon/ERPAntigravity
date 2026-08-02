@@ -235,7 +235,7 @@ export default function BulkUploadSection({
   };
 
   return (
-    <section className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
+    <section className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl hover:shadow-2xl transition-all duration-300">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-sm bg-blue-50 text-[#1e3d60] flex items-center justify-center shrink-0">
@@ -256,7 +256,7 @@ export default function BulkUploadSection({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         <div
           onClick={handleDownloadTemplate}
-          className="bg-[#eff4ff] rounded-sm p-8 border border-transparent hover:border-[#1e3d60]/20 hover:bg-blue-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
+          className="bg-[var(--color-caleo-cloud)] rounded-sm p-8 border border-transparent hover:border-[#1e3d60]/20 hover:bg-blue-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
         >
           <div className="w-16 h-16 rounded-full bg-[#1e3d60] text-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform duration-300">
             <Download className="w-6 h-6" />

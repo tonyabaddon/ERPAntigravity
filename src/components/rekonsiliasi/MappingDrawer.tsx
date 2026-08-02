@@ -109,7 +109,7 @@ export default function MappingDrawer({
       />
       <div className={`fixed right-0 top-0 bottom-0 w-[460px] bg-white z-50 shadow-2xl flex flex-col transition-transform ${open ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Header */}
-        <div className="p-5 border-b border-[#e5eeff]" style={{ background: source.headerBg }}>
+        <div className="p-5 border-b border-[var(--color-caleo-mist)]" style={{ background: source.headerBg }}>
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: source.headerColor }}>🔍 Cari pasangan</div>
@@ -122,19 +122,19 @@ export default function MappingDrawer({
 
         {/* Multi-allocation balance bar */}
         {multiAllocation && (
-          <div className={`px-4 py-2 border-b border-[#e5eeff] flex items-center justify-between text-[11px] font-bold ${overTarget ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+          <div className={`px-4 py-2 border-b border-[var(--color-caleo-mist)] flex items-center justify-between text-[11px] font-bold ${overTarget ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
             <span>Dipilih: {fmt(selectedTotal)}</span>
             <span className="text-slate-500 font-semibold">Target: {fmt(target)}</span>
           </div>
         )}
 
         {/* Search */}
-        <div className="px-4 py-3 border-b border-[#e5eeff]">
+        <div className="px-4 py-3 border-b border-[var(--color-caleo-mist)]">
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Cari nama atau ID…"
-            className="w-full text-xs px-3 py-2 rounded-sm border border-[#e5eeff]"
+            className="w-full text-xs px-3 py-2 rounded-sm border border-[var(--color-caleo-mist)]"
           />
         </div>
 
@@ -153,7 +153,7 @@ export default function MappingDrawer({
                       ? 'border-emerald-400 bg-emerald-50'
                       : c.best
                       ? 'border-emerald-200 bg-emerald-50/50'
-                      : 'border-[#e5eeff]'
+                      : 'border-[var(--color-caleo-mist)]'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -186,7 +186,7 @@ export default function MappingDrawer({
 
             // Single-select mode (default) — unchanged behavior
             return (
-              <div key={c.id} className={`p-3 rounded-sm border mb-2 cursor-pointer ${c.best ? 'border-emerald-400 bg-emerald-50' : 'border-[#e5eeff]'}`}>
+              <div key={c.id} className={`p-3 rounded-sm border mb-2 cursor-pointer ${c.best ? 'border-emerald-400 bg-emerald-50' : 'border-[var(--color-caleo-mist)]'}`}>
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
@@ -198,7 +198,7 @@ export default function MappingDrawer({
                   </div>
                   <div className="text-right">
                     <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(c.amount)}</div>
-                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded-sm text-[10px] font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[#e5eeff] text-[var(--color-caleo-primary)]'}`}>
+                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded-sm text-[10px] font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]'}`}>
                       {c.best ? '✓ Pilih' : 'Pilih'}
                     </button>
                   </div>
@@ -211,7 +211,7 @@ export default function MappingDrawer({
 
         {/* Footer */}
         {multiAllocation ? (
-          <div className="border-t border-[#e5eeff] p-4 space-y-2 bg-slate-50">
+          <div className="border-t border-[var(--color-caleo-mist)] p-4 space-y-2 bg-slate-50">
             <button
               onClick={handleMultiSubmit}
               disabled={submitDisabled}
@@ -230,9 +230,9 @@ export default function MappingDrawer({
             <button onClick={onSkip} className="w-full text-left p-3 rounded-sm bg-white border border-amber-200 text-xs font-extrabold text-amber-700">⏭️ Lewati dulu</button>
           </div>
         ) : (
-          <div className="border-t border-[#e5eeff] p-4 space-y-2 bg-slate-50">
-            <button onClick={onSplit} className="w-full text-left p-3 rounded-sm bg-white border border-[#e5eeff] text-xs font-bold text-[var(--color-caleo-primary)]">🔀 Split — pecah ke beberapa target</button>
-            <button onClick={onClassify} className="w-full text-left p-3 rounded-sm bg-white border border-[#e5eeff] text-xs font-bold text-[var(--color-caleo-primary)]">📝 Klasifikasi lain — topup, biaya, refund</button>
+          <div className="border-t border-[var(--color-caleo-mist)] p-4 space-y-2 bg-slate-50">
+            <button onClick={onSplit} className="w-full text-left p-3 rounded-sm bg-white border border-[var(--color-caleo-mist)] text-xs font-bold text-[var(--color-caleo-primary)]">🔀 Split — pecah ke beberapa target</button>
+            <button onClick={onClassify} className="w-full text-left p-3 rounded-sm bg-white border border-[var(--color-caleo-mist)] text-xs font-bold text-[var(--color-caleo-primary)]">📝 Klasifikasi lain — topup, biaya, refund</button>
             <button onClick={onSkip} className="w-full text-left p-3 rounded-sm bg-white border border-amber-200 text-xs font-extrabold text-amber-700">⏭️ Lewati dulu</button>
           </div>
         )}

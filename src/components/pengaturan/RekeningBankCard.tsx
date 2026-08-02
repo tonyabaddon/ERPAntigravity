@@ -152,13 +152,13 @@ export default function RekeningBankCard({ showToast }: Props) {
         background: 'white',
         borderRadius: 24,
         boxShadow: '0 2px 12px rgba(1,39,73,0.06)',
-        border: '1px solid #e5eeff',
+        border: '1px solid var(--color-caleo-mist)',
         padding: 24,
       }}
     >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
+          <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)]">
             <CreditCard size={20} />
           </div>
           <div>
@@ -184,7 +184,7 @@ export default function RekeningBankCard({ showToast }: Props) {
       ) : (
         <>
           {showForm && (
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-4 mb-4">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-4 mb-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm font-bold text-[var(--color-caleo-primary)]">
                   {editingId ? 'Edit Rekening' : 'Rekening Baru'}
@@ -274,7 +274,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                 <div
                   key={account.id}
                   className={`flex items-center gap-3 p-3 rounded-sm border ${
-                    account.is_active ? 'border-[#c7d7f5] bg-[#fafbff]' : 'border-gray-200 bg-gray-50 opacity-70'
+                    account.is_active ? 'border-[var(--color-caleo-mist-dark)] bg-[#fafbff]' : 'border-gray-200 bg-gray-50 opacity-70'
                   }`}
                 >
                   <button
@@ -301,7 +301,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                     type="button"
                     onClick={() => openEdit(account)}
                     disabled={busyId === account.id || showForm}
-                    className="text-[var(--color-caleo-primary)] hover:bg-[#eff4ff] p-2 rounded-sm disabled:opacity-30"
+                    className="text-[var(--color-caleo-primary)] hover:bg-[var(--color-caleo-cloud)] p-2 rounded-sm disabled:opacity-30"
                     title="Edit"
                   >
                     <Edit2 size={16} />

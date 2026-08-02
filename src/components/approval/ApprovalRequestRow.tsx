@@ -264,7 +264,7 @@ export default function ApprovalRequestRow({
   };
 
   return (
-    <div className="rounded-sm border border-[#e5eeff] p-4 bg-white">
+    <div className="rounded-sm border border-[var(--color-caleo-mist)] p-4 bg-white">
       <div className="flex items-start gap-3">
         <div
           className={`w-9 h-9 rounded-sm ${icon.bg} ${icon.fg} flex items-center justify-center text-base flex-shrink-0`}

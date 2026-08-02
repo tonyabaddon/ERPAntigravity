@@ -41,7 +41,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
       </div>
 
       {/* Preview 1: Daftar Stok */}
-      <div className="bg-white rounded-sm border border-[#e5eeff] p-4 shadow-sm">
+      <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-4 shadow-sm">
         <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Di Daftar Stok</div>
         <div className="bg-slate-50 rounded-sm p-3 flex items-center gap-3 border border-slate-100">
           <div className="w-14 h-14 rounded-sm overflow-hidden bg-slate-300 flex items-center justify-center shrink-0">
@@ -68,7 +68,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
       </div>
 
       {/* Preview 2: Stok per Gudang */}
-      <div className="bg-white rounded-sm border border-[#e5eeff] p-4 shadow-sm">
+      <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Stok per Gudang</div>
           {state.isPendingApproval && (

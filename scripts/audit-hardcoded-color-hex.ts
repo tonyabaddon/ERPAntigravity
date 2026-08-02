@@ -18,6 +18,8 @@ const TOKENIZED_HEX = new Set<string>([
   '#0F146E', '#0095DA', '#E31E52', '#1E3A8A', '#E63946', '#25D366',
   '#E1306C', '#475569',
   '#012749',
+  // Soft-blue "mist" palette tokenized 2026-08-02 (Phase 3.3)
+  '#e5eeff', '#c7d7f5', '#eff4ff',
 ]);
 
 const ALLOWLIST_FILES = new Set<string>([]);
@@ -65,9 +67,10 @@ for (const f of files) {
   }
 }
 
-// Baseline captured 2026-08-02: 1,357 refs across 169 unique colors. Guardrail
-// prevents drift ABOVE baseline. Phase 3 codemod will reduce count.
-const BASELINE_COUNT = 1357;
+// Baseline captured 2026-08-02: 1,031 refs across 166 unique colors after
+// Phase 3.3 codemod (326 refs across #e5eeff/#c7d7f5/#eff4ff tokenized).
+// Guardrail: prevents drift ABOVE baseline. Future codemods reduce further.
+const BASELINE_COUNT = 1031;
 
 const byHex = new Map<string, number>();
 for (const v of violations) {

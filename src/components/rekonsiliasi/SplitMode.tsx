@@ -37,7 +37,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
                 const opt = candidates.find(c => c.id === e.target.value);
                 updateRow(i, { slotId: e.target.value, slotLabel: opt?.label ?? '' });
               }}
-              className="flex-1 px-3 py-2 border border-[#e5eeff] rounded-sm text-xs"
+              className="flex-1 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs"
             >
               <option value="">— pilih target —</option>
               {candidates.map(c => <option key={c.id} value={c.id}>{c.label} ({fmt(c.expected)})</option>)}
@@ -45,7 +45,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
             <NumberInput
               value={r.amount}
               onChange={n => updateRow(i, { amount: n })}
-              className="w-32 px-3 py-2 border border-[#e5eeff] rounded-sm text-xs"
+              className="w-32 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs"
             />
             <button onClick={() => deleteRow(i)} className="text-red-600 px-2">×</button>
           </div>

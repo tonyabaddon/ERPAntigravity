@@ -205,7 +205,7 @@ export default function YearEndCloseModal({
           </div>
 
           {loading && (
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6 text-center text-[13px] text-gray-500">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-6 text-center text-[13px] text-gray-500">
               Memuat snapshot...
             </div>
           )}
@@ -243,12 +243,12 @@ export default function YearEndCloseModal({
               )}
 
               {/* Snapshot */}
-              <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-4 space-y-2">
+              <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-4 space-y-2">
                 <div className="font-extrabold text-[#1e3d60] flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Snapshot {year}
                 </div>
-                <div className="flex justify-between border-t border-[#c7d7f5] pt-2">
+                <div className="flex justify-between border-t border-[var(--color-caleo-mist-dark)] pt-2">
                   <span className="text-gray-600">Total Pendapatan</span>
                   <span className="font-bold text-emerald-700">{formatRp(snapshot.totalPendapatan)}</span>
                 </div>
@@ -293,7 +293,7 @@ export default function YearEndCloseModal({
             type="button"
             onClick={() => !submitting && onClose()}
             disabled={submitting}
-            className="border border-[#c7d7f5] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[#eff4ff] disabled:opacity-50"
+            className="border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[var(--color-caleo-cloud)] disabled:opacity-50"
           >
             Batal
           </button>

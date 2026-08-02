@@ -161,11 +161,11 @@ export default function COAManagementTab({
   const accountCount = accounts.filter(a => a.is_active).length;
 
   return (
-    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
+          <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
             <List className="w-5 h-5" />
           </div>
           <div>
@@ -179,11 +179,11 @@ export default function COAManagementTab({
         {/* ── Filter Bar ── */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Toggle pills */}
-          <div className="flex items-center gap-2 rounded-sm border border-[#c7d7f5] p-1 bg-white">
+          <div className="flex items-center gap-2 rounded-sm border border-[var(--color-caleo-mist-dark)] p-1 bg-white">
             <button
               className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
                 onlyActive
-                  ? 'bg-[#c7d7f5] text-[var(--color-caleo-primary)]'
+                  ? 'bg-[var(--color-caleo-mist-dark)] text-[var(--color-caleo-primary)]'
                   : 'text-gray-600 hover:text-[var(--color-caleo-primary)]'
               }`}
               onClick={() => setOnlyActive(true)}
@@ -193,7 +193,7 @@ export default function COAManagementTab({
             <button
               className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors ${
                 !onlyActive
-                  ? 'bg-[#c7d7f5] text-[var(--color-caleo-primary)]'
+                  ? 'bg-[var(--color-caleo-mist-dark)] text-[var(--color-caleo-primary)]'
                   : 'text-gray-600 hover:text-[var(--color-caleo-primary)]'
               }`}
               onClick={() => setOnlyActive(false)}
@@ -206,7 +206,7 @@ export default function COAManagementTab({
           <input
             type="text"
             placeholder="Cari kode atau nama..."
-            className="flex-1 min-w-[200px] border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="flex-1 min-w-[200px] border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -256,7 +256,7 @@ export default function COAManagementTab({
                       return (
                         <div
                           key={account.id}
-                          className={`bg-[#fafbff] border border-[#c7d7f5] rounded-sm p-3 flex items-center gap-3 transition-opacity ${
+                          className={`bg-[#fafbff] border border-[var(--color-caleo-mist-dark)] rounded-sm p-3 flex items-center gap-3 transition-opacity ${
                             isInactive ? 'opacity-60' : ''
                           }`}
                         >
@@ -299,7 +299,7 @@ export default function COAManagementTab({
                             </div>
                             {isOwner && (
                               <button
-                                className="p-1.5 rounded-sm hover:bg-[#eff4ff] transition-colors text-[var(--color-caleo-primary)]"
+                                className="p-1.5 rounded-sm hover:bg-[var(--color-caleo-cloud)] transition-colors text-[var(--color-caleo-primary)]"
                                 onClick={() => handleEditClick(account)}
                                 title="Edit akun"
                               >

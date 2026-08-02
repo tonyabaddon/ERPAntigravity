@@ -34,7 +34,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
+    <div className="bg-white rounded-sm border border-[var(--color-caleo-mist)] p-6 shadow-sm">
       <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mb-3">Metode Costing Toko</h3>
       <div className="space-y-2 mb-4">
         <label className="flex items-start gap-3 p-3 rounded-sm border border-slate-200 hover:bg-slate-50 cursor-pointer">

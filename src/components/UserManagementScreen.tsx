@@ -321,7 +321,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
         {/* LEFT COLUMN: Add New Admin Form */}
-        <section className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl">
+        <section className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 rounded-sm bg-blue-50 text-[var(--color-caleo-primary)] flex items-center justify-center shrink-0">
               <UserPlus className="w-5 h-5" />
@@ -338,7 +338,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Contoh: Budi Santoso"
-                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -350,7 +350,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="staff@email.com"
-                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -362,7 +362,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newWhatsapp}
                 onChange={(e) => setNewWhatsapp(e.target.value)}
                 placeholder="+62 812..."
-                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -383,7 +383,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                     className={`flex-1 py-2.5 px-3 rounded-sm text-xs font-bold transition-colors border ${
                       newGender === value
                         ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
-                        : 'bg-white text-[#43474e] border-[#e5eeff] hover:border-[#abc9f3]'
+                        : 'bg-white text-[#43474e] border-[var(--color-caleo-mist)] hover:border-[#abc9f3]'
                     }`}
                   >
                     {label}
@@ -398,7 +398,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
-                  className="flex-1 bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30] cursor-pointer"
+                  className="flex-1 bg-[var(--color-caleo-cloud)] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30] cursor-pointer"
                 >
                   <option value="Pilih Peran...">Pilih Peran...</option>
                   {PERMISSION_ROLES.map(r => (
@@ -433,7 +433,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         </section>
 
         {/* RIGHT COLUMN: Admin List with Expandable Permission Rows */}
-        <section className="lg:col-span-8 bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl overflow-hidden">
+        <section className="lg:col-span-8 bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-sm bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0 border border-emerald-100">
@@ -441,7 +441,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
               </div>
               <h3 className="text-[var(--color-caleo-primary)] font-extrabold text-lg leading-tight">Hak Akses Menu Aplikasi</h3>
             </div>
-            <div className="bg-[#eff4ff] px-4 py-2.5 rounded-full border border-blue-50 flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="bg-[var(--color-caleo-cloud)] px-4 py-2.5 rounded-full border border-blue-50 flex items-center gap-2.5 w-full sm:w-auto">
               <Search className="w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -475,10 +475,10 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 );
                 const isExpanded = expandedId === adm.id;
                 return (
-                  <div key={adm.id} className="border border-[#e5eeff] rounded-sm overflow-hidden">
+                  <div key={adm.id} className="border border-[var(--color-caleo-mist)] rounded-sm overflow-hidden">
                     {/* Collapsed row */}
                     <div
-                      className="flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-[#eff4ff]/40 transition-colors"
+                      className="flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-[var(--color-caleo-cloud)]/40 transition-colors"
                       onClick={() => setExpandedId(isExpanded ? null : adm.id)}
                     >
                       <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[var(--color-caleo-primary)] font-black text-sm select-none shrink-0">
@@ -513,7 +513,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
 
                     {/* Expanded permission grid — grouped by category */}
                     {isExpanded && (
-                      <div className="border-t border-[#eff4ff] bg-[#fafbff] px-4 py-5 space-y-5">
+                      <div className="border-t border-[var(--color-caleo-cloud)] bg-[#fafbff] px-4 py-5 space-y-5">
                         {isOwner && (
                           <p className="text-[10px] font-bold text-amber-600 mb-3 flex items-center gap-1.5">
                             <Crown className="w-3 h-3" /> Owner memiliki akses penuh — hak akses tidak dapat diubah.
@@ -531,7 +531,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                                 {entries.map(({ key, label, description }) => (
                                   <label
                                     key={key}
-                                    className={`flex items-center justify-between bg-white border border-[#e5eeff] rounded-sm px-4 py-2.5 gap-3 ${
+                                    className={`flex items-center justify-between bg-white border border-[var(--color-caleo-mist)] rounded-sm px-4 py-2.5 gap-3 ${
                                       isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#abc9f3]'
                                     }`}
                                   >
@@ -568,7 +568,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
             )}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-[#eff4ff] flex justify-between items-center select-none">
+          <div className="mt-6 pt-6 border-t border-[var(--color-caleo-cloud)] flex justify-between items-center select-none">
             <p className="text-xs text-gray-500 font-semibold">
               Menampilkan {filteredAdmins.length} dari total {admins.length} Admin pengurus.
             </p>

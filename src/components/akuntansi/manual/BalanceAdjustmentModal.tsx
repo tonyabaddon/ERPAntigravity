@@ -474,7 +474,7 @@ export default function BalanceAdjustmentModal({
             type="button"
             onClick={() => !saving && onClose()}
             disabled={saving}
-            className="border border-[#c7d7f5] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[#eff4ff] disabled:opacity-50"
+            className="border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] rounded-full text-xs font-bold px-4 py-2 hover:bg-[var(--color-caleo-cloud)] disabled:opacity-50"
           >
             Batal
           </button>

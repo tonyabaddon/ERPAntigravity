@@ -212,7 +212,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
     <div className="space-y-5 animate-fadeIn pb-24">
 
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-[#e5eeff] shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-lg">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-black tracking-widest text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full flex items-center gap-1.5">
@@ -232,13 +232,13 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
               value={selectedDate}
               max={todayISO()}
               onChange={e => setSelectedDate(e.target.value)}
-              className="bg-white border border-[#e5eeff] rounded-sm px-3 py-2 text-xs font-semibold text-[var(--color-caleo-primary)] outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+              className="bg-white border border-[var(--color-caleo-mist)] rounded-sm px-3 py-2 text-xs font-semibold text-[var(--color-caleo-primary)] outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
             />
           )}
           {isOwner && (
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-white border border-[#e5eeff] text-[var(--color-caleo-primary)] hover:border-[var(--color-caleo-primary)] transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)] hover:border-[var(--color-caleo-primary)] transition-all"
             >
               <Printer className="w-3.5 h-3.5" /> Cetak Laporan
             </button>
@@ -305,7 +305,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* Transaction log — takes 2 cols */}
-        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-[#e5eeff] shadow-xl overflow-hidden flex flex-col">
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl overflow-hidden flex flex-col">
           <div className="p-6 pb-3 border-b border-slate-50">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -433,7 +433,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
         <div className="flex flex-col gap-4">
 
           {/* Add transaction */}
-          <div className="bg-white rounded-[2.5rem] border border-[#e5eeff] shadow-xl p-5">
+          <div className="bg-white rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl p-5">
             <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-1">Catat Transaksi</h3>
             <p className="text-[10px] text-gray-400 mb-4">Pilih jenis transaksi</p>
 
@@ -458,7 +458,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
 
           {/* Payment method breakdown — visible to all, for cash drawer check */}
           {!loading && summary && (
-            <div className="bg-white rounded-[2.5rem] border border-[#e5eeff] shadow-xl p-5">
+            <div className="bg-white rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl p-5">
               <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-0.5">Rekap Pembayaran</h3>
               <p className="text-[10px] text-gray-400 mb-3">Cek laci kas & rekening</p>
               <div className="space-y-2">
@@ -481,7 +481,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
 
           {/* Closing summary — owner only */}
           {isOwner && summary && (
-            <div className="bg-white rounded-[2.5rem] border border-[#e5eeff] shadow-xl overflow-hidden">
+            <div className="bg-white rounded-[2.5rem] border border-[var(--color-caleo-mist)] shadow-xl overflow-hidden">
               <div className="p-5 pb-4">
                 <h3 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-1">Tutup Buku Harian</h3>
                 <p className="text-[10px] text-gray-400 mb-4">Ringkasan &amp; cetak laporan</p>

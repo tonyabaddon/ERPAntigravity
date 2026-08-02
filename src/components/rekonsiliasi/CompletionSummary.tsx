@@ -10,7 +10,7 @@ interface Props {
 export default function CompletionSummary({ orderPct, mutasiPct, cashPct }: Props) {
   const total = Math.round((orderPct + mutasiPct + cashPct) / 3);
   return (
-    <div className="bg-white/85 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[#e5eeff] shadow-sm flex items-center justify-between">
+    <div className="bg-white/85 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[var(--color-caleo-mist)] shadow-sm flex items-center justify-between">
       <div>
         <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🎯 Target Final · Semua Punya Pasangan</div>
         <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Tutup buku diizinkan setelah ketiga kolom 100% atau reason untuk yang tidak match</div>

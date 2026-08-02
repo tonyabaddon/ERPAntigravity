@@ -67,8 +67,8 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
   const dropdownValue = FILTER_GROUP_SET.has(filter) ? '' : filter;
 
   return (
-    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm flex flex-col overflow-hidden">
-      <div className="px-4 py-4 border-b border-[#e5eeff]">
+    <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[var(--color-caleo-mist)] shadow-sm flex flex-col overflow-hidden">
+      <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="flex items-center justify-between">
           <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📋 Order Penjualan</div>
           <span className="text-[10px] text-slate-500 font-bold">{paired}/{orders.length} · {pct}%</span>

@@ -912,7 +912,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       </span>
                       <button
                         onClick={() => setInvoiceOrder(order)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-white text-[var(--color-caleo-primary)] text-xs font-bold rounded-sm border border-[#c7d7f5] hover:bg-blue-50"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-white text-[var(--color-caleo-primary)] text-xs font-bold rounded-sm border border-[var(--color-caleo-mist-dark)] hover:bg-blue-50"
                       >
                         📄 Lihat Invoice
                       </button>

@@ -115,7 +115,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
   return (
     <div className="space-y-8 animate-fadeIn pb-24">
       {/* Upper Brand Info card */}
-      <section className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl">
+      <section className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl">
         <div className="flex flex-col gap-6">
           <div className="max-w-4xl">
             <div className="flex items-center gap-4 mb-5">
@@ -139,7 +139,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
             {/* Config controls Grid matching screen 5 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Box 1: Status */}
-              <div className="bg-[#eff4ff]/60 p-6 rounded-sm flex flex-col justify-between hover:bg-white hover:shadow-lg hover:border-slate-100 border border-transparent transition-all group select-none">
+              <div className="bg-[var(--color-caleo-cloud)]/60 p-6 rounded-sm flex flex-col justify-between hover:bg-white hover:shadow-lg hover:border-slate-100 border border-transparent transition-all group select-none">
                 <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">Status Layanan</span>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Aktifkan Laporan</span>
@@ -156,7 +156,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               </div>
 
               {/* Box 2: Interval */}
-              <div className="bg-[#eff4ff]/60 p-6 rounded-sm flex flex-col justify-between hover:bg-white hover:shadow-lg hover:border-slate-100 border border-transparent transition-all group cursor-pointer relative">
+              <div className="bg-[var(--color-caleo-cloud)]/60 p-6 rounded-sm flex flex-col justify-between hover:bg-white hover:shadow-lg hover:border-slate-100 border border-transparent transition-all group cursor-pointer relative">
                 <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">Interval Pengiriman</span>
                 <div className="relative">
                   <select 
@@ -241,7 +241,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
       {/* Grid containing secondary limit thresholds cards */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Alert Card 1: Low stock notification limits */}
-        <div className="bg-white border border-[#e5eeff] rounded-[2.5rem] p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
+        <div className="bg-white border border-[var(--color-caleo-mist)] rounded-[2.5rem] p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-sm flex items-center justify-center shrink-0 border border-rose-100">
               <span className="material-symbols-outlined text-3xl font-black">inventory_2</span>
@@ -252,9 +252,9 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#eff4ff]/60 p-6 rounded-sm border border-transparent hover:border-slate-100 hover:bg-white transition-all duration-300">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[var(--color-caleo-cloud)]/60 p-6 rounded-sm border border-transparent hover:border-slate-100 hover:bg-white transition-all duration-300">
             <span className="text-xs font-bold text-slate-700 leading-none">Picu notifikasi jika stok kurang dari</span>
-            <div className="flex items-center gap-2 bg-[#eff4ff] px-4 py-2 rounded-full border border-blue-50 shrink-0">
+            <div className="flex items-center gap-2 bg-[var(--color-caleo-cloud)] px-4 py-2 rounded-full border border-blue-50 shrink-0">
               <input
                 type="number"
                 min="1"
@@ -273,7 +273,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
         </div>
 
         {/* Alert Card 2: Delay thresholds */}
-        <div className="bg-white border border-[#e5eeff] rounded-[2.5rem] p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
+        <div className="bg-white border border-[var(--color-caleo-mist)] rounded-[2.5rem] p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-sm flex items-center justify-center shrink-0 border border-amber-100">
               <span className="material-symbols-outlined text-3xl font-black">timer</span>
@@ -284,9 +284,9 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#eff4ff]/60 p-6 rounded-sm border border-transparent hover:border-slate-100 hover:bg-white transition-all duration-300">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[var(--color-caleo-cloud)]/60 p-6 rounded-sm border border-transparent hover:border-slate-100 hover:bg-white transition-all duration-300">
             <span className="text-xs font-bold text-slate-700 leading-none">Picu peringatan jika respon terhambat lebih dari</span>
-            <div className="flex items-center gap-2 bg-[#eff4ff] px-4 py-2 rounded-full border border-blue-50 shrink-0">
+            <div className="flex items-center gap-2 bg-[var(--color-caleo-cloud)] px-4 py-2 rounded-full border border-blue-50 shrink-0">
               <input
                 type="number"
                 min="1"
@@ -309,7 +309,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
           (2026-06-12 e2e audit). Read-only mirror keeps the operator
           aware of who receives the heartbeat while the canonical source
           stays in Pengaturan. */}
-      <section className="bg-white border border-[#e5eeff] rounded-[2.5rem] p-8 shadow-xl">
+      <section className="bg-white border border-[var(--color-caleo-mist)] rounded-[2.5rem] p-8 shadow-xl">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-sm flex items-center justify-center shrink-0 border border-emerald-100">

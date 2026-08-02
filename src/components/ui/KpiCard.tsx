@@ -24,7 +24,7 @@ export default function KpiCard({
 }: KpiCardProps) {
   const cardCls = alarming
     ? 'bg-rose-50/50 border-rose-100 shadow-rose-50/50'
-    : 'bg-white border-[#e5eeff] shadow-primary/5';
+    : 'bg-white border-[var(--color-caleo-mist)] shadow-primary/5';
   return (
     <div className={`rounded-sm p-6 border shadow-lg hover:translate-y-[-4px] transition-all duration-300 ${cardCls}`}>
       <div className="flex justify-between items-start mb-4">

@@ -1086,7 +1086,7 @@ export default function App() {
           <SalesChannelsProvider>
           <div
             className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex font-sans"
-            style={{ background: 'radial-gradient(circle at 70% 80%, #eff4ff 0%, #f8f9ff 100%)' }}
+            style={{ background: 'radial-gradient(circle at 70% 80%, var(--color-caleo-cloud) 0%, #f8f9ff 100%)' }}
           >
             {toastMessage && (
               <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-bounce-subtle">
@@ -1122,7 +1122,7 @@ export default function App() {
                       type="text"
                       placeholder="Cari menu..."
                       onClick={() => triggerToast("Gunakan pintasan navigasi di sidebar untuk berpindah tab.", 'info')}
-                      className="bg-[#eff4ff] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+                      className="bg-[var(--color-caleo-cloud)] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
                     />
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
                   </div>
@@ -1218,7 +1218,7 @@ export default function App() {
     <SalesChannelsProvider>
     <div
       className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex font-sans"
-      style={{ background: 'radial-gradient(circle at 70% 80%, #eff4ff 0%, #f8f9ff 100%)' }}
+      style={{ background: 'radial-gradient(circle at 70% 80%, var(--color-caleo-cloud) 0%, #f8f9ff 100%)' }}
     >
       {/* Dynamic Animated Success / Alert Toaster */}
       {toastMessage && (
@@ -1269,7 +1269,7 @@ export default function App() {
                 type="text" 
                 placeholder="Cari menu..." 
                 onClick={() => triggerToast("🔍 Gunakan pintasan navigasi di sidebar untuk berpindah tab.", 'info')}
-                className="bg-[#eff4ff] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+                className="bg-[var(--color-caleo-cloud)] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
             </div>

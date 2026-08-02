@@ -217,11 +217,11 @@ export default function TrialBalanceTab({
     : 'Periode —';
 
   return (
-    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
+          <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
             <Scale className="w-5 h-5" />
           </div>
           <div>
@@ -235,7 +235,7 @@ export default function TrialBalanceTab({
         <div className="flex items-center gap-2 shrink-0">
           {/* Period selector */}
           <select
-            className="border border-[#c7d7f5] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white w-44 focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
+            className="border border-[var(--color-caleo-mist-dark)] rounded-sm px-3 py-1.5 text-xs text-[#43474e] bg-white w-44 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
             value={selectedPeriod?.id ?? ''}
             onChange={e => handlePeriodChange(e.target.value)}
             disabled={loading || periods.length === 0}
@@ -252,14 +252,14 @@ export default function TrialBalanceTab({
 
           {/* Export placeholders */}
           <button
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[#c7d7f5] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
             onClick={() => showToast('Export PDF/Excel hadir di Phase 4 Laporan', 'info')}
           >
             <FileDown className="w-3.5 h-3.5" />
             PDF
           </button>
           <button
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[#c7d7f5] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white text-xs text-[#43474e] font-medium hover:bg-[#f5f7ff] transition-colors"
             onClick={() => showToast('Export PDF/Excel hadir di Phase 4 Laporan', 'info')}
           >
             <Grid className="w-3.5 h-3.5" />
@@ -301,7 +301,7 @@ export default function TrialBalanceTab({
 
       {/* ── Table area ── */}
       <div className="px-6 pb-6 mt-6">
-        <div className="rounded-sm border border-[#c7d7f5] overflow-hidden">
+        <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] overflow-hidden">
           {loading ? (
             <div className="py-16 text-center text-[13px] text-gray-500">Memuat...</div>
           ) : rows.length === 0 ? (
@@ -310,7 +310,7 @@ export default function TrialBalanceTab({
             </div>
           ) : (
             <table className="w-full text-[12px]">
-              <thead style={{ background: '#eff4ff' }}>
+              <thead style={{ background: 'var(--color-caleo-cloud)' }}>
                 <tr className="text-[10px] uppercase font-extrabold text-gray-600">
                   <th className="text-left py-2 px-3">Kode</th>
                   <th className="text-left py-2 px-3">Nama Akun</th>
@@ -363,7 +363,7 @@ export default function TrialBalanceTab({
                   );
                 })}
               </tbody>
-              <tfoot style={{ background: '#eff4ff' }}>
+              <tfoot style={{ background: 'var(--color-caleo-cloud)' }}>
                 <tr
                   className="font-extrabold border-t-2"
                   style={{ color: 'var(--color-caleo-primary)', borderColor: '#1e40af' }}

@@ -241,7 +241,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] bg-white overflow-hidden">
       {/* ── Hero header ── */}
       <div
         className="p-6 text-white text-center"
@@ -266,7 +266,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
             className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
               periodPreset === preset
                 ? 'bg-emerald-700 text-white'
-                : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
+                : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'
             }`}
           >
             {preset === 'bulan-ini'
@@ -499,14 +499,14 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
               <button
                 onClick={handlePdfExport}
                 disabled={exporting || !data}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 {exporting ? 'Menghasilkan...' : 'PDF SAK EMKM'}
               </button>
               <button
                 onClick={() => showToast('Export Excel akan hadir segera', 'info')}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff] transition-colors"
+                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
               >
                 <Grid className="w-3.5 h-3.5" />
                 Excel

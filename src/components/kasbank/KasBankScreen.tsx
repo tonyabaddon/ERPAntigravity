@@ -62,7 +62,7 @@ function accountIconConfig(type: CashAccountType): IconTileConfig {
     case 'E_WALLET':
       return { bgClass: 'bg-amber-100', textClass: 'text-amber-800', Icon: Bike };
     default:
-      return { bgClass: 'bg-[#eff4ff]', textClass: 'text-[var(--color-caleo-primary)]', Icon: Wallet };
+      return { bgClass: 'bg-[var(--color-caleo-cloud)]', textClass: 'text-[var(--color-caleo-primary)]', Icon: Wallet };
   }
 }
 
@@ -160,7 +160,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
 
   return (
     <div
-      className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-5 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
+      className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-5 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -294,7 +294,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
+          <div className="w-11 h-11 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)]">
             <Wallet className="w-5 h-5" />
           </div>
           <div>
@@ -350,7 +350,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
         </div>
 
         {businessAccounts.length === 0 ? (
-          <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-8 text-center text-[13px] text-gray-500">
+          <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-8 text-center text-[13px] text-gray-500">
             Belum ada akun bisnis.{' '}
             {isOwner && (
               <button
@@ -404,7 +404,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
       {/* Full empty state — no accounts at all */}
       {accounts.length === 0 && (
-        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-12 text-center text-[13px] text-gray-500 mt-2">
+        <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-12 text-center text-[13px] text-gray-500 mt-2">
           <Wallet className="w-8 h-8 mx-auto mb-3 text-gray-300" />
           <p className="font-bold text-gray-700 mb-1">Belum ada akun kas atau bank</p>
           <p className="text-gray-500 text-xs mb-4">

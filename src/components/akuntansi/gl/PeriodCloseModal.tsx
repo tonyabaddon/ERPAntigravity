@@ -267,8 +267,8 @@ export default function PeriodCloseModal({
         {/* ── Body ── */}
         <div className="px-6 py-5 space-y-4">
           {/* Snapshot sub-card */}
-          <div className="rounded-sm border border-[#c7d7f5] overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-[#c7d7f5]" style={{ background: '#eff4ff' }}>
+          <div className="rounded-sm border border-[var(--color-caleo-mist-dark)] overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-[var(--color-caleo-mist-dark)]" style={{ background: 'var(--color-caleo-cloud)' }}>
               <span className="text-[11px] font-bold text-[var(--color-caleo-primary)] uppercase tracking-wide">
                 Snapshot Periode
               </span>
