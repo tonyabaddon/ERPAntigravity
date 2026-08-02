@@ -43,10 +43,10 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
           className="px-4 py-4 border-b"
           style={{ borderColor: '#ECEEF1' }}
         >
-          <h2 className="text-[14px] font-bold" style={{ color: '#0B2545' }}>
+          <h2 className="text-sm font-bold" style={{ color: '#0B2545' }}>
             Tolak Pembayaran
           </h2>
-          <p className="text-[12px] mt-0.5" style={{ color: '#6B7C93' }}>
+          <p className="text-xs mt-0.5" style={{ color: '#6B7C93' }}>
             Tenant: <span className="font-semibold">{tenantName}</span>
           </p>
         </div>
@@ -56,7 +56,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="reject-reason"
-              className="text-[13px] font-medium"
+              className="text-caleo-13 font-medium"
               style={{ color: '#0B2545' }}
             >
               Alasan penolakan
@@ -68,7 +68,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
               rows={3}
               required
               placeholder="Contoh: Bukti transfer tidak terbaca atau nominal tidak sesuai..."
-              className="rounded px-3 py-2 text-[13px] resize-none outline-none"
+              className="rounded px-3 py-2 text-caleo-13 resize-none outline-none"
               style={{
                 border: '1px solid #CBD5E1',
                 color: '#0B2545',
@@ -84,7 +84,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded text-[13px] font-medium transition-colors"
+              className="px-4 py-2 rounded text-caleo-13 font-medium transition-colors"
               style={{ border: '1px solid #CBD5E1', color: '#0B2545', background: 'white' }}
               data-testid="reject-modal-cancel"
             >
@@ -93,7 +93,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
             <button
               type="submit"
               disabled={submitting || !reason.trim()}
-              className="px-4 py-2 rounded text-[13px] font-medium transition-colors"
+              className="px-4 py-2 rounded text-caleo-13 font-medium transition-colors"
               style={{
                 background: submitting || !reason.trim() ? '#FCA5A5' : '#DC2626',
                 color: 'white',

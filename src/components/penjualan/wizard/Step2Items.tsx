@@ -123,8 +123,8 @@ export default function Step2Items(props: Props) {
                 <div key={s.sku} className="px-4 py-3 hover:bg-slate-50 flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold">{s.name}</div>
-                    <div className="text-[11px] text-slate-500">SKU: {s.sku} · {formatRp(s.price)}</div>
-                    <div className="text-[11px] mt-0.5">
+                    <div className="text-caleo-11 text-slate-500">SKU: {s.sku} · {formatRp(s.price)}</div>
+                    <div className="text-caleo-11 mt-0.5">
                       <span className={atas > 0 ? 'text-emerald-600' : 'text-rose-600'}>Atas: {atas}</span>
                       <span className="text-slate-400"> · </span>
                       <span className={bawah > 0 ? 'text-emerald-600' : 'text-rose-600'}>Bawah: {bawah}</span>
@@ -146,7 +146,7 @@ export default function Step2Items(props: Props) {
 
         {/* + Produk Baru affordance — always visible below results */}
         {!showNewProductForm && (
-          <div className="mt-3 flex items-center justify-between text-[11px]">
+          <div className="mt-3 flex items-center justify-between text-caleo-11">
             <div className="text-slate-500">
               {q.trim().length > 0 && filtered.length === 0
                 ? 'Produk tidak ketemu di daftar?'
@@ -181,7 +181,7 @@ export default function Step2Items(props: Props) {
             formType={props.rakitFormType}
             onOpen={props.onOpenRakitForm}
           />
-          <p className="text-[11px] text-slate-500 mt-1.5 italic">Skip jasa kalau pesanan ini cuma jual komponen.</p>
+          <p className="text-caleo-11 text-slate-500 mt-1.5 italic">Skip jasa kalau pesanan ini cuma jual komponen.</p>
         </div>
 
         {props.rakitFormOpen && props.rakitFormType && (
@@ -241,7 +241,7 @@ export default function Step2Items(props: Props) {
             <button
               type="button"
               onClick={props.onClearCart}
-              className="text-[11px] text-rose-600 font-semibold hover:underline"
+              className="text-caleo-11 text-rose-600 font-semibold hover:underline"
             >
               × Kosongkan
             </button>
@@ -269,7 +269,7 @@ export default function Step2Items(props: Props) {
         />
 
         {preOrderCount > 0 && (
-          <div className="mt-3 px-3 py-2 rounded bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
+          <div className="mt-3 px-3 py-2 rounded bg-amber-50 border border-amber-200 text-caleo-11 text-amber-800 flex items-start gap-2">
             <span>⏳</span>
             <div>
               <strong>{preOrderCount} item pre-order</strong> di pesanan ini — stok minus akan dipenuhi setelah supplier kirim

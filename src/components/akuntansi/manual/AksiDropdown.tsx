@@ -295,7 +295,7 @@ export default function AksiDropdown({
               <button
                 role="menuitem"
                 onClick={() => handleAction(item.action)}
-                className={`block w-full text-left px-4 py-2 text-[13px] flex items-center gap-2 ${item.hoverBg} ${
+                className={`block w-full text-left px-4 py-2 text-caleo-13 flex items-center gap-2 ${item.hoverBg} ${
                   item.textColor || ''
                 }`}
                 style={{

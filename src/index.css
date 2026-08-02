@@ -52,6 +52,16 @@
   --radius-xl: 4px;
   --radius-signature: 4px;
 
+  /* Caleo typography size tokens (2026-08-02 v1). Fill in-between sizes not
+     covered by Tailwind defaults (xs=12, sm=14, base=16, lg=18, xl=20, 2xl=24).
+     Font-size only, no line-height binding — matches current text-[Npx] behavior.
+     Per spec docs/superpowers/specs/2026-08-02-typography-scale-design.md */
+  --text-caleo-9:  9px;
+  --text-caleo-10: 10px;
+  --text-caleo-11: 11px;
+  --text-caleo-13: 13px;
+  --text-caleo-15: 15px;
+
   /* Sales channel brand colors (D17) — used as background for icon containers + chart segments + pill border */
   --color-channel-walkin:    #64748B;
   --color-channel-grosir:    #7C3AED;

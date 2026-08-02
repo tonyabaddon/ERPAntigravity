@@ -170,10 +170,10 @@ export function AuditLogViewer() {
       {/* Page header */}
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div>
-          <h1 className="text-[16px] font-bold" style={{ color: C.navy }}>
+          <h1 className="text-base font-bold" style={{ color: C.navy }}>
             Log Aktivitas
           </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: C.muted }}>
+          <p className="text-caleo-13 mt-0.5" style={{ color: C.muted }}>
             {loading ? 'Memuat…' : `${events.length} entri`}
             {page > 1 && ` (halaman ${page})`}
           </p>
@@ -181,7 +181,7 @@ export function AuditLogViewer() {
         <button
           onClick={() => downloadCsv(events)}
           disabled={events.length === 0 || loading}
-          className="border rounded px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
+          className="border rounded px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
           style={{ borderColor: C.surface, color: C.navy, background: '#ffffff' }}
           aria-label="Ekspor CSV"
         >
@@ -193,11 +193,11 @@ export function AuditLogViewer() {
       <div className="flex flex-wrap gap-2 items-end">
         {/* Action code filter */}
         <label className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-medium" style={{ color: C.slate }}>Aksi</span>
+          <span className="text-caleo-11 font-medium" style={{ color: C.slate }}>Aksi</span>
           <select
             value={actionCode}
             onChange={(e) => handleFilterChange(setActionCode)(e.target.value)}
-            className="border rounded px-3 py-1.5 text-[12px] focus-visible:outline-none"
+            className="border rounded px-3 py-1.5 text-xs focus-visible:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '170px' }}
             aria-label="Filter aksi"
           >
@@ -211,13 +211,13 @@ export function AuditLogViewer() {
 
         {/* Actor (email) filter */}
         <label className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-medium" style={{ color: C.slate }}>Pelaku</span>
+          <span className="text-caleo-11 font-medium" style={{ color: C.slate }}>Pelaku</span>
           <input
             type="text"
             placeholder="Cari email admin…"
             value={actorInput}
             onChange={(e) => handleActorChange(e.target.value)}
-            className="border rounded px-3 py-1.5 text-[12px] focus-visible:outline-none"
+            className="border rounded px-3 py-1.5 text-xs focus-visible:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '180px' }}
             aria-label="Filter pelaku"
           />
@@ -225,7 +225,7 @@ export function AuditLogViewer() {
 
         {/* Date range: Dari */}
         <label className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-medium" style={{ color: C.slate }}>Rentang tanggal</span>
+          <span className="text-caleo-11 font-medium" style={{ color: C.slate }}>Rentang tanggal</span>
           <div className="flex gap-1 items-center">
             <input
               type="date"
@@ -234,11 +234,11 @@ export function AuditLogViewer() {
               onChange={(e) => {
                 handleFilterChange(setFromDate)(e.target.value);
               }}
-              className="border rounded px-2 py-1.5 text-[12px] focus-visible:outline-none"
+              className="border rounded px-2 py-1.5 text-xs focus-visible:outline-none"
               style={{ borderColor: C.surface, color: C.ink }}
               aria-label="Dari tanggal"
             />
-            <span className="text-[12px]" style={{ color: C.muted }}>–</span>
+            <span className="text-xs" style={{ color: C.muted }}>–</span>
             <input
               type="date"
               placeholder="Sampai"
@@ -246,7 +246,7 @@ export function AuditLogViewer() {
               onChange={(e) => {
                 handleFilterChange(setToDate)(e.target.value);
               }}
-              className="border rounded px-2 py-1.5 text-[12px] focus-visible:outline-none"
+              className="border rounded px-2 py-1.5 text-xs focus-visible:outline-none"
               style={{ borderColor: C.surface, color: C.ink }}
               aria-label="Sampai tanggal"
             />
@@ -255,13 +255,13 @@ export function AuditLogViewer() {
 
         {/* Free-text search */}
         <label className="flex flex-col gap-0.5">
-          <span className="text-[11px] font-medium" style={{ color: C.slate }}>Cari</span>
+          <span className="text-caleo-11 font-medium" style={{ color: C.slate }}>Cari</span>
           <input
             type="text"
             placeholder="Cari aksi / email…"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="border rounded px-3 py-1.5 text-[12px] focus-visible:outline-none"
+            className="border rounded px-3 py-1.5 text-xs focus-visible:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '180px' }}
             aria-label="Cari log"
           />
@@ -271,14 +271,14 @@ export function AuditLogViewer() {
       {/* Error inline retry */}
       {error && !loading && (
         <div
-          className="border rounded px-4 py-3 text-[13px] flex items-center justify-between"
+          className="border rounded px-4 py-3 text-caleo-13 flex items-center justify-between"
           style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
           data-testid="audit-viewer-error"
         >
           <span>Gagal memuat log: {error}</span>
           <button
             onClick={() => fetchEvents(filters)}
-            className="ml-4 px-3 py-1 rounded border font-medium text-[12px] hover:opacity-80"
+            className="ml-4 px-3 py-1 rounded border font-medium text-xs hover:opacity-80"
             style={{ borderColor: C.danger, color: C.danger }}
           >
             Coba lagi
@@ -296,7 +296,7 @@ export function AuditLogViewer() {
       {/* Pagination — only shown when not loading and there's more than 1 page */}
       {!loading && (page > 1 || hasMore) && (
         <div
-          className="flex justify-between items-center text-[12px]"
+          className="flex justify-between items-center text-xs"
           style={{ color: C.muted }}
         >
           <span>

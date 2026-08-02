@@ -145,7 +145,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
             ? `Error: ${checkError}`
             : `Tutup Buku Tahun ${fiscalYear}`
         }
-        className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
           background: isDisabled ? '#f3f4f6' : '#fef3c7',
           borderWidth: 1,
@@ -176,7 +176,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-amber-700" />
-                <h2 className="text-[15px] font-bold text-gray-900">
+                <h2 className="text-caleo-15 font-bold text-gray-900">
                   Tutup Buku Tahun {fiscalYear}?
                 </h2>
               </div>
@@ -194,14 +194,14 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
             {/* Modal body */}
             <div className="px-6 py-5 space-y-4">
               {previewLoading && (
-                <div className="flex items-center justify-center py-8 text-[13px] text-gray-500">
+                <div className="flex items-center justify-center py-8 text-caleo-13 text-gray-500">
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   Memuat preview...
                 </div>
               )}
 
               {previewError && (
-                <div className="rounded px-4 py-3 text-[13px] text-rose-700 bg-rose-50 border border-rose-200">
+                <div className="rounded px-4 py-3 text-caleo-13 text-rose-700 bg-rose-50 border border-rose-200">
                   Gagal memuat preview: {previewError}
                 </div>
               )}
@@ -211,11 +211,11 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
                   {/* Preview block */}
                   <div className="rounded border border-amber-200 bg-amber-50 overflow-hidden">
                     <div className="px-4 py-2 border-b border-amber-200">
-                      <p className="text-[12px] font-bold uppercase tracking-wide text-amber-900">
+                      <p className="text-xs font-bold uppercase tracking-wide text-amber-900">
                         Preview Tahun {fiscalYear}
                       </p>
                     </div>
-                    <div className="px-4 py-3 space-y-2 text-[13px]">
+                    <div className="px-4 py-3 space-y-2 text-caleo-13">
                       <div className="flex justify-between">
                         <span className="text-gray-700">Total Pendapatan {fiscalYear}</span>
                         <span className="font-mono font-bold text-emerald-800">
@@ -230,7 +230,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
                       </div>
                       <div className="flex justify-between border-t border-amber-200 pt-2 mt-1">
                         <span className="font-bold text-gray-900">Net Income</span>
-                        <span className={`font-mono font-bold text-[14px] ${
+                        <span className={`font-mono font-bold text-sm ${
                           preview.net_income >= 0 ? 'text-emerald-800' : 'text-rose-800'
                         }`}>
                           {preview.net_income < 0
@@ -239,19 +239,19 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
                           }
                         </span>
                       </div>
-                      <div className="text-[11px] text-amber-800 italic pt-1">
+                      <div className="text-caleo-11 text-amber-800 italic pt-1">
                         &rarr; Transfer ke Laba Ditahan
                       </div>
                     </div>
                   </div>
 
                   {/* Explanation */}
-                  <div className="text-[12px] text-gray-600 space-y-1">
+                  <div className="text-xs text-gray-600 space-y-1">
                     <p>Sistem akan membuat Jurnal Umum yang me-nol-kan semua akun
                     Pendapatan &amp; Beban {fiscalYear} dan mentransfer selisihnya ke
                     <strong> Laba Ditahan</strong>. Laporan Laba Rugi {fiscalYear + 1}
                     akan mulai dari 0.</p>
-                    <p className="text-amber-800 text-[11px]">
+                    <p className="text-amber-800 text-caleo-11">
                       Reverse via menu <strong>Mutasi</strong> jika perlu koreksi.
                     </p>
                   </div>
@@ -264,7 +264,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
                       onChange={e => setConfirmed(e.target.checked)}
                       className="mt-0.5 h-4 w-4 rounded accent-amber-700 cursor-pointer"
                     />
-                    <span className="text-[13px] text-gray-800">
+                    <span className="text-caleo-13 text-gray-800">
                       Saya sudah verify semua transaksi <strong>{fiscalYear}</strong> sudah lengkap dan benar
                     </span>
                   </label>
@@ -277,14 +277,14 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
               <button
                 onClick={() => setModalOpen(false)}
                 disabled={submitting}
-                className="px-4 py-2 rounded-full text-[13px] font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-full text-caleo-13 font-bold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!confirmed || !preview || submitting || previewLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-caleo-13 font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
                   background: '#92400e',
                   color: '#fff',

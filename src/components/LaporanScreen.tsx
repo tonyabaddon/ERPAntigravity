@@ -50,12 +50,12 @@ function formatRupiah(val: number): string {
 function DeltaBadge({ current, previous }: { current: number; previous: number }) {
   const d: DeltaResult = computeDelta(current, previous);
   if (d.pct == null) {
-    return <span className="text-[11px] text-slate-400">— tidak ada data periode sebelumnya</span>;
+    return <span className="text-caleo-11 text-slate-400">— tidak ada data periode sebelumnya</span>;
   }
   const arrow = d.direction === 'up' ? '▲' : d.direction === 'down' ? '▼' : '—';
   const cls = d.direction === 'up' ? 'text-emerald-600' : d.direction === 'down' ? 'text-rose-600' : 'text-slate-500';
   return (
-    <span className={`text-[11px] font-semibold ${cls}`}>
+    <span className={`text-caleo-11 font-semibold ${cls}`}>
       {arrow} {d.pct > 0 ? '+' : ''}{d.pct}% vs periode sebelumnya
     </span>
   );
@@ -273,7 +273,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
                       <span className="font-semibold text-slate-700">{row.channel}</span>
                       <span className="font-bold text-emerald-700">{Math.round(row.margin_pct)}%</span>
                     </div>
-                    <div className="mt-0.5 text-[11px] text-slate-500">
+                    <div className="mt-0.5 text-caleo-11 text-slate-500">
                       {formatRupiah(row.revenue)} · Profit {formatRupiah(row.gross_profit)}
                     </div>
                   </div>

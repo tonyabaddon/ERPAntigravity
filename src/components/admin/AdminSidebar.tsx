@@ -191,7 +191,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 flex flex-col gap-0.5" aria-label="Admin navigasi">
         <div
-          className="px-2 mb-1 text-[11px] font-bold uppercase tracking-widest"
+          className="px-2 mb-1 text-caleo-11 font-bold uppercase tracking-widest"
           style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
         >
           Menu
@@ -206,7 +206,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
               href={item.to}
               onClick={(e) => handleAdminSPAClick(e, item.to)}
               aria-current={active ? 'page' : undefined}
-              className="flex items-center gap-2.5 px-3 py-2 rounded text-[13px] font-medium transition-colors"
+              className="flex items-center gap-2.5 px-3 py-2 rounded text-caleo-13 font-medium transition-colors"
               style={{
                 background: active ? '#0B2545' : 'transparent',
                 color: active ? '#ffffff' : '#0B2545',
@@ -231,7 +231,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
               <span>{item.label}</span>
               {badgeCount !== undefined && badgeCount > 0 && (
                 <span
-                  className="ml-auto text-[11px] font-bold px-1.5 py-0.5 rounded-full"
+                  className="ml-auto text-caleo-11 font-bold px-1.5 py-0.5 rounded-full"
                   style={{
                     background: item.badgeSource === 'pendingPayments' ? '#DC2626' : '#F9B233',
                     color: item.badgeSource === 'pendingPayments' ? '#ffffff' : '#0B2545',

@@ -48,9 +48,9 @@ export default function NextActionBanner({ reviewCount, cashPending, piutangCoun
       <div className="flex items-center gap-3">
         <div className="text-3xl">🎯</div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Langkah selanjutnya</div>
+          <div className="text-caleo-10 font-black uppercase tracking-widest text-emerald-300">Langkah selanjutnya</div>
           <div className="text-base font-black mt-0.5">{text}</div>
-          <div className="text-[11px] font-semibold mt-0.5 opacity-80">{detail}</div>
+          <div className="text-caleo-11 font-semibold mt-0.5 opacity-80">{detail}</div>
         </div>
       </div>
       <button

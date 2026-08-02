@@ -422,7 +422,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                     />
                   </div>
                   {signInSent && (
-                    <p className="text-[11px] text-gray-500 italic px-2">
+                    <p className="text-caleo-11 text-gray-500 italic px-2">
                       Cek email Anda untuk kode OTP dari Supabase.
                     </p>
                   )}

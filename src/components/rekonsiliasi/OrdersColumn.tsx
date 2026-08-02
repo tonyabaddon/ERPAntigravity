@@ -70,8 +70,8 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[var(--color-caleo-mist)] shadow-sm flex flex-col overflow-hidden">
       <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="flex items-center justify-between">
-          <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📋 Order Penjualan</div>
-          <span className="text-[10px] text-slate-500 font-bold">{paired}/{orders.length} · {pct}%</span>
+          <div className="text-caleo-11 font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📋 Order Penjualan</div>
+          <span className="text-caleo-10 text-slate-500 font-bold">{paired}/{orders.length} · {pct}%</span>
         </div>
         <div className="h-1.5 mt-2 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: pct + '%' }} />
@@ -114,14 +114,14 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-[var(--color-caleo-primary)]">#{o.id.slice(0, 6)} · {o.customer_name}</span>
                     <span
-                      className="text-[10px] font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1 text-white"
+                      className="text-caleo-10 font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1 text-white"
                       style={{ background: def.brandColor }}
                     >
                       <ChannelIcon code={o.channel} size={10} />
                       {def.label}
                     </span>
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{fmtDate(o.created_at)}</div>
+                  <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{fmtDate(o.created_at)}</div>
                 </div>
                 <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(o.total)}</div>
               </div>
@@ -129,16 +129,16 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
                 {o.slots.map(s => (
                   <span
                     key={s.id}
-                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${s.status === 'MATCHED' ? 'bg-emerald-100 text-emerald-700' : s.status === 'EXTENDED' ? 'bg-blue-100 text-blue-700' : s.status === 'WRITTEN_OFF' ? 'bg-slate-200 text-slate-600' : 'bg-amber-100 text-amber-700'}`}
+                    className={`text-caleo-10 font-extrabold px-2 py-0.5 rounded ${s.status === 'MATCHED' ? 'bg-emerald-100 text-emerald-700' : s.status === 'EXTENDED' ? 'bg-blue-100 text-blue-700' : s.status === 'WRITTEN_OFF' ? 'bg-slate-200 text-slate-600' : 'bg-amber-100 text-amber-700'}`}
                   >
                     {s.status === 'MATCHED' ? '✓' : s.status === 'OPEN' ? '⏳' : s.status === 'EXTENDED' ? '📅' : '✗'} {s.slot_type} {fmt(s.expected_amount)}
                   </span>
                 ))}
                 {isPiutang && (
                   <>
-                    <button onClick={() => onFindPayment(o.id, o.slots.find(s => s.status === 'OPEN')!.id)} className="text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-amber-200 text-amber-700">Cari pasangan →</button>
-                    <button onClick={() => onExtend(o.slots.find(s => s.status === 'OPEN')!.id)} className="text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-blue-200 text-blue-700">📅 Geser</button>
-                    <button onClick={() => onWriteOff(o.slots.find(s => s.status === 'OPEN')!.id)} className="text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-red-700">✗ Write-off</button>
+                    <button onClick={() => onFindPayment(o.id, o.slots.find(s => s.status === 'OPEN')!.id)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-amber-200 text-amber-700">Cari pasangan →</button>
+                    <button onClick={() => onExtend(o.slots.find(s => s.status === 'OPEN')!.id)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-blue-200 text-blue-700">📅 Geser</button>
+                    <button onClick={() => onWriteOff(o.slots.find(s => s.status === 'OPEN')!.id)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-red-700">✗ Write-off</button>
                   </>
                 )}
               </div>

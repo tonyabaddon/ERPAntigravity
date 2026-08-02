@@ -1110,7 +1110,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       <div className="bg-white border border-slate-200 rounded-t-lg px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className={`text-lg font-extrabold ${mode === 'quote' ? 'text-amber-800' : 'text-[var(--color-caleo-primary)]'}`}>
-            {mode === 'quote' && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wider mr-2">QUOTE MODE</span>}
+            {mode === 'quote' && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-caleo-10 font-extrabold tracking-wider mr-2">QUOTE MODE</span>}
             {mode === 'quote' ? 'Sales Order' : 'Sales Invoice'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">Step {currentStep} dari 3 — {stepSlug}</p>
@@ -1149,7 +1149,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
               <span className="text-slate-400">·</span>
               <span className="text-slate-600">👤 <strong>{customer.name}</strong></span>
               {customer.allows_tempo && (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-caleo-10">
                   TEMPO OK · Limit {Math.round((customer.credit_limit ?? 0) / 1_000_000)}jt
                 </span>
               )}
@@ -1307,7 +1307,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
         {!loading && (
           <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-            <div className="text-[11px] text-slate-500">
+            <div className="text-caleo-11 text-slate-500">
               {currentStep === 1 && !canAdvanceStep1 && (
                 (() => {
                   const errs = validateStep1(step1State).errors ?? [];

@@ -49,16 +49,16 @@ function SuperAdminGate({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, []);
   if (state === 'checking') {
-    return <div className="p-6 text-[13px] text-slate-500 font-caleo">Memeriksa akses super_admin…</div>;
+    return <div className="p-6 text-caleo-13 text-slate-500 font-caleo">Memeriksa akses super_admin…</div>;
   }
   if (state === 'deny') {
     return (
       <div className="p-8 max-w-md">
         <h1 className="text-lg font-semibold text-slate-800">Butuh super admin</h1>
-        <p className="text-[13px] text-slate-600 mt-2">
+        <p className="text-caleo-13 text-slate-600 mt-2">
           Halaman ini hanya dapat diakses oleh super_admin. Sales_rep tidak berwenang di sub-modul ini.
         </p>
-        <a href="/admin" onClick={(e) => handleAdminSPAClick(e, '/admin')} className="mt-4 inline-block text-[13px] text-slate-700 underline">← Kembali ke Beranda</a>
+        <a href="/admin" onClick={(e) => handleAdminSPAClick(e, '/admin')} className="mt-4 inline-block text-caleo-13 text-slate-700 underline">← Kembali ke Beranda</a>
       </div>
     );
   }

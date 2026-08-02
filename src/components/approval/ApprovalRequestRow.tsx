@@ -274,7 +274,7 @@ export default function ApprovalRequestRow({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="inline-block rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5">
+            <span className="inline-block rounded-full bg-amber-100 text-amber-800 text-caleo-10 font-extrabold uppercase tracking-wider px-2 py-0.5">
               {typeLabel}
             </span>
             <span className="text-xs font-bold text-[var(--color-caleo-primary)]">
@@ -284,7 +284,7 @@ export default function ApprovalRequestRow({
               <span className="text-xs text-slate-500">
                 {relativeId(request.requestedAt)}
               </span>
-              <span className={`inline-block rounded-full text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 ${statusPill}`}>
+              <span className={`inline-block rounded-full text-caleo-10 font-extrabold uppercase tracking-wider px-2 py-0.5 ${statusPill}`}>
                 {statusLabel}
               </span>
             </span>

@@ -213,7 +213,7 @@ export default function SalesInboxScreen({
 
         {/* Kategori list (Slack-style) */}
         <div className="border-b border-gray-100 shrink-0">
-          <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-gray-400">
+          <div className="px-3 pt-2 pb-1 text-caleo-9 font-bold uppercase tracking-widest text-gray-400">
             Kategori
           </div>
           {(
@@ -234,7 +234,7 @@ export default function SalesInboxScreen({
                 }`}
               >
                 <span className={`text-xs ${isActive ? 'font-bold' : ''}`}>{label}</span>
-                <span className={`text-[10px] font-bold px-1.5 rounded-full ${
+                <span className={`text-caleo-10 font-bold px-1.5 rounded-full ${
                   isActive ? badge : 'bg-gray-200 text-gray-700'
                 }`}>
                   {counts[id]}
@@ -274,13 +274,13 @@ export default function SalesInboxScreen({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
                       <span className="font-bold text-xs text-gray-800 truncate">{getDisplayName(conv)}</span>
-                      <span className="text-[8px] text-gray-300 shrink-0">{lastTime}</span>
+                      <span className="text-caleo-9 text-gray-300 shrink-0">{lastTime}</span>
                     </div>
-                    <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                    <p className="text-caleo-10 text-gray-400 truncate mt-0.5">
                       {lastMsg?.text || '...'}
                     </p>
                     {stateInfo && (
-                      <span className={`inline-block mt-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${stateInfo.badgeClass}`}>
+                      <span className={`inline-block mt-1 text-caleo-9 font-bold px-1.5 py-0.5 rounded-full ${stateInfo.badgeClass}`}>
                         {stateInfo.label}
                       </span>
                     )}
@@ -306,7 +306,7 @@ export default function SalesInboxScreen({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-sm truncate">{getDisplayName(activeChat)}</div>
-                <div className="text-[10px] opacity-60">{activeChat.customer_phone}</div>
+                <div className="text-caleo-10 opacity-60">{activeChat.customer_phone}</div>
               </div>
               {/* State badge — clickable dropdown trigger for canOverride users */}
               {(() => {
@@ -320,7 +320,7 @@ export default function SalesInboxScreen({
                     <button
                       disabled={!canOverride}
                       onClick={() => setStateDropdownOpen(o => !o)}
-                      className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full ${stateInfo?.badgeClass ?? 'bg-gray-100 text-gray-600'} ${canOverride ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
+                      className={`flex items-center gap-1.5 text-caleo-10 font-bold px-3 py-1.5 rounded-full ${stateInfo?.badgeClass ?? 'bg-gray-100 text-gray-600'} ${canOverride ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
                     >
                       {minutesLeft !== null && <span>🔒</span>}
                       {stateInfo?.label ?? activeChat.state}
@@ -369,7 +369,7 @@ export default function SalesInboxScreen({
                         toggleAiControl(activeChat.id, banner.makeActive, isEscalated ? 'COLLECTING' : undefined);
                       }
                     }}
-                    className="bg-white/20 hover:bg-white/30 rounded px-2 py-1 text-[10px] font-bold"
+                    className="bg-white/20 hover:bg-white/30 rounded px-2 py-1 text-caleo-10 font-bold"
                   >
                     {banner.btnLabel}
                   </button>
@@ -417,7 +417,7 @@ export default function SalesInboxScreen({
             </div>
             {sendError && (
               <div
-                className="mx-3 mb-2 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1"
+                className="mx-3 mb-2 text-caleo-11 text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1"
                 role="alert"
               >
                 Gagal kirim: {sendError}
@@ -469,8 +469,8 @@ function StateOverrideDropdown({
       <div className="fixed inset-0 z-10" onClick={onClose} />
       <div className="absolute top-full right-0 mt-1 bg-white text-gray-800 rounded shadow-2xl border border-gray-200 w-64 z-20">
         <div className="px-3 py-2 border-b border-gray-100">
-          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400">Ubah Status Manual</div>
-          <div className="text-[10px] text-gray-500 mt-0.5">AI di-pause 15 menit. Admin handle balas. Auto-resume saat lock expire.</div>
+          <div className="text-caleo-9 font-bold uppercase tracking-wide text-gray-400">Ubah Status Manual</div>
+          <div className="text-caleo-10 text-gray-500 mt-0.5">AI di-pause 15 menit. Admin handle balas. Auto-resume saat lock expire.</div>
         </div>
         <div className="max-h-56 overflow-y-auto py-1 text-xs">
           {ALL_CONV_STATES.map(s => {
@@ -488,10 +488,10 @@ function StateOverrideDropdown({
                   'hover:bg-gray-50'
                 }`}
               >
-                <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full ${info?.badgeClass ?? 'bg-gray-100 text-gray-600'}`}>
+                <span className={`inline-block text-caleo-9 font-bold px-1.5 py-0.5 rounded-full ${info?.badgeClass ?? 'bg-gray-100 text-gray-600'}`}>
                   {info?.label ?? s}
                 </span>
-                <span className="text-gray-400 text-[9px] font-mono">
+                <span className="text-gray-400 text-caleo-9 font-mono">
                   {s}{isCurrent ? ' · saat ini' : isTerminal ? ' · terminal' : ''}
                 </span>
               </button>
@@ -533,7 +533,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
 
   if (msg.sender === 'system') {
     return (
-      <div className="text-center text-[9px] text-gray-400 italic py-1">
+      <div className="text-center text-caleo-9 text-gray-400 italic py-1">
         {msg.text}
       </div>
     );
@@ -553,7 +553,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
   return (
     <div className={`flex ${isCustomer ? 'justify-start' : 'justify-end'}`}>
       <div className="flex flex-col" style={{ maxWidth: '68%' }}>
-        <span className="text-[9px] text-gray-400 mb-0.5 px-1">{senderLabel}</span>
+        <span className="text-caleo-9 text-gray-400 mb-0.5 px-1">{senderLabel}</span>
         <div className={`px-3 py-2 text-xs leading-relaxed ${bubbleClass}`}>
           {msg.media_url ? (
             <>
@@ -572,7 +572,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
           ) : (
             msg.text
           )}
-          <p className="text-[8px] opacity-60 mt-1 text-right">{time}</p>
+          <p className="text-caleo-9 opacity-60 mt-1 text-right">{time}</p>
         </div>
       </div>
     </div>
@@ -617,9 +617,9 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
 
       {/* Section: Alur */}
       <div className="px-3 py-2.5 border-b border-gray-100">
-        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Alur Percakapan</div>
+        <div className="text-caleo-9 font-bold text-gray-400 uppercase tracking-wide mb-2">Alur Percakapan</div>
         {isOffPath && (
-          <div className={`text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 inline-block ${CONV_STATE_DISPLAY[conv.state]?.badgeClass ?? ''}`}>
+          <div className={`text-caleo-9 font-bold px-2 py-0.5 rounded-full mb-2 inline-block ${CONV_STATE_DISPLAY[conv.state]?.badgeClass ?? ''}`}>
             {CONV_STATE_DISPLAY[conv.state]?.label ?? conv.state}
           </div>
         )}
@@ -637,7 +637,7 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
                     <div className={`w-px flex-1 min-h-[10px] ${isDone ? 'bg-[#2d8a4e]' : 'bg-gray-200'}`} />
                   )}
                 </div>
-                <div className={`text-[9px] pb-2 ${
+                <div className={`text-caleo-9 pb-2 ${
                   isDone ? 'text-gray-400' : isActive ? 'font-bold text-amber-700' : 'text-gray-300'
                 }`}>
                   {step.label}{isActive && ' ◀'}
@@ -650,14 +650,14 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
 
       {/* Section: Data Terkumpul */}
       <div className="px-3 py-2.5 border-b border-gray-100">
-        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Data Terkumpul</div>
+        <div className="text-caleo-9 font-bold text-gray-400 uppercase tracking-wide mb-2">Data Terkumpul</div>
         {dataFields.length === 0 ? (
-          <p className="text-[9px] text-gray-400 italic">Data belum terkumpul.</p>
+          <p className="text-caleo-9 text-gray-400 italic">Data belum terkumpul.</p>
         ) : (
           dataFields.map((f, i) => (
             <div key={i} className="flex items-start gap-1.5 mb-1">
-              <span className="text-[10px] shrink-0">{f.icon}</span>
-              <span className="text-[9px] text-gray-700 font-medium leading-snug">{f.value}</span>
+              <span className="text-caleo-10 shrink-0">{f.icon}</span>
+              <span className="text-caleo-9 text-gray-700 font-medium leading-snug">{f.value}</span>
             </div>
           ))
         )}
@@ -665,37 +665,37 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
 
       {/* Section: Pesanan Terkait */}
       <div className="px-3 py-2.5 border-b border-gray-100">
-        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Pesanan Terkait</div>
+        <div className="text-caleo-9 font-bold text-gray-400 uppercase tracking-wide mb-2">Pesanan Terkait</div>
         {order ? (
           <div>
-            <div className="font-mono text-[10px] font-bold text-[var(--color-caleo-primary)]">
+            <div className="font-mono text-caleo-10 font-bold text-[var(--color-caleo-primary)]">
               {order.gjp_order_id ?? order.id.slice(0, 8)}
             </div>
             <div className="text-sm font-extrabold text-[#2d8a4e]">
               {formatIDR(order.total)}
             </div>
-            <div className="text-[9px] text-gray-400 mt-0.5">
+            <div className="text-caleo-9 text-gray-400 mt-0.5">
               {order.status.replace(/_/g, ' ')}
             </div>
             {order.status === 'PENDING_ADMIN_CONFIRMATION' && (
               <button
                 onClick={() => onNavigate('order-history')}
-                className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold py-1.5 rounded"
+                className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white text-caleo-9 font-bold py-1.5 rounded"
               >
                 🔔 Konfirmasi Pesanan
               </button>
             )}
           </div>
         ) : (
-          <p className="text-[9px] text-gray-400 italic">Belum ada pesanan.</p>
+          <p className="text-caleo-9 text-gray-400 italic">Belum ada pesanan.</p>
         )}
       </div>
 
       {/* Section: Follow-up */}
       <div className="px-3 py-2.5">
-        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Follow-up Otomatis</div>
+        <div className="text-caleo-9 font-bold text-gray-400 uppercase tracking-wide mb-2">Follow-up Otomatis</div>
         <div className="text-xs font-bold text-gray-700">{conv.followup_count_today} / 2</div>
-        <div className="text-[9px] text-gray-400 mt-0.5">terkirim hari ini</div>
+        <div className="text-caleo-9 text-gray-400 mt-0.5">terkirim hari ini</div>
       </div>
     </div>
   );

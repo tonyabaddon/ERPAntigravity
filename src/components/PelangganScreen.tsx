@@ -244,7 +244,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       key={t}
                       aria-pressed={tierFilter === t}
                       onClick={() => setTierFilter(t)}
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
+                      className={`text-caleo-10 font-semibold px-2 py-0.5 rounded-full transition-colors ${
                         tierFilter === t
                           ? isBase
                             ? 'bg-[var(--color-caleo-primary)] text-white'
@@ -292,11 +292,11 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         {c.name}
                       </div>
                       {c.company && (
-                        <div className={`text-[10px] font-semibold truncate ${isSelected ? 'text-[var(--color-caleo-primary)]/70' : 'text-gray-500'}`}>
+                        <div className={`text-caleo-10 font-semibold truncate ${isSelected ? 'text-[var(--color-caleo-primary)]/70' : 'text-gray-500'}`}>
                           {c.company}
                         </div>
                       )}
-                      <div className="font-mono text-[10px] text-gray-400 truncate">{c.wa_number}</div>
+                      <div className="font-mono text-caleo-10 text-gray-400 truncate">{c.wa_number}</div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <div className={`text-xs font-bold ${isSelected ? 'text-[var(--color-caleo-primary)]' : 'text-gray-500'}`}>
@@ -307,7 +307,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         const tierInfo = getActiveTiers(tenantSettings).find(t => t.key === effTier)!;
                         const isBase = tierInfo.slot === 1;
                         return (
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                          <span className={`text-caleo-9 font-bold px-1.5 py-0.5 rounded-full ${
                             isBase ? 'bg-gray-100 text-gray-500' : 'bg-purple-100 text-purple-700'
                           }`}>
                             {tierInfo.label}
@@ -358,7 +358,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       />
                       {showTierDropdown && tenantSettings && (
                         <div>
-                          <label className="text-[11px] font-bold text-white/60">Tier Harga Default</label>
+                          <label className="text-caleo-11 font-bold text-white/60">Tier Harga Default</label>
                           <div className="flex gap-1.5 mt-0.5 flex-wrap">
                             {getActiveTiers(tenantSettings).map((t) => {
                               const active = editTier === t.key;
@@ -381,18 +381,18 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                               );
                             })}
                           </div>
-                          <p className="text-[10px] text-white/40 mt-1">Otomatis dipakai saat customer ini transaksi; kasir bebas switch.</p>
+                          <p className="text-caleo-10 text-white/40 mt-1">Otomatis dipakai saat customer ini transaksi; kasir bebas switch.</p>
                         </div>
                       )}
                     </div>
                   ) : (
                     <>
-                      <div className="font-extrabold text-[15px] truncate">{profile.name || <span className="opacity-40 italic">Nama belum diisi</span>}</div>
-                      <div className="text-[11px] opacity-60 mt-0.5">
+                      <div className="font-extrabold text-caleo-15 truncate">{profile.name || <span className="opacity-40 italic">Nama belum diisi</span>}</div>
+                      <div className="text-caleo-11 opacity-60 mt-0.5">
                         {profile.wa_number}
                         {profile.company && ` · ${profile.company}`}
                       </div>
-                      <div className="text-[11px] opacity-60">Pelanggan sejak {formatDate(profile.created_at)}</div>
+                      <div className="text-caleo-11 opacity-60">Pelanggan sejak {formatDate(profile.created_at)}</div>
                     </>
                   )}
                 </div>
@@ -418,11 +418,11 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       <div className="text-lg font-extrabold text-emerald-300">
                         {formatIDR(totalSpend)}
                       </div>
-                      <div className="text-[9px] opacity-55">total belanja</div>
+                      <div className="text-caleo-9 opacity-55">total belanja</div>
                     </div>
                     <button
                       onClick={() => { setEditName(profile.name); setEditCompany(profile.company); setEditTier(profile.default_pricing_tier ?? 'eceran'); setEditing(true); }}
-                      className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[10px] px-2 py-1 rounded transition-colors"
+                      className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-caleo-10 px-2 py-1 rounded transition-colors"
                     >
                       <Pencil className="w-3 h-3" /> Edit
                     </button>
@@ -458,14 +458,14 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                 ).map((stat, i) => (
                   <div key={i} className={`py-3 text-center ${i < 2 ? 'border-r border-gray-200' : ''}`} title={stat.tip}>
                     <div className={`text-base font-extrabold ${stat.color ?? 'text-[var(--color-caleo-primary)]'}`}>{stat.value}</div>
-                    <div className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{stat.label}</div>
+                    <div className="text-caleo-9 text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{stat.label}</div>
                   </div>
                 ))}
               </div>
 
               {/* Sales entries section */}
               <div className="px-4 py-4">
-                <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-2">
                   Riwayat Pesanan ({salesEntries.length})
                 </div>
                 {salesEntries.length === 0 ? (
@@ -482,13 +482,13 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         <div className="flex justify-between items-center mb-1 gap-2">
                           <span className="font-bold font-mono text-gray-700 truncate">{entry.display_id}</span>
                           <div className="flex items-center gap-1 shrink-0">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${CHANNEL_BADGE_CLASS[entry.channel]}`}>
+                            <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full ${CHANNEL_BADGE_CLASS[entry.channel]}`}>
                               {CHANNEL_LABEL[entry.channel]}
                             </span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+                            <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
                           </div>
                         </div>
-                        <div className="text-gray-500 text-[11px]">
+                        <div className="text-gray-500 text-caleo-11">
                           {entry.items[0]?.name ?? '—'}
                           {entry.items.length > 1 && ` +${entry.items.length - 1}`}
                           {' · '}{formatDate(entry.created_at)}
@@ -502,7 +502,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
 
               {/* Leads section */}
               <div className="px-4 py-4 border-t border-gray-100">
-                <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-2">
                   Leads ({profile.leads.length})
                 </div>
                 {profile.leads.length === 0 ? (
@@ -513,11 +513,11 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                     return (
                       <div key={lead.id} className="border border-gray-200 rounded p-3 mb-2 last:mb-0 flex justify-between items-center">
                         <div>
-                          <div className="font-mono text-[11px] font-semibold text-gray-700">{lead.id}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">Dibuat {formatDate(lead.created_at)}</div>
+                          <div className="font-mono text-caleo-11 font-semibold text-gray-700">{lead.id}</div>
+                          <div className="text-caleo-10 text-gray-400 mt-0.5">Dibuat {formatDate(lead.created_at)}</div>
                         </div>
                         <div className="flex flex-col items-end gap-1.5">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+                          <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
                         </div>
                       </div>
                     );
@@ -542,7 +542,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
 
               {/* WA Reminder opt-out section */}
               <div className="px-4 py-4 border-t border-gray-100">
-                <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+                <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-3">
                   WA Reminder Piutang
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">

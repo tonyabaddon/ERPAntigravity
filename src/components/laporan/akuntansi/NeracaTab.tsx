@@ -71,11 +71,11 @@ function SectionRows({ items, negative = false }: SectionRowsProps): React.React
     <>
       {items.map(item => (
         <tr key={item.code} className="border-t border-gray-50">
-          <td className="py-1.5 px-3 pl-6 text-gray-700 text-[12px]">
+          <td className="py-1.5 px-3 pl-6 text-gray-700 text-xs">
             {item.name}{' '}
-            <span className="text-[10px] text-gray-400">({item.code})</span>
+            <span className="text-caleo-10 text-gray-400">({item.code})</span>
           </td>
-          <td className="py-1.5 px-3 text-right font-mono text-[12px] text-gray-800">
+          <td className="py-1.5 px-3 text-right font-mono text-xs text-gray-800">
             {negative ? `(${formatRupiah(item.amount)})` : formatRupiah(item.amount)}
           </td>
         </tr>
@@ -208,35 +208,35 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
           <Layout className="w-5 h-5 text-violet-200" />
           <h3 className="text-xl font-extrabold">{companyName}</h3>
         </div>
-        <p className="text-[12px] text-violet-100">
+        <p className="text-xs text-violet-100">
           Neraca · {asOfLabel} · (dalam Rupiah)
         </p>
       </div>
 
       {/* ── As-of date control row ── */}
       <div className="px-6 pt-4 pb-2 flex items-center gap-3 border-b border-gray-100">
-        <span className="text-[11px] font-bold uppercase text-gray-500">Per Tanggal:</span>
+        <span className="text-caleo-11 font-bold uppercase text-gray-500">Per Tanggal:</span>
         <input
           type="date"
           value={asOfDate}
           onChange={e => setAsOfDate(e.target.value)}
-          className="text-[12px] border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-[#1e3d60] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+          className="text-xs border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-[#1e3d60] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
         />
-        <span className="ml-auto text-[11px] text-gray-500 font-medium">{asOfLabel}</span>
+        <span className="ml-auto text-caleo-11 text-gray-500 font-medium">{asOfLabel}</span>
       </div>
 
       {/* ── Body ── */}
       <div className="p-6">
         {loading ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">
+          <div className="py-16 text-center text-caleo-13 text-gray-500">
             Memuat data...
           </div>
         ) : error ? (
-          <div className="py-8 text-center text-[13px] text-rose-600">
+          <div className="py-8 text-center text-caleo-13 text-rose-600">
             Gagal memuat data: {error}
           </div>
         ) : isEmpty ? (
-          <div className="py-16 text-center text-[13px] text-gray-500">
+          <div className="py-16 text-center text-caleo-13 text-gray-500">
             Belum ada data Neraca pada tanggal ini.
           </div>
         ) : data ? (
@@ -248,14 +248,14 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
               <div className="rounded border border-[var(--color-caleo-mist-dark)] overflow-hidden">
                 {/* Sub-card header */}
                 <div className="py-2.5 px-4" style={{ background: '#dbeafe' }}>
-                  <span className="font-extrabold text-[13px] text-blue-900 uppercase">ASET</span>
+                  <span className="font-extrabold text-caleo-13 text-blue-900 uppercase">ASET</span>
                 </div>
 
-                <table className="w-full text-[12px]">
+                <table className="w-full text-xs">
                   <tbody>
                     {/* Aset Lancar section */}
                     <tr style={{ background: 'rgba(219,234,254,0.3)' }}>
-                      <td colSpan={2} className="py-2 px-3 font-bold text-[11px] uppercase text-blue-800">
+                      <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-blue-800">
                         Aset Lancar
                       </td>
                     </tr>
@@ -270,7 +270,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
                     {/* Aset Tetap section */}
                     <tr style={{ background: 'rgba(219,234,254,0.3)' }}>
-                      <td colSpan={2} className="py-2 px-3 font-bold text-[11px] uppercase text-blue-800">
+                      <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-blue-800">
                         Aset Tetap
                       </td>
                     </tr>
@@ -278,10 +278,10 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                     {/* Akumulasi Penyusutan — italic gray with negative parens */}
                     {data.akumulasiPenyusutan !== 0 && (
                       <tr className="border-t border-gray-50">
-                        <td className="py-1.5 px-3 pl-6 text-gray-500 italic text-[12px]">
+                        <td className="py-1.5 px-3 pl-6 text-gray-500 italic text-xs">
                           (Akumulasi Penyusutan)
                         </td>
-                        <td className="py-1.5 px-3 text-right font-mono text-gray-500 text-[12px] italic">
+                        <td className="py-1.5 px-3 text-right font-mono text-gray-500 text-xs italic">
                           ({formatRupiah(data.akumulasiPenyusutan)})
                         </td>
                       </tr>
@@ -301,8 +301,8 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                       className="border-t-4"
                       style={{ background: '#dbeafe', borderColor: '#1e40af' }}
                     >
-                      <td className="py-3 px-3 font-black text-[14px] text-blue-900">TOTAL ASET</td>
-                      <td className="py-3 px-3 text-right font-black text-[14px] font-mono text-blue-900">
+                      <td className="py-3 px-3 font-black text-sm text-blue-900">TOTAL ASET</td>
+                      <td className="py-3 px-3 text-right font-black text-sm font-mono text-blue-900">
                         {formatRupiah(data.totalAset)}
                       </td>
                     </tr>
@@ -316,14 +316,14 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                 {/* LIABILITAS sub-card */}
                 <div className="rounded border border-[#fca5a5] overflow-hidden">
                   <div className="py-2.5 px-4" style={{ background: '#fee2e2' }}>
-                    <span className="font-extrabold text-[13px] text-red-900 uppercase">LIABILITAS</span>
+                    <span className="font-extrabold text-caleo-13 text-red-900 uppercase">LIABILITAS</span>
                   </div>
 
-                  <table className="w-full text-[12px]">
+                  <table className="w-full text-xs">
                     <tbody>
                       {/* Liabilitas Lancar section */}
                       <tr style={{ background: 'rgba(254,226,226,0.3)' }}>
-                        <td colSpan={2} className="py-2 px-3 font-bold text-[11px] uppercase text-red-800">
+                        <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-red-800">
                           Liabilitas Lancar
                         </td>
                       </tr>
@@ -337,7 +337,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
                       {/* Liabilitas Jangka Panjang section */}
                       <tr style={{ background: 'rgba(254,226,226,0.3)' }}>
-                        <td colSpan={2} className="py-2 px-3 font-bold text-[11px] uppercase text-red-800">
+                        <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-red-800">
                           Liabilitas Jangka Panjang
                         </td>
                       </tr>
@@ -345,7 +345,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                         <SectionRows items={data.liabilitasJkPanjang} />
                       ) : (
                         <tr className="border-t border-gray-50">
-                          <td colSpan={2} className="py-1.5 px-3 pl-6 text-gray-400 italic text-[11px]">
+                          <td colSpan={2} className="py-1.5 px-3 pl-6 text-gray-400 italic text-caleo-11">
                             Tidak ada
                           </td>
                         </tr>
@@ -364,8 +364,8 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                         className="border-t-2"
                         style={{ background: '#fee2e2', borderColor: '#dc2626' }}
                       >
-                        <td className="py-2.5 px-3 font-extrabold text-[13px] text-rose-900">TOTAL LIABILITAS</td>
-                        <td className="py-2.5 px-3 text-right font-extrabold text-[13px] font-mono text-rose-900">
+                        <td className="py-2.5 px-3 font-extrabold text-caleo-13 text-rose-900">TOTAL LIABILITAS</td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-caleo-13 font-mono text-rose-900">
                           {formatRupiah(data.totalLiabilitas)}
                         </td>
                       </tr>
@@ -376,16 +376,16 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                 {/* EKUITAS sub-card */}
                 <div className="rounded border border-[#c4b5fd] overflow-hidden">
                   <div className="py-2.5 px-4" style={{ background: '#e9d5ff' }}>
-                    <span className="font-extrabold text-[13px] text-violet-900 uppercase">EKUITAS</span>
+                    <span className="font-extrabold text-caleo-13 text-violet-900 uppercase">EKUITAS</span>
                   </div>
 
-                  <table className="w-full text-[12px]">
+                  <table className="w-full text-xs">
                     <tbody>
                       {data.ekuitas.map(item => (
                         <tr key={item.code} className="border-t border-gray-50">
                           <td className="py-1.5 px-3 pl-6 text-gray-700">
                             {item.name}{' '}
-                            <span className="text-[10px] text-gray-400">({item.code})</span>
+                            <span className="text-caleo-10 text-gray-400">({item.code})</span>
                           </td>
                           <td className="py-1.5 px-3 text-right font-mono text-gray-800">
                             {formatRupiah(item.amount)}
@@ -394,7 +394,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                       ))}
                       {data.ekuitas.length === 0 && (
                         <tr>
-                          <td colSpan={2} className="py-2 px-3 text-gray-400 italic text-[11px]">
+                          <td colSpan={2} className="py-2 px-3 text-gray-400 italic text-caleo-11">
                             Tidak ada data ekuitas
                           </td>
                         </tr>
@@ -407,8 +407,8 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                         className="border-t-2"
                         style={{ background: '#e9d5ff', borderColor: '#7c3aed' }}
                       >
-                        <td className="py-2.5 px-3 font-extrabold text-[13px] text-violet-900">TOTAL EKUITAS</td>
-                        <td className="py-2.5 px-3 text-right font-extrabold text-[13px] font-mono text-violet-900">
+                        <td className="py-2.5 px-3 font-extrabold text-caleo-13 text-violet-900">TOTAL EKUITAS</td>
+                        <td className="py-2.5 px-3 text-right font-extrabold text-caleo-13 font-mono text-violet-900">
                           {formatRupiah(data.totalEkuitas)}
                         </td>
                       </tr>
@@ -421,19 +421,19 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                   className="rounded border-2 p-4 text-center"
                   style={{ background: '#d1fae5', borderColor: '#059669' }}
                 >
-                  <p className="text-[10px] font-bold uppercase text-emerald-900 tracking-wide mb-1">
+                  <p className="text-caleo-10 font-bold uppercase text-emerald-900 tracking-wide mb-1">
                     TOTAL LIABILITAS + EKUITAS
                   </p>
                   <p className="text-2xl font-black text-emerald-900 font-mono">
                     {formatRupiahRaw(data.totalLiabilitas + data.totalEkuitas)}
                   </p>
                   {data.balanceCheck.isBalanced ? (
-                    <div className="mt-2 flex items-center justify-center gap-1.5 text-[12px] text-emerald-800 font-bold">
+                    <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-emerald-800 font-bold">
                       <CheckCircle className="w-4 h-4" />
                       <span>SEIMBANG dengan Total Aset</span>
                     </div>
                   ) : (
-                    <div className="mt-2 flex items-center justify-center gap-1.5 text-[12px] text-red-700 font-bold">
+                    <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-red-700 font-bold">
                       <AlertTriangle className="w-4 h-4" />
                       <span>TIDAK SEIMBANG · selisih {formatRupiahRaw(Math.abs(data.balanceCheck.diff))}</span>
                     </div>
@@ -445,7 +445,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
             {/* ── Verification banner (full width) ── */}
             <div
-              className="mt-6 rounded p-3 flex items-center gap-2 text-[11px] text-amber-900 border"
+              className="mt-6 rounded p-3 flex items-center gap-2 text-caleo-11 text-amber-900 border"
               style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
             >
               {data.balanceCheck.isBalanced ? (
@@ -471,14 +471,14 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
               <button
                 onClick={handlePdfExport}
                 disabled={exporting || !data}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 {exporting ? 'Menghasilkan...' : 'PDF SAK EMKM'}
               </button>
               <button
                 onClick={() => showToast('Export Excel akan hadir segera', 'info')}
-                className="inline-flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)] transition-colors"
               >
                 <Grid className="w-3.5 h-3.5" />
                 Excel

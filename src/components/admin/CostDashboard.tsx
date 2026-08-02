@@ -71,7 +71,7 @@ function OutlierBanner({ outliers }: { outliers: TenantCostRow[] }) {
   if (outliers.length === 0) return null;
   return (
     <div
-      className="flex items-start gap-3 rounded p-4 text-[13px]"
+      className="flex items-start gap-3 rounded p-4 text-caleo-13"
       style={{ background: '#FEF3C7', border: '1px solid #F59E0B' }}
       data-testid="cost-outlier-banner"
       role="alert"
@@ -88,7 +88,7 @@ function OutlierBanner({ outliers }: { outliers: TenantCostRow[] }) {
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-[12px]" style={{ color: '#92400E' }}>
+        <p className="mt-2 text-xs" style={{ color: '#92400E' }}>
           Estimasi kasar — angka aktual ada di tagihan GCP / Supabase.
         </p>
       </div>
@@ -108,7 +108,7 @@ function CostTable({
   if (rows.length === 0) {
     return (
       <div
-        className="rounded p-8 text-center text-[13px]"
+        className="rounded p-8 text-center text-caleo-13"
         style={{ background: '#F8FAFC', border: '1px solid #ECEEF1', color: '#64748B' }}
         data-testid="cost-empty"
       >
@@ -119,7 +119,7 @@ function CostTable({
 
   return (
     <div className="overflow-x-auto rounded" style={{ border: '1px solid #ECEEF1' }}>
-      <table className="w-full text-[13px] font-caleo" style={{ borderCollapse: 'collapse' }}>
+      <table className="w-full text-caleo-13 font-caleo" style={{ borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #ECEEF1' }}>
             <th className="text-left px-4 py-3 font-semibold" style={{ color: '#64748B', width: '30%' }}>Tenant</th>
@@ -152,11 +152,11 @@ function CostTable({
                     )}
                     <div>
                       <span className="font-medium" style={{ color: '#0B2545' }}>{row.name}</span>
-                      <span className="ml-1.5 text-[11px]" style={{ color: '#94A3B8' }}>{row.slug}</span>
+                      <span className="ml-1.5 text-caleo-11" style={{ color: '#94A3B8' }}>{row.slug}</span>
                     </div>
                   </div>
                   {!row.usage_date && (
-                    <div className="text-[11px] mt-0.5" style={{ color: '#94A3B8' }}>
+                    <div className="text-caleo-11 mt-0.5" style={{ color: '#94A3B8' }}>
                       belum ada data — klik Refresh
                     </div>
                   )}
@@ -173,14 +173,14 @@ function CostTable({
                 <td className="text-right px-4 py-3" style={{ color: '#334155' }}>
                   {fmtNum(row.gemini_output_tokens)}
                 </td>
-                <td className="text-right px-4 py-3 font-mono text-[12px]" style={{ color: '#334155' }}>
+                <td className="text-right px-4 py-3 font-mono text-xs" style={{ color: '#334155' }}>
                   {fmtUSD(row.est_gemini_usd)}
                 </td>
-                <td className="text-right px-4 py-3 font-mono text-[12px]" style={{ color: '#334155' }}>
+                <td className="text-right px-4 py-3 font-mono text-xs" style={{ color: '#334155' }}>
                   {fmtUSD(row.est_storage_usd)}
                 </td>
                 <td
-                  className="text-right px-4 py-3 font-mono text-[12px] font-semibold"
+                  className="text-right px-4 py-3 font-mono text-xs font-semibold"
                   style={{ color: isOutlier ? '#B45309' : '#0B2545' }}
                 >
                   {fmtUSD(row.est_total_usd)}
@@ -261,7 +261,7 @@ export function CostDashboard() {
               Biaya Per Tenant
             </h1>
           </div>
-          <p className="text-[12px] mt-0.5" style={{ color: '#64748B' }}>
+          <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>
             Estimasi sinyal biaya harian — bukan tagihan resmi GCP/Supabase.
             {' '}Klik <strong>Refresh</strong> untuk agregasi terbaru dari Storage.
           </p>
@@ -272,7 +272,7 @@ export function CostDashboard() {
             value={date}
             max={todayISO()}
             onChange={(e) => setDate(e.target.value)}
-            className="text-[13px] px-3 py-1.5 rounded"
+            className="text-caleo-13 px-3 py-1.5 rounded"
             style={{
               border: '1px solid #D1D5DB',
               color: '#0B2545',
@@ -284,7 +284,7 @@ export function CostDashboard() {
           <button
             onClick={handleBackfill}
             disabled={refreshing || loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-caleo-13 font-medium transition-colors disabled:opacity-50"
             style={{ background: '#0B2545', color: '#FFFFFF' }}
             data-testid="cost-backfill-button"
           >
@@ -301,7 +301,7 @@ export function CostDashboard() {
       {/* Error state */}
       {error && (
         <div
-          className="rounded p-4 text-[13px]"
+          className="rounded p-4 text-caleo-13"
           style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B' }}
           data-testid="cost-error"
         >
@@ -319,7 +319,7 @@ export function CostDashboard() {
           <CostTable rows={rows} outlierIds={outlierIds} />
 
           {/* Footnote */}
-          <div className="text-[11px]" style={{ color: '#94A3B8' }}>
+          <div className="text-caleo-11" style={{ color: '#94A3B8' }}>
             <strong>Catatan:</strong> Estimasi Gemini berdasarkan tarif Gemini 2.5 Flash Lite
             (input $0.075/1M token, output $0.30/1M token).
             Storage gratis sampai 1 GB, lalu ~$0.021/GB/bulan.

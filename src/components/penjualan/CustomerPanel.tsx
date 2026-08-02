@@ -18,10 +18,10 @@ export interface CustomerPanelProps {
 
 function CreditChip({ c }: { c: DbCustomerWithStats }) {
   if (!c.allows_tempo) {
-    return <span className="text-[10px] text-slate-400 font-semibold">CASH ONLY</span>;
+    return <span className="text-caleo-10 text-slate-400 font-semibold">CASH ONLY</span>;
   }
   return (
-    <div className="flex items-center gap-2 text-[11px]">
+    <div className="flex items-center gap-2 text-caleo-11">
       <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold">TEMPO OK</span>
       <span className="text-slate-500">
         Limit {formatRp(c.credit_limit ?? 0)} · {c.term_days ?? 0} hari
@@ -80,7 +80,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
             >
               <div>
                 <div className="text-sm font-semibold">{c.name}</div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-caleo-11 text-slate-500">
                   {c.company || '—'} · {c.wa_number ?? '—'} · {c.order_count ?? 0} pesanan
                 </div>
               </div>
@@ -92,7 +92,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
 
       {/* No results — hint to use + Customer Baru button (rendered by parent) */}
       {search.trim().length > 0 && filtered.length === 0 && !isSelected && (
-        <div className="text-[11px] text-slate-500 italic px-1 mt-2">
+        <div className="text-caleo-11 text-slate-500 italic px-1 mt-2">
           Tidak ketemu di daftar. Gunakan "+ Customer Baru" di bawah untuk daftarkan customer baru.
         </div>
       )}
@@ -102,10 +102,10 @@ export default function CustomerPanel(props: CustomerPanelProps) {
         <div className="mt-2 bg-[var(--color-caleo-primary)]/5 border border-[var(--color-caleo-primary)]/30 rounded px-4 py-3 flex justify-between items-center">
           <div>
             <div className="font-bold text-[var(--color-caleo-primary)] text-sm">{selected.name}</div>
-            <div className="text-[11px] text-slate-600 mt-0.5">
+            <div className="text-caleo-11 text-slate-600 mt-0.5">
               📞 {selected.wa_number ?? '—'} · 🏢 {selected.company || '—'}
             </div>
-            <div className="text-[11px] text-slate-600 mt-0.5">
+            <div className="text-caleo-11 text-slate-600 mt-0.5">
               🛒 {selected.order_count ?? 0} pesanan · 💰 {formatRp(selected.total_spend ?? 0)}
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
             <button
               type="button"
               onClick={onClearSelection}
-              className="text-[var(--color-caleo-primary)] text-[11px] font-bold bg-white px-3 py-1 rounded border border-[var(--color-caleo-primary)]/30 hover:bg-[var(--color-caleo-primary)]/5 flex items-center gap-1"
+              className="text-[var(--color-caleo-primary)] text-caleo-11 font-bold bg-white px-3 py-1 rounded border border-[var(--color-caleo-primary)]/30 hover:bg-[var(--color-caleo-primary)]/5 flex items-center gap-1"
             >
               <X className="w-3 h-3" /> Ganti
             </button>

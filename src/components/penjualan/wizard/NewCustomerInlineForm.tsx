@@ -72,33 +72,33 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Customer Baru</div>
-          <div className="text-[11px] text-slate-600">Akan tersimpan ke daftar Pelanggan.</div>
+          <div className="text-caleo-11 text-slate-600">Akan tersimpan ke daftar Pelanggan.</div>
         </div>
         <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-700 text-sm">×</button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Nama <span className="text-red-500">*</span></label>
           <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">No HP / WhatsApp <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">No HP / WhatsApp <span className="text-red-500">*</span></label>
           <input value={wa} onChange={(e) => setWa(e.target.value)} placeholder="08xxx" className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Perusahaan / PT</label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Perusahaan / PT</label>
           <input value={company} onChange={(e) => setCompany(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Alamat</label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Alamat</label>
           <input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
       </div>
 
       {showTierField && tenantSettings && (
         <div className="mt-3 pt-3 border-t border-[var(--color-caleo-primary)]/20">
-          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Tipe Harga default</label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1.5">Tipe Harga default</label>
           <div className="flex gap-1.5 flex-wrap">
             {getActiveTiers(tenantSettings).map((t) => {
               const active = tier === t.key;
@@ -121,7 +121,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
               );
             })}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1 italic">Otomatis dipakai saat customer ini transaksi; kasir bebas switch per pesanan.</p>
+          <p className="text-caleo-11 text-slate-500 mt-1 italic">Otomatis dipakai saat customer ini transaksi; kasir bebas switch per pesanan.</p>
         </div>
       )}
 
@@ -132,27 +132,27 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
         </label>
         {requestTempo && (
           <>
-            <p className="text-[11px] text-slate-500 mt-1 ml-6">
+            <p className="text-caleo-11 text-slate-500 mt-1 ml-6">
               Centang kalau customer mau bayar nanti. <strong>Butuh approval Owner dulu</strong> — request masuk ke Persetujuan, customer baru bisa pakai TEMPO setelah disetujui.
             </p>
             <div className="mt-2 ml-6 space-y-2">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Limit Kredit yang diminta (Rp)</label>
+                  <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Limit Kredit yang diminta (Rp)</label>
                   <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Mis: 5.000.000" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded" />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Term (hari)</label>
+                  <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Term (hari)</label>
                   <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Mis: 14" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded" />
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Alasan / Justifikasi (optional)</label>
+                <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Alasan / Justifikasi (optional)</label>
                 <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Mis: Customer regular, sudah belanja 3x via WA. Owner tetangga sebelah." className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded" />
-                <p className="text-[10px] text-slate-500 mt-1 italic">Bantu Owner decide cepat. Tampil sebagai blockquote di Persetujuan inbox.</p>
+                <p className="text-caleo-10 text-slate-500 mt-1 italic">Bantu Owner decide cepat. Tampil sebagai blockquote di Persetujuan inbox.</p>
               </div>
             </div>
-            <p className="text-[11px] text-amber-700 mt-2 ml-6 italic">
+            <p className="text-caleo-11 text-amber-700 mt-2 ml-6 italic">
               ⚠️ Untuk transaksi sekarang: customer baru saja dibuat & TEMPO belum di-approve, jadi pesanan ini harus pakai <strong>LUNAS</strong> atau <strong>DP</strong>. TEMPO bisa dipakai untuk pesanan berikutnya setelah Owner approve.
             </p>
           </>

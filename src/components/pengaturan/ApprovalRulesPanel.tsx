@@ -98,7 +98,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
               <div className="font-bold text-xs text-slate-700 uppercase tracking-wider">
                 {group.icon} {group.heading}
               </div>
-              <div className="text-[11px] text-slate-500">{activeCount} dari {visibleGates.length} aktif</div>
+              <div className="text-caleo-11 text-slate-500">{activeCount} dari {visibleGates.length} aktif</div>
             </div>
             <div className="divide-y divide-slate-100">
               {visibleGates.map(g => {
@@ -126,10 +126,10 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
                       />
                       <div className="flex-1 cursor-pointer" onClick={() => setExpandedType(isExpanded ? null : g.type)}>
                         <div className="text-sm font-semibold text-slate-800">{g.title}</div>
-                        <div className="text-[11px] text-slate-500">{g.description}</div>
+                        <div className="text-caleo-11 text-slate-500">{g.description}</div>
                       </div>
                       {g.thresholdLabel && (
-                        <div className="flex items-center gap-2 text-[11px]">
+                        <div className="flex items-center gap-2 text-caleo-11">
                           <span className="text-slate-500">{g.thresholdLabel}</span>
                           <input
                             type="text"
@@ -173,7 +173,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
       <details className="mt-6 border border-slate-200 rounded">
         <summary className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 cursor-pointer">
           <span className="font-bold text-xs text-slate-700">Pengaturan lanjutan</span>
-          <span className="text-[11px] text-slate-400">Per-gate verification method · approver role · self-bypass · reason text</span>
+          <span className="text-caleo-11 text-slate-400">Per-gate verification method · approver role · self-bypass · reason text</span>
         </summary>
         <div className="px-4 py-4 border-t border-slate-200 text-xs text-slate-600 bg-slate-50">
           <p>Advanced per-gate config disesuaikan kebutuhan tenant — override verification method (PIN/WA/INBOX), override approver role (default Owner), self-bypass (Owner sendiri minta auto-approve), reason text wajib.</p>

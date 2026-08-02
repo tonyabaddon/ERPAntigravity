@@ -46,7 +46,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
       <div className="bg-white rounded max-w-2xl w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Cari Produk via Foto</p>
+            <p className="text-caleo-10 font-extrabold text-emerald-700 uppercase tracking-widest">Cari Produk via Foto</p>
             <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mt-0.5">Pilih sumber foto produk</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center">
@@ -59,13 +59,13 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
               <span className="material-symbols-outlined text-amber-800 animate-spin">progress_activity</span>
               <div>
                 <h4 className="text-sm font-extrabold text-amber-900">⏱️ Menyiapkan AI… 5 detik</h4>
-                <p className="text-[11px] text-amber-800 mt-1">CLIP model lagi di-load. Search berikutnya akan langsung cepat.</p>
+                <p className="text-caleo-11 text-amber-800 mt-1">CLIP model lagi di-load. Search berikutnya akan langsung cepat.</p>
               </div>
             </div>
           </div>
         )}
         {isSearching && !coldStart && (
-          <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4 text-center text-[12px] text-[var(--color-caleo-primary)] font-bold">Mencari…</div>
+          <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-4 text-center text-xs text-[var(--color-caleo-primary)] font-bold">Mencari…</div>
         )}
         <div className="grid grid-cols-2 gap-3 mb-3">
           <button
@@ -75,7 +75,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
             <div className="w-12 h-12 bg-emerald-200 rounded flex items-center justify-center mb-3">
               <span className="material-symbols-outlined text-2xl text-emerald-800">photo_camera</span>
             </div>
-            <p className="text-[10px] font-extrabold uppercase text-emerald-700">Opsi 1</p>
+            <p className="text-caleo-10 font-extrabold uppercase text-emerald-700">Opsi 1</p>
             <h4 className="text-sm font-extrabold text-emerald-900 mt-0.5">Pakai Kamera</h4>
             <input ref={camRef} type="file" accept="image/*" capture="environment" className="hidden"
                    onChange={e => { const f = e.target.files?.[0]; if (f) void runSearch(f); }} />
@@ -87,7 +87,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
             <div className="w-12 h-12 bg-blue-200 rounded flex items-center justify-center mb-3">
               <span className="material-symbols-outlined text-2xl text-blue-800">folder_open</span>
             </div>
-            <p className="text-[10px] font-extrabold uppercase text-blue-700">Opsi 2</p>
+            <p className="text-caleo-10 font-extrabold uppercase text-blue-700">Opsi 2</p>
             <h4 className="text-sm font-extrabold text-blue-900 mt-0.5">Upload File</h4>
             <input ref={fileRef} type="file" accept="image/*" className="hidden"
                    onChange={e => { const f = e.target.files?.[0]; if (f) void runSearch(f); }} />
@@ -97,7 +97,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
           onFileSelected={runSearch}
           onError={msg => showToast(msg, 'warning')}
         />
-        <div className="mt-4 bg-amber-50 border border-amber-200 rounded p-3 text-[11px] text-amber-900">
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded p-3 text-caleo-11 text-amber-900">
           💡 Foto produk dari angle depan / label paling jelas memberi hasil paling akurat.
         </div>
       </div>

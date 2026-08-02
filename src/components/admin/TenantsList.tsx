@@ -233,12 +233,12 @@ export function TenantsList() {
       <div className="flex justify-between items-center">
         <div>
           <h1
-            className="text-[16px] font-bold"
+            className="text-base font-bold"
             style={{ color: '#0B2545' }}
           >
             Tenant
           </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: '#9DB2CE' }}>
+          <p className="text-caleo-13 mt-0.5" style={{ color: '#9DB2CE' }}>
             {loading ? 'Memuat…' : `${totalCount} tenant ditemukan`}
           </p>
         </div>
@@ -252,7 +252,7 @@ export function TenantsList() {
           placeholder="Cari slug / nama tenant…"
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="flex-1 min-w-[200px] border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
+          className="flex-1 min-w-[200px] border rounded px-3 py-1.5 text-caleo-13 focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Cari slug atau nama"
         />
@@ -261,7 +261,7 @@ export function TenantsList() {
         <select
           value={planCode}
           onChange={(e) => handleFilterChange(setPlanCode)(e.target.value as PlanCode | '')}
-          className="border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
+          className="border rounded px-3 py-1.5 text-caleo-13 focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter paket"
         >
@@ -275,7 +275,7 @@ export function TenantsList() {
         <select
           value={status}
           onChange={(e) => handleFilterChange(setStatus)(e.target.value as TenantStatus | '')}
-          className="border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
+          className="border rounded px-3 py-1.5 text-caleo-13 focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter status"
         >
@@ -289,7 +289,7 @@ export function TenantsList() {
         <select
           value={expiryWithinDays}
           onChange={(e) => handleFilterChange(setExpiryWithinDays)(e.target.value as '' | '30' | '90')}
-          className="border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
+          className="border rounded px-3 py-1.5 text-caleo-13 focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter kedaluwarsa"
         >
@@ -302,14 +302,14 @@ export function TenantsList() {
       {/* Error inline retry */}
       {error && !loading && (
         <div
-          className="border rounded px-4 py-3 text-[13px] flex items-center justify-between"
+          className="border rounded px-4 py-3 text-caleo-13 flex items-center justify-between"
           style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
           data-testid="tenants-error"
         >
           <span>Gagal memuat tenant: {error}</span>
           <button
             onClick={() => fetchTenants()}
-            className="ml-4 px-3 py-1 rounded border font-medium text-[12px] hover:opacity-80"
+            className="ml-4 px-3 py-1 rounded border font-medium text-xs hover:opacity-80"
             style={{ borderColor: '#991b1b', color: '#991b1b' }}
           >
             Coba lagi
@@ -337,7 +337,7 @@ export function TenantsList() {
       {/* Pagination */}
       {!loading && totalCount > PAGE_SIZE && (
         <div
-          className="flex justify-between items-center text-[12px]"
+          className="flex justify-between items-center text-xs"
           style={{ color: '#9DB2CE' }}
         >
           <span>

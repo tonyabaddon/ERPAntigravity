@@ -58,7 +58,7 @@ export default function TfQuickAddTagihanModal({
             <h3 className="text-base font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
               Tambah Tagihan Cepat
             </h3>
-            <div className="text-[11px] text-gray-500 mt-0.5">
+            <div className="text-caleo-11 text-gray-500 mt-0.5">
               Faktur yang belum ada di sistem. Item barang bisa di-isi nanti dari Tagihan Detail.
             </div>
           </div>
@@ -93,11 +93,11 @@ export default function TfQuickAddTagihanModal({
             </div>
           </div>
 
-          <div className="p-3 rounded bg-sky-50 border border-sky-200 text-[11px] text-sky-900 flex gap-2">
+          <div className="p-3 rounded bg-sky-50 border border-sky-200 text-caleo-11 text-sky-900 flex gap-2">
             <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             <span>
               <b>Quick-add tanpa Pesanan.</b> Tagihan ini dicatat{' '}
-              <code className="text-[10px] bg-white px-1 rounded">is_tf_quick_add=true</code>, tanpa
+              <code className="text-caleo-10 bg-white px-1 rounded">is_tf_quick_add=true</code>, tanpa
               stock_lots / items. Hapus TF = hapus juga Tagihan ini (cascade).
             </span>
           </div>
@@ -123,7 +123,7 @@ export default function TfQuickAddTagihanModal({
               onChange={e => setDueAt(e.target.value)}
               className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
             />
-            <div className="text-[11px] text-gray-500 mt-1">
+            <div className="text-caleo-11 text-gray-500 mt-1">
               Auto-fill Net {defaultPaymentTermDays} hari dari supplier. JT TF (di form luar) akan
               meng-override saat di-bundle.
             </div>
@@ -131,7 +131,7 @@ export default function TfQuickAddTagihanModal({
         </div>
 
         <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50/80 rounded-b-3xl">
-          <div className="text-[11px] text-gray-500">Tagihan baru langsung ter-add ke bundle TF.</div>
+          <div className="text-caleo-11 text-gray-500">Tagihan baru langsung ter-add ke bundle TF.</div>
           <div className="flex gap-2">
             <button
               onClick={onCancel}

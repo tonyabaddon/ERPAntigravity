@@ -128,7 +128,7 @@ export default function RakitLockApprovalRequestRow({
         <div className="w-9 h-9 rounded bg-orange-100 text-orange-700 flex items-center justify-center text-base flex-shrink-0">🛠</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="inline-block rounded-full bg-orange-200 text-orange-800 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5">
+            <span className="inline-block rounded-full bg-orange-200 text-orange-800 text-caleo-10 font-extrabold uppercase tracking-wider px-2 py-0.5">
               Rakit Lock
             </span>
             <span className="text-xs font-bold text-[var(--color-caleo-primary)]">{request.requestedBy.slice(0, 8)}…</span>
@@ -144,21 +144,21 @@ export default function RakitLockApprovalRequestRow({
                 {lines.length} line · {lines.map((l) => (l as Record<string, unknown>).description as string).join(' · ')}
               </p>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <span className="text-[12px]">Final: <strong>{formatIDR(totalFinal)}</strong></span>
-                <span className="text-[12px]">HPP: <strong>{formatIDR(totalHpp)}</strong></span>
-                <span className={`text-[12px] font-bold ${marginWarn ? 'text-rose-600' : 'text-emerald-700'}`}>
+                <span className="text-xs">Final: <strong>{formatIDR(totalFinal)}</strong></span>
+                <span className="text-xs">HPP: <strong>{formatIDR(totalHpp)}</strong></span>
+                <span className={`text-xs font-bold ${marginWarn ? 'text-rose-600' : 'text-emerald-700'}`}>
                   {marginWarn ? '⚠ ' : ''}Margin: {formatIDR(margin)} ({marginPct.toFixed(1)}%)
                 </span>
                 <button
                   type="button"
                   onClick={() => setExpanded(s => !s)}
-                  className="ml-auto text-[11px] underline text-slate-500 hover:text-slate-700"
+                  className="ml-auto text-caleo-11 underline text-slate-500 hover:text-slate-700"
                 >
                   {expanded ? 'Tutup detail' : 'Lihat detail komponen'}
                 </button>
               </div>
               {expanded && (
-                <div className="mt-2 bg-white border border-slate-200 rounded p-2 text-[12px] space-y-1">
+                <div className="mt-2 bg-white border border-slate-200 rounded p-2 text-xs space-y-1">
                   {lines.map((l, idx) => {
                     const row = l as Record<string, unknown>;
                     const comps = Array.isArray(row.components) ? row.components : [];

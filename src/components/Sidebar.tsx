@@ -216,7 +216,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
         </div>
         <div className={`transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           <h1 className="text-lg font-extrabold text-white tracking-tight leading-none">Caleo</h1>
-          <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mt-1">MSME ERP Suite</p>
+          <p className="text-caleo-10 text-emerald-400 font-bold uppercase tracking-widest mt-1">MSME ERP Suite</p>
         </div>
       </div>
 
@@ -230,7 +230,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
             <div key={cat} className="space-y-0.5">
               {isExpanded ? (
                 <div className={`px-4 ${isFirst ? 'pt-1' : 'pt-3'} pb-1.5`}>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400/70 whitespace-nowrap">
+                  <p className="text-caleo-10 font-bold uppercase tracking-[0.18em] text-emerald-400/70 whitespace-nowrap">
                     {CATEGORY_LABELS[cat]}
                   </p>
                 </div>
@@ -325,7 +325,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
           />
           <div className={`flex flex-col transition-opacity duration-300 overflow-hidden ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-            <p className="text-[10px] text-white/50 truncate font-semibold">{currentUser.role}</p>
+            <p className="text-caleo-10 text-white/50 truncate font-semibold">{currentUser.role}</p>
           </div>
         </div>
 

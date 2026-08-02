@@ -129,14 +129,14 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Supplier</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Pesanan</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Total</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase w-48">Dibayar</th>
-                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Status</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
-                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase">Aksi</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Tagihan</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Supplier</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Pesanan</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Total</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase w-48">Dibayar</th>
+                <th className="text-center px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Status</th>
+                <th className="text-left px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">JT</th>
+                <th className="text-right px-4 py-3 text-caleo-11 font-semibold text-gray-500 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -159,7 +159,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                     </td>
                     <td className="px-4 py-4 text-right text-sm font-bold">{formatIDR(t.total)}</td>
                     <td className="px-4 py-4">
-                      <div className="text-[11px] text-gray-600 mb-1">
+                      <div className="text-caleo-11 text-gray-600 mb-1">
                         <span className="font-semibold text-green-700">{formatIDR(paid)}</span>
                         <span className="text-gray-400"> / </span>
                         <span className="text-gray-600">{formatIDR(t.total)}</span>
@@ -167,7 +167,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                       <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                         <div className={`h-full ${paid >= t.total ? 'bg-green-500' : paid > 0 ? 'bg-sky-500' : 'bg-amber-400'}`} style={{ width: `${pct}%` }} />
                       </div>
-                      {outstanding > 0 && <div className="text-[10px] text-gray-400 mt-0.5">Sisa {formatIDR(outstanding)}</div>}
+                      {outstanding > 0 && <div className="text-caleo-10 text-gray-400 mt-0.5">Sisa {formatIDR(outstanding)}</div>}
                     </td>
                     <td className="px-4 py-4 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusBadge(eff)}`}>{statusLabel(eff)}</span>
@@ -177,12 +177,12 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                       <div className="inline-flex gap-1">
                         {eff !== 'LUNAS' && eff !== 'VOID' && onOpenPembayaran && (
                           <button onClick={() => onOpenPembayaran(t.supplier_id)}
-                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                            className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
                             Bayar
                           </button>
                         )}
                         <button onClick={() => onOpenDetail(t.pi_number)}
-                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                          className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
                           Detail
                         </button>
                       </div>

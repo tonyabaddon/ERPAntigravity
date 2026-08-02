@@ -124,7 +124,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
 
         {/* Instruction callout */}
         <div
-          className="border-l-4 p-3 rounded mb-5 text-[13px]"
+          className="border-l-4 p-3 rounded mb-5 text-caleo-13"
           style={{ background: '#F0F4F8', borderColor: '#9DB2CE', color: '#0B2545' }}
         >
           Buat user di Supabase Dashboard dulu → copy UUID-nya → paste di bawah.
@@ -136,7 +136,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
           <div className="mb-4">
             <label
               htmlFor="salesrep-user-id"
-              className="block text-[12px] font-semibold mb-1"
+              className="block text-xs font-semibold mb-1"
               style={{ color: '#0B2545' }}
             >
               User UUID (dari Supabase Dashboard) <span style={{ color: '#DC2626' }}>*</span>
@@ -150,7 +150,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               onChange={(e) => setUserId(e.target.value)}
               disabled={submitting}
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              className="w-full border rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
               style={{
                 borderColor: '#D3D8E0',
                 color: '#0B2545',
@@ -159,7 +159,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               aria-label="User UUID dari Supabase Dashboard"
             />
             {userId && !isUUIDLike(userId) && (
-              <p className="text-[11px] mt-0.5" style={{ color: '#DC2626' }}>
+              <p className="text-caleo-11 mt-0.5" style={{ color: '#DC2626' }}>
                 Format UUID tidak valid.
               </p>
             )}
@@ -169,7 +169,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
           <div className="mb-4">
             <label
               htmlFor="salesrep-email"
-              className="block text-[12px] font-semibold mb-1"
+              className="block text-xs font-semibold mb-1"
               style={{ color: '#0B2545' }}
             >
               Email <span style={{ color: '#DC2626' }}>*</span>
@@ -182,7 +182,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
               placeholder="salesrep@contoh.com"
-              className="w-full border rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Email sales rep"
             />
@@ -192,7 +192,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
           <div className="mb-6">
             <label
               htmlFor="salesrep-name"
-              className="block text-[12px] font-semibold mb-1"
+              className="block text-xs font-semibold mb-1"
               style={{ color: '#0B2545' }}
             >
               Nama lengkap <span style={{ color: '#DC2626' }}>*</span>
@@ -205,7 +205,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               onChange={(e) => setName(e.target.value)}
               disabled={submitting}
               placeholder="Nama lengkap"
-              className="w-full border rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-caleo-13 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Nama lengkap sales rep"
             />
@@ -217,7 +217,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="border rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="border rounded-full px-4 py-2.5 text-caleo-13 font-medium disabled:opacity-40 transition-colors"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
             >
               Batal
@@ -225,7 +225,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
             <button
               type="submit"
               disabled={submitting || !isValid}
-              className="font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="font-extrabold rounded-full px-4 py-2.5 text-caleo-13 disabled:opacity-40 hover:opacity-90 transition-opacity"
               style={{ background: '#0B2545', color: '#ffffff' }}
             >
               {submitting ? 'Menyimpan…' : 'Simpan'}

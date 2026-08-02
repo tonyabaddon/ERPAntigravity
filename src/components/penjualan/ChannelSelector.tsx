@@ -54,12 +54,12 @@ export default function ChannelSelector({ value, onChange }: ChannelSelectorProp
               }`}
             >
               <ChannelIcon code={code} size={20} tint="none" className={isActive ? 'text-[var(--color-caleo-primary)]' : 'text-slate-500'} />
-              <span className={`text-[11px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{def.label}</span>
+              <span className={`text-caleo-11 ${isActive ? 'font-bold' : 'font-semibold'}`}>{def.label}</span>
             </button>
           );
         })}
       </div>
-      <p className="text-[11px] text-slate-500 mt-2">
+      <p className="text-caleo-11 text-slate-500 mt-2">
         Channel terpilih: <strong className="text-[var(--color-caleo-primary)]">{selectedDef.label}</strong> · {selectedHint(value)}
       </p>
     </div>

@@ -64,11 +64,11 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
       {/* Group sections */}
       {(['offline', 'marketplace', 'direct'] as ChannelGroup[]).map(group => (
         <div key={group}>
-          <div className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest mb-3 pl-1">
+          <div className="text-caleo-11 font-extrabold text-slate-500 uppercase tracking-widest mb-3 pl-1">
             {GROUP_TITLE[group]}
           </div>
           {GROUP_HINT[group] && (
-            <p className="text-[11px] text-slate-400 italic mb-2 pl-1">{GROUP_HINT[group]}</p>
+            <p className="text-caleo-11 text-slate-400 italic mb-2 pl-1">{GROUP_HINT[group]}</p>
           )}
           <div className="bg-white rounded border border-gray-200 divide-y divide-gray-100">
             {CHANNEL_GROUPS[group].map(code => {
@@ -86,7 +86,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
                     </div>
                     <div>
                       <div className="font-semibold text-sm text-gray-800">{def.label}</div>
-                      <div className="text-[11px] text-gray-400">
+                      <div className="text-caleo-11 text-gray-400">
                         invoice {def.invoicePrefix}-… {def.flow === 'orders' && '· flow orders'}
                       </div>
                     </div>
@@ -98,7 +98,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
                     title={isLocked ? 'Walk-in tidak bisa dinonaktifkan' : ''}
                     className="flex items-center gap-2"
                   >
-                    <span className={`text-[11px] font-bold uppercase tracking-wide ${
+                    <span className={`text-caleo-11 font-bold uppercase tracking-wide ${
                       isLocked ? 'text-slate-500'
                       : isVisible ? 'text-emerald-700'
                       : 'text-slate-400'
@@ -119,7 +119,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
         </div>
       ))}
 
-      <div className="border-t border-gray-100 pt-4 text-[11px] text-gray-400">
+      <div className="border-t border-gray-100 pt-4 text-caleo-11 text-gray-400">
         💡 Tip: Data historis pada kanal yang dinonaktifkan tetap muncul di Rekonsiliasi & Laporan. Visibility hanya filter input baru.
       </div>
     </div>

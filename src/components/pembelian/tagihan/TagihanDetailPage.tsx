@@ -201,7 +201,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
           <div>
             <div className="text-sm font-bold text-red-800">Tagihan ini sudah di-void</div>
             <div className="text-xs text-red-700 mt-1">{tgh.void_reason ?? '—'}</div>
-            <div className="text-[11px] text-red-600 mt-1">Void {fmtDate(tgh.voided_at)}</div>
+            <div className="text-caleo-11 text-red-600 mt-1">Void {fmtDate(tgh.voided_at)}</div>
           </div>
         </div>
       )}
@@ -210,28 +210,28 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         <div className="bg-white/78 backdrop-blur-xl rounded border border-indigo-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <LinkIcon className="w-3.5 h-3.5 text-indigo-600" />
-            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Pesanan Terkait</div>
+            <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500">Pesanan Terkait</div>
           </div>
           <div className="text-sm font-bold text-indigo-700">
             {tgh.pesanan_id ? (pesananNumber ?? 'Memuat…') : '—'}
           </div>
           {tgh.pesanan_id && onOpenPesanan && (
-            <button onClick={() => onOpenPesanan(tgh.pesanan_id!)} className="text-[11px] text-indigo-600 font-semibold hover:underline mt-2">Lihat Pesanan →</button>
+            <button onClick={() => onOpenPesanan(tgh.pesanan_id!)} className="text-caleo-11 text-indigo-600 font-semibold hover:underline mt-2">Lihat Pesanan →</button>
           )}
         </div>
         <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <Store className="w-3.5 h-3.5 text-violet-600" />
-            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Supplier</div>
+            <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500">Supplier</div>
           </div>
           <div className="font-bold text-gray-800">{tgh.supplier?.name ?? '—'}</div>
           <div className="text-xs text-gray-500 mt-1">Net {tgh.supplier?.payment_term_days ?? 0} hari</div>
-          {tgh.supplier_invoice_number && <div className="text-[11px] text-gray-600 mt-1">Faktur: <strong>{tgh.supplier_invoice_number}</strong></div>}
+          {tgh.supplier_invoice_number && <div className="text-caleo-11 text-gray-600 mt-1">Faktur: <strong>{tgh.supplier_invoice_number}</strong></div>}
         </div>
         <div className="bg-white/78 backdrop-blur-xl rounded border border-amber-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock className="w-3.5 h-3.5 text-amber-600" />
-            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Jatuh Tempo</div>
+            <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500">Jatuh Tempo</div>
           </div>
           <div className="font-bold text-amber-700">{fmtDate(tgh.payment_due_at)}</div>
           <div className="text-xs text-gray-500 mt-1">{tgh.payment_method}</div>
@@ -243,22 +243,22 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Status Pembayaran</div>
         <div className="grid grid-cols-3 gap-4 mb-3">
           <div className="bg-gray-50 rounded p-3">
-            <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Tagihan</div>
+            <div className="text-caleo-11 text-gray-500 uppercase font-semibold">Total Tagihan</div>
             <div className="text-lg font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(tgh.total)}</div>
           </div>
           <div className="bg-green-50 rounded p-3">
-            <div className="text-[11px] text-green-700 uppercase font-semibold">Sudah Dibayar</div>
+            <div className="text-caleo-11 text-green-700 uppercase font-semibold">Sudah Dibayar</div>
             <div className="text-lg font-extrabold mt-1 text-green-700">{formatIDR(paid)}</div>
           </div>
           <div className="bg-amber-50 rounded p-3">
-            <div className="text-[11px] text-amber-700 uppercase font-semibold">Sisa Bayar</div>
+            <div className="text-caleo-11 text-amber-700 uppercase font-semibold">Sisa Bayar</div>
             <div className="text-lg font-extrabold mt-1 text-amber-700">{formatIDR(outstanding)}</div>
           </div>
         </div>
         <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
           <div className={`h-full ${paid >= tgh.total ? 'bg-green-500' : paid > 0 ? 'bg-sky-500' : 'bg-amber-400'}`} style={{ width: `${paidPct}%` }} />
         </div>
-        <div className="text-[11px] text-gray-500 mt-1">{paidPct.toFixed(0)}% terbayar</div>
+        <div className="text-caleo-11 text-gray-500 mt-1">{paidPct.toFixed(0)}% terbayar</div>
       </div>
 
       {tgh.supplier_invoice_photo_url && (
@@ -297,13 +297,13 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
             <table className="w-full">
               <thead className="border-b border-gray-200">
                 <tr>
-                  <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">SKU / Nama</th>
-                  <th className="text-center py-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Qty</th>
-                  <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
+                  <th className="text-left py-2 text-caleo-11 font-semibold text-gray-500 uppercase">SKU / Nama</th>
+                  <th className="text-center py-2 w-20 text-caleo-11 font-semibold text-gray-500 uppercase">Qty</th>
+                  <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Harga Beli</th>
                   {hasItemDiscount && (
-                    <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Diskon Item</th>
+                    <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Diskon Item</th>
                   )}
-                  <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
+                  <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Subtotal</th>
                 </tr>
               </thead>
               <tbody>
@@ -315,7 +315,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
                         <span className="text-sm">{it.product_name}</span>
                       </div>
                       {(it.master_unit_cost ?? 0) > it.unit_cost && (
-                        <div className="text-[10px] text-slate-400 mt-0.5">List {formatIDR(it.master_unit_cost ?? 0)}</div>
+                        <div className="text-caleo-10 text-slate-400 mt-0.5">List {formatIDR(it.master_unit_cost ?? 0)}</div>
                       )}
                     </td>
                     <td className="py-3 text-center font-semibold">{it.qty}</td>
@@ -360,7 +360,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
 
       {tgh.notes && (
         <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-4">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Catatan</div>
+          <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500 mb-1">Catatan</div>
           <div className="text-sm text-gray-700">{tgh.notes}</div>
         </div>
       )}
@@ -415,7 +415,7 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
             <textarea value={reason} onChange={e => setReason(e.target.value)}
               rows={3} placeholder="Contoh: Faktur salah, barang return semua ke supplier"
               className="w-full text-sm px-3 py-2 rounded border border-gray-300 focus:border-red-400 focus-visible:outline-none" />
-            <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
+            <div className="text-caleo-11 text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">

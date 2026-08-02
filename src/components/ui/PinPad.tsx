@@ -191,7 +191,7 @@ export default function PinPad({
     <div className={containerCls}>
       {(title || subtitle || showDemoHint) && (
         <div className="text-center mb-4">
-          <span className="inline-block rounded-full bg-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1">
+          <span className="inline-block rounded-full bg-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)] text-caleo-10 font-extrabold uppercase tracking-wider px-3 py-1">
             Approval Sync
           </span>
           {title && (

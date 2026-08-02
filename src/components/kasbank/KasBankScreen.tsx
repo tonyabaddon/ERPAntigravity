@@ -129,8 +129,8 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
               <User className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[14px] font-extrabold text-gray-700">{account.internal_label}</div>
-              <div className="text-[11px] text-gray-500 flex items-center gap-1 flex-wrap mt-0.5">
+              <div className="text-sm font-extrabold text-gray-700">{account.internal_label}</div>
+              <div className="text-caleo-11 text-gray-500 flex items-center gap-1 flex-wrap mt-0.5">
                 {subtitleParts.map((part, i) => (
                   <React.Fragment key={i}>
                     {i > 0 && <span>·</span>}
@@ -140,7 +140,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
               </div>
             </div>
           </div>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-gray-300 text-gray-700">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide bg-gray-300 text-gray-700">
             Pribadi
           </span>
         </div>
@@ -149,7 +149,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
         <div className="text-2xl font-black text-gray-700">{formatRp(account.current_balance)}</div>
 
         {/* Footer */}
-        <div className="mt-3 text-[11px] text-gray-500">
+        <div className="mt-3 text-caleo-11 text-gray-500">
           {account.movements_this_month > 0
             ? `${account.movements_this_month} mutasi GL bulan ini`
             : 'Belum ada mutasi'}
@@ -173,10 +173,10 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
             <Icon className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[14px] font-extrabold" style={{ color: 'var(--color-primary)' }}>
+            <div className="text-sm font-extrabold" style={{ color: 'var(--color-primary)' }}>
               {account.internal_label}
             </div>
-            <div className="text-[11px] text-gray-500 flex items-center gap-1 flex-wrap mt-0.5">
+            <div className="text-caleo-11 text-gray-500 flex items-center gap-1 flex-wrap mt-0.5">
               {subtitleParts.map((part, i) => (
                 <React.Fragment key={i}>
                   {i > 0 && <span>·</span>}
@@ -187,7 +187,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
           </div>
         </div>
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${chip.bgClass} ${chip.textClass}`}
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide ${chip.bgClass} ${chip.textClass}`}
         >
           {chip.label}
         </span>
@@ -199,7 +199,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 text-[11px] text-gray-500">
+      <div className="flex items-center justify-between mt-3 text-caleo-11 text-gray-500">
         <span className="flex items-center gap-1">
           <Activity className="w-3 h-3" />
           {account.movements_this_month > 0
@@ -283,7 +283,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
   if (loading) {
     return (
-      <div className="p-8 text-[13px] text-[#43474e]">
+      <div className="p-8 text-caleo-13 text-[#43474e]">
         Memuat data kas &amp; bank...
       </div>
     );
@@ -323,12 +323,12 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
         className="rounded p-6 text-white mb-6"
         style={{ background: 'linear-gradient(135deg, #065f46, #047857)' }}
       >
-        <div className="text-[11px] uppercase tracking-widest text-emerald-100 font-extrabold mb-1">
+        <div className="text-caleo-11 uppercase tracking-widest text-emerald-100 font-extrabold mb-1">
           Total liquid (akun bisnis · cleared)
         </div>
         <div className="text-4xl font-black tracking-tight">{formatRp(totalLiquid)}</div>
         {totalPending > 0 && (
-          <div className="text-[12px] text-emerald-100 mt-2 flex items-center gap-2">
+          <div className="text-xs text-emerald-100 mt-2 flex items-center gap-2">
             <AlertTriangle className="w-3 h-3 flex-shrink-0" />
             Termasuk {formatRp(totalPending)} marketplace PENDING (tidak masuk saldo cleared)
           </div>
@@ -350,7 +350,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
         </div>
 
         {businessAccounts.length === 0 ? (
-          <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-8 text-center text-[13px] text-gray-500">
+          <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-8 text-center text-caleo-13 text-gray-500">
             Belum ada akun bisnis.{' '}
             {isOwner && (
               <button
@@ -380,7 +380,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
           <div className="flex items-baseline justify-between mb-3">
             <h4 className="text-sm font-extrabold uppercase tracking-widest text-gray-500 flex items-center gap-2">
               Akun Pribadi
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-gray-200 text-gray-700">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold bg-gray-200 text-gray-700">
                 Excluded dari laporan bisnis
               </span>
             </h4>
@@ -404,7 +404,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
       {/* Full empty state — no accounts at all */}
       {accounts.length === 0 && (
-        <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-12 text-center text-[13px] text-gray-500 mt-2">
+        <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-12 text-center text-caleo-13 text-gray-500 mt-2">
           <Wallet className="w-8 h-8 mx-auto mb-3 text-gray-300" />
           <p className="font-bold text-gray-700 mb-1">Belum ada akun kas atau bank</p>
           <p className="text-gray-500 text-xs mb-4">

@@ -33,7 +33,7 @@ export default function Step1ChannelCustomer(props: Props) {
           Channel Penjualan <span className="text-red-500">*</span>
         </label>
         <ChannelSelector value={props.channel} onChange={props.setChannel} />
-        <p className="text-[11px] text-slate-400 mt-2 italic">Atur kanal aktif di Pengaturan → Kanal Penjualan.</p>
+        <p className="text-caleo-11 text-slate-400 mt-2 italic">Atur kanal aktif di Pengaturan → Kanal Penjualan.</p>
         {CHANNEL_REQUIRES_ORDER_NO.has(props.channel) && (
           <div className="mt-4">
             <TokpedStrip value={props.marketplaceOrderNo} onChange={props.setMarketplaceOrderNo} />
@@ -63,11 +63,11 @@ export default function Step1ChannelCustomer(props: Props) {
           onSelectExisting={(c) => props.setCustomer(c)}
           onClearSelection={() => props.setCustomer(undefined)}
         />
-        <p className="text-[11px] text-slate-500 mt-1.5 italic">
+        <p className="text-caleo-11 text-slate-500 mt-1.5 italic">
           💡 Tip: cari pakai nomor HP untuk auto-detect kalau customer pernah belanja sebelumnya — bantu repeat-buyer recognition.
         </p>
         {!props.customer && !showNewCustomerForm && (
-          <div className="mt-3 flex items-center justify-between text-[11px]">
+          <div className="mt-3 flex items-center justify-between text-caleo-11">
             <div className="text-slate-500">Tidak ketemu di daftar?</div>
             <button
               type="button"
@@ -87,7 +87,7 @@ export default function Step1ChannelCustomer(props: Props) {
             tenantSettings={props.tenantSettings}
           />
         )}
-        <p className="mt-2 text-[11px] text-slate-500 italic">
+        <p className="mt-2 text-caleo-11 text-slate-500 italic">
           ℹ️ Setiap customer wajib tersimpan di daftar Pelanggan — database MSME penting.
         </p>
       </div>

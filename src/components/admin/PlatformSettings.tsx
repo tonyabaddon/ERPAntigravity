@@ -95,12 +95,12 @@ export function PlatformSettings() {
         <h1 className="text-xl font-bold" style={{ color: '#0B2545' }}>
           Pengaturan Pembayaran
         </h1>
-        <p className="mt-1 text-[13px]" style={{ color: '#64748B' }}>
+        <p className="mt-1 text-caleo-13" style={{ color: '#64748B' }}>
           Informasi bank + WhatsApp yang tampil di instruksi pembayaran ke customer
           setelah onboarding tenant.
         </p>
         {settings?.updated_at && (
-          <p className="mt-1 text-[11px]" style={{ color: '#9DB2CE' }}>
+          <p className="mt-1 text-caleo-11" style={{ color: '#9DB2CE' }}>
             Terakhir diperbarui:{' '}
             {new Date(settings.updated_at).toLocaleString('id-ID', {
               day: '2-digit',
@@ -122,7 +122,7 @@ export function PlatformSettings() {
           <div>
             <label
               htmlFor="bank-name"
-              className="block text-[13px] font-medium mb-1"
+              className="block text-caleo-13 font-medium mb-1"
               style={{ color: '#0B2545' }}
             >
               Nama Bank
@@ -133,7 +133,7 @@ export function PlatformSettings() {
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
               placeholder="Contoh: BCA"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
+              className="w-full px-3 py-2 rounded border text-caleo-13 outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -147,7 +147,7 @@ export function PlatformSettings() {
           <div>
             <label
               htmlFor="bank-account-no"
-              className="block text-[13px] font-medium mb-1"
+              className="block text-caleo-13 font-medium mb-1"
               style={{ color: '#0B2545' }}
             >
               Nomor Rekening
@@ -158,7 +158,7 @@ export function PlatformSettings() {
               value={bankAccountNo}
               onChange={(e) => setBankAccountNo(e.target.value)}
               placeholder="1234567890"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
+              className="w-full px-3 py-2 rounded border text-caleo-13 outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -172,7 +172,7 @@ export function PlatformSettings() {
           <div>
             <label
               htmlFor="bank-account-name"
-              className="block text-[13px] font-medium mb-1"
+              className="block text-caleo-13 font-medium mb-1"
               style={{ color: '#0B2545' }}
             >
               Atas Nama
@@ -183,7 +183,7 @@ export function PlatformSettings() {
               value={bankAccountName}
               onChange={(e) => setBankAccountName(e.target.value)}
               placeholder="PT Caleo Digital"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
+              className="w-full px-3 py-2 rounded border text-caleo-13 outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -197,7 +197,7 @@ export function PlatformSettings() {
           <div>
             <label
               htmlFor="admin-wa-number"
-              className="block text-[13px] font-medium mb-1"
+              className="block text-caleo-13 font-medium mb-1"
               style={{ color: '#0B2545' }}
             >
               Nomor WhatsApp Admin
@@ -208,7 +208,7 @@ export function PlatformSettings() {
               value={adminWaNumber}
               onChange={(e) => setAdminWaNumber(e.target.value)}
               placeholder="+62812-3456-7890"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
+              className="w-full px-3 py-2 rounded border text-caleo-13 outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -223,7 +223,7 @@ export function PlatformSettings() {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded text-[13px] font-semibold transition-opacity"
+              className="px-4 py-2 rounded text-caleo-13 font-semibold transition-opacity"
               style={{
                 background: saving ? '#9DB2CE' : '#0B2545',
                 color: '#FFFFFF',

@@ -126,7 +126,7 @@ export default function CashAccountPicker({
     return (
       <div>
         {label && (
-          <label className="block font-bold mb-1 text-[13px]" style={{ color: '#1e3d60' }}>
+          <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
             {label}
             {required && <span className="text-rose-600"> *</span>}
           </label>
@@ -146,7 +146,7 @@ export default function CashAccountPicker({
     return (
       <div>
         {label && (
-          <label className="block font-bold mb-1 text-[13px]" style={{ color: '#1e3d60' }}>
+          <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
             {label}
             {required && <span className="text-rose-600"> *</span>}
           </label>
@@ -171,12 +171,12 @@ export default function CashAccountPicker({
     return (
       <div>
         {label && (
-          <label className="block font-bold mb-1 text-[13px]" style={{ color: '#1e3d60' }}>
+          <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
             {label}
             {required && <span className="text-rose-600"> *</span>}
           </label>
         )}
-        <div className="w-full border border-amber-300 bg-amber-50 rounded px-3 py-2.5 text-[12px] text-amber-900 leading-snug">
+        <div className="w-full border border-amber-300 bg-amber-50 rounded px-3 py-2.5 text-xs text-amber-900 leading-snug">
           Belum ada akun <strong>{expectedTypeLabel}</strong> aktif untuk tenant ini.
           <br />
           Tambah dulu di <strong>Sidebar → Kas &amp; Bank → + Akun Baru</strong>, lalu balik ke halaman ini.
@@ -189,7 +189,7 @@ export default function CashAccountPicker({
   return (
     <div>
       {label && (
-        <label className="block font-bold mb-1 text-[13px]" style={{ color: '#1e3d60' }}>
+        <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
           {label}
           {required && <span className="text-rose-600"> *</span>}
         </label>
@@ -208,7 +208,7 @@ export default function CashAccountPicker({
         ))}
       </select>
       {required && !value && (
-        <p className="text-[10px] text-rose-600 mt-1">Wajib dipilih</p>
+        <p className="text-caleo-10 text-rose-600 mt-1">Wajib dipilih</p>
       )}
     </div>
   );

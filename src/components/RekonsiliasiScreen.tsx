@@ -352,7 +352,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
       {/* Header */}
       <div className="flex justify-between items-center gap-4 bg-white/78 backdrop-blur-xl p-5 rounded-[2rem] border border-[var(--color-caleo-mist)] shadow-sm">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#2d8a4e] bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
+          <span className="text-caleo-10 font-bold uppercase tracking-widest text-[#2d8a4e] bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5 align-middle" />
             Rekonsiliasi Aktif
           </span>

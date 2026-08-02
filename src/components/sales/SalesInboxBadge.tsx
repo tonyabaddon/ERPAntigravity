@@ -13,8 +13,8 @@ interface SalesInboxBadgeProps {
 }
 
 const SIZES = {
-  sm: { pill: 'min-w-[18px] h-[18px] text-[10px] px-1' },
-  md: { pill: 'min-w-[20px] h-5 text-[11px] px-1.5' },
+  sm: { pill: 'min-w-[18px] h-[18px] text-caleo-10 px-1' },
+  md: { pill: 'min-w-[20px] h-5 text-caleo-11 px-1.5' },
 } as const;
 
 export default function SalesInboxBadge({ size = 'md', className }: SalesInboxBadgeProps) {

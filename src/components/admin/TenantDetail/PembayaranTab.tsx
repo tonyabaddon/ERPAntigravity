@@ -158,17 +158,17 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
       >
         <h3
           id="delete-payment-title"
-          className="text-[15px] font-bold text-caleo-navy mb-3"
+          className="text-caleo-15 font-bold text-caleo-navy mb-3"
         >
           Konfirmasi Hapus Pembayaran
         </h3>
-        <p className="text-[13px] mb-4" style={{ color: C.slate }}>
+        <p className="text-caleo-13 mb-4" style={{ color: C.slate }}>
           Tindakan ini tidak dapat dibatalkan. Masukkan alasan penghapusan:
         </p>
         <div className="mb-5">
           <label
             htmlFor="delete-reason"
-            className="block text-[12px] font-semibold text-caleo-navy mb-1"
+            className="block text-xs font-semibold text-caleo-navy mb-1"
           >
             Alasan penghapusan <span className="text-caleo-danger">*</span>
           </label>
@@ -180,7 +180,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
             maxLength={500}
             rows={3}
             placeholder="Contoh: duplikat, kesalahan input, dll."
-            className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
+            className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-caleo-13 text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
             aria-label="Alasan penghapusan"
             autoFocus
           />
@@ -190,7 +190,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-4 py-2 text-[13px] font-medium disabled:opacity-40 transition-colors"
+            className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-4 py-2 text-caleo-13 font-medium disabled:opacity-40 transition-colors"
           >
             Batal
           </button>
@@ -198,7 +198,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
             type="button"
             onClick={handleConfirm}
             disabled={submitting || !reason.trim()}
-            className="rounded-full px-4 py-2 text-[13px] font-extrabold disabled:opacity-40 transition-opacity hover:opacity-90"
+            className="rounded-full px-4 py-2 text-caleo-13 font-extrabold disabled:opacity-40 transition-opacity hover:opacity-90"
             style={{ background: C.danger, color: '#ffffff' }}
             data-testid="delete-confirm-btn"
           >
@@ -305,14 +305,14 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
         style={{ background: '#fff5f5', borderColor: '#fecaca' }}
         data-testid="pembayaran-tab-error"
       >
-        <p className="text-[13px] font-semibold mb-1" style={{ color: C.danger }}>
+        <p className="text-caleo-13 font-semibold mb-1" style={{ color: C.danger }}>
           Gagal memuat riwayat pembayaran
         </p>
-        <p className="text-[12px] mb-3" style={{ color: C.slate }}>{error}</p>
+        <p className="text-xs mb-3" style={{ color: C.slate }}>{error}</p>
         <button
           type="button"
           onClick={refresh}
-          className="text-[13px] font-semibold rounded-full px-4 py-1.5 border"
+          className="text-caleo-13 font-semibold rounded-full px-4 py-1.5 border"
           style={{ borderColor: C.navy, color: C.navy }}
         >
           Coba lagi
@@ -340,18 +340,18 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           data-testid="pembayaran-tab-empty"
         >
           <p
-            className="text-[14px] font-semibold mb-2"
+            className="text-sm font-semibold mb-2"
             style={{ color: C.navy }}
           >
             Belum ada pembayaran tercatat
           </p>
-          <p className="text-[13px] mb-6" style={{ color: C.muted }}>
+          <p className="text-caleo-13 mb-6" style={{ color: C.muted }}>
             Catat pembayaran pertama untuk tenant ini.
           </p>
           <button
             type="button"
             onClick={() => setRecordOpen(true)}
-            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-6 py-3 text-[14px] hover:opacity-90 transition-opacity"
+            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-6 py-3 text-sm hover:opacity-90 transition-opacity"
             data-testid="catat-pembayaran-cta"
           >
             + Catat pembayaran
@@ -403,36 +403,36 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           data-testid="coverage-summary"
         >
           <div>
-            <div className="text-[11px] font-bold tracking-widest uppercase mb-0.5"
+            <div className="text-caleo-11 font-bold tracking-widest uppercase mb-0.5"
               style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
               Total dibayar YTD
             </div>
-            <div className="text-[16px] font-bold" style={{ color: C.navy }}>
+            <div className="text-base font-bold" style={{ color: C.navy }}>
               {fmtRupiah(totalYTD)}
             </div>
           </div>
           <div>
-            <div className="text-[11px] font-bold tracking-widest uppercase mb-0.5"
+            <div className="text-caleo-11 font-bold tracking-widest uppercase mb-0.5"
               style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
               Total dibayar (all-time)
             </div>
-            <div className="text-[16px] font-bold" style={{ color: C.navy }}>
+            <div className="text-base font-bold" style={{ color: C.navy }}>
               {fmtRupiah(totalAllTime)}
             </div>
           </div>
           <div>
-            <div className="text-[11px] font-bold tracking-widest uppercase mb-0.5"
+            <div className="text-caleo-11 font-bold tracking-widest uppercase mb-0.5"
               style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
               Status coverage
             </div>
             <CoverageStatusBadge status={coverageStatus} />
           </div>
           <div>
-            <div className="text-[11px] font-bold tracking-widest uppercase mb-0.5"
+            <div className="text-caleo-11 font-bold tracking-widest uppercase mb-0.5"
               style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
               Aktif s/d
             </div>
-            <div className="text-[13px]" style={{ color: C.ink, fontFamily: 'JetBrains Mono, monospace' }}>
+            <div className="text-caleo-13" style={{ color: C.ink, fontFamily: 'JetBrains Mono, monospace' }}>
               {row.expires_at ?? '—'}
             </div>
           </div>
@@ -443,7 +443,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           <button
             type="button"
             onClick={() => setRecordOpen(true)}
-            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-4 py-2 text-[13px] hover:opacity-90 transition-opacity"
+            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-4 py-2 text-caleo-13 hover:opacity-90 transition-opacity"
             data-testid="catat-pembayaran-btn"
           >
             + Catat pembayaran
@@ -456,7 +456,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           style={{ borderColor: C.surface }}
         >
           <table
-            className="w-full text-[12px]"
+            className="w-full text-xs"
             style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
           >
             <thead>
@@ -466,7 +466,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
                 ).map((label) => (
                   <th
                     key={label}
-                    className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest whitespace-nowrap"
+                    className="text-left px-3 py-2 text-caleo-11 font-bold uppercase tracking-widest whitespace-nowrap"
                     style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}
                   >
                     {label}
@@ -497,19 +497,19 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
                   <td className="px-3 py-2 whitespace-nowrap" style={{ color: C.slate }}>
                     {fmtMethod(p.payment_method)}
                     {p.bank_name && (
-                      <span className="ml-1 text-[11px]" style={{ color: C.muted }}>
+                      <span className="ml-1 text-caleo-11" style={{ color: C.muted }}>
                         · {p.bank_name}
                       </span>
                     )}
                     {p.ewallet_provider && (
-                      <span className="ml-1 text-[11px]" style={{ color: C.muted }}>
+                      <span className="ml-1 text-caleo-11" style={{ color: C.muted }}>
                         · {p.ewallet_provider}
                       </span>
                     )}
                   </td>
 
                   {/* Periode */}
-                  <td className="px-3 py-2 whitespace-nowrap text-[11px]" style={{ color: C.slate, fontFamily: 'JetBrains Mono, monospace' }}>
+                  <td className="px-3 py-2 whitespace-nowrap text-caleo-11" style={{ color: C.slate, fontFamily: 'JetBrains Mono, monospace' }}>
                     {p.period_from} → {p.period_to}
                   </td>
 
@@ -531,17 +531,17 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
                   </td>
 
                   {/* Ref bank */}
-                  <td className="px-3 py-2 text-[11px] max-w-[120px] truncate" style={{ color: C.slate, fontFamily: 'JetBrains Mono, monospace' }}>
+                  <td className="px-3 py-2 text-caleo-11 max-w-[120px] truncate" style={{ color: C.slate, fontFamily: 'JetBrains Mono, monospace' }}>
                     {p.bank_reference ?? '—'}
                   </td>
 
                   {/* Catatan */}
-                  <td className="px-3 py-2 text-[11px] max-w-[160px] truncate" style={{ color: C.slate }}>
+                  <td className="px-3 py-2 text-caleo-11 max-w-[160px] truncate" style={{ color: C.slate }}>
                     {p.notes ?? '—'}
                   </td>
 
                   {/* Dicatat oleh */}
-                  <td className="px-3 py-2 text-[11px] max-w-[140px] truncate" style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
+                  <td className="px-3 py-2 text-caleo-11 max-w-[140px] truncate" style={{ color: C.muted, fontFamily: 'JetBrains Mono, monospace' }}>
                     {p.recorded_by_admin}
                   </td>
 
@@ -551,7 +551,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
                       <button
                         type="button"
                         onClick={() => setEditTarget(p)}
-                        className="text-[11px] font-semibold rounded-full px-2 py-0.5 border transition-colors hover:bg-caleo-cream"
+                        className="text-caleo-11 font-semibold rounded-full px-2 py-0.5 border transition-colors hover:bg-caleo-cream"
                         style={{ borderColor: C.navy, color: C.navy }}
                         data-testid={`edit-payment-btn-${p.id}`}
                       >
@@ -560,7 +560,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(p)}
-                        className="text-[11px] font-semibold rounded-full px-2 py-0.5 border transition-colors"
+                        className="text-caleo-11 font-semibold rounded-full px-2 py-0.5 border transition-colors"
                         style={{ borderColor: C.danger, color: C.danger }}
                         data-testid={`delete-payment-btn-${p.id}`}
                       >
@@ -575,7 +575,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
         </div>
 
         {/* Footer info */}
-        <p className="text-[11px] text-right" style={{ color: C.muted }}>
+        <p className="text-caleo-11 text-right" style={{ color: C.muted }}>
           {payments.length} pembayaran · tenant: {tenantSlug}
         </p>
       </div>

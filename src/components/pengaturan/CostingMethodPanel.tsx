@@ -49,11 +49,11 @@ export default function CostingMethodPanel({ showToast }: Props) {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-extrabold text-[var(--color-caleo-primary)]">FIFO</span>
-              <span className="text-[9px] font-extrabold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
+              <span className="text-caleo-9 font-extrabold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
                 Default
               </span>
             </div>
-            <p className="text-[11px] text-slate-600 mt-1">
+            <p className="text-caleo-11 text-slate-600 mt-1">
               First-In-First-Out. Setiap penjualan ambil HPP dari lot pembelian paling lama. Akurat tapi butuh
               tracking per-lot.
             </p>
@@ -70,14 +70,14 @@ export default function CostingMethodPanel({ showToast }: Props) {
           />
           <div>
             <span className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Average</span>
-            <p className="text-[11px] text-slate-600 mt-1">
+            <p className="text-caleo-11 text-slate-600 mt-1">
               Rata-rata tertimbang dari semua lot. Lebih sederhana, tapi HPP &quot;blurry&quot; — gak
               mencerminkan harga lot tertentu.
             </p>
           </div>
         </label>
       </div>
-      <div className="bg-amber-50 border border-amber-200 rounded p-3 mb-4 text-[11px] text-amber-900">
+      <div className="bg-amber-50 border border-amber-200 rounded p-3 mb-4 text-caleo-11 text-amber-900">
         Mengubah metode akan menghitung ulang HPP semua transaksi setelah tanggal perubahan. Laporan profit
         historis sebelum tanggal ini tidak berubah.
       </div>

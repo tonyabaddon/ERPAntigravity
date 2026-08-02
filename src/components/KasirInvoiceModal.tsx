@@ -86,10 +86,10 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                       <div className="text-xl font-black text-[var(--color-caleo-primary)] tracking-tight">
                         {store?.nama_toko ?? 'Toko Anda'}
                       </div>
-                      <div className="text-[11px] text-gray-500 font-sans mt-1">
+                      <div className="text-caleo-11 text-gray-500 font-sans mt-1">
                         {store?.alamat_lengkap ?? 'Alamat belum diisi'}
                       </div>
-                      <div className="text-[11px] text-gray-500 font-sans">
+                      <div className="text-caleo-11 text-gray-500 font-sans">
                         {store?.telp_wa && `${store.telp_wa} · `}{store?.email ?? ''}
                       </div>
                     </div>
@@ -98,10 +98,10 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                       <div className="text-xs font-mono font-bold text-gray-700 mt-1">
                         {transaction.invoice_number}
                       </div>
-                      <div className="text-[10px] text-gray-400 font-sans mt-0.5">
+                      <div className="text-caleo-10 text-gray-400 font-sans mt-0.5">
                         Tanggal: {formatDate(transaction.created_at)}
                       </div>
-                      <div className="text-[10px] text-gray-500 font-sans mt-0.5">
+                      <div className="text-caleo-10 text-gray-500 font-sans mt-0.5">
                         {transaction.channel ? CHANNEL_VISUAL[transaction.channel].label : ''}
                       </div>
                     </div>
@@ -110,7 +110,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   {/* Bill to */}
                   {(transaction.customer_name || transaction.customer_company) && (
                     <div className="mb-5">
-                      <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">
+                      <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">
                         Kepada Yth.
                       </div>
                       {transaction.customer_name && <div className="font-bold text-gray-800">{transaction.customer_name}</div>}
@@ -123,11 +123,11 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   <table className="w-full text-xs font-sans border-collapse mb-4">
                     <thead>
                       <tr className="bg-[var(--color-caleo-primary)] text-white">
-                        <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">No.</th>
-                        <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">Produk / SKU</th>
-                        <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Qty</th>
-                        <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Harga Satuan</th>
-                        <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Subtotal</th>
+                        <th className="px-3 py-2 text-left text-caleo-10 uppercase tracking-wide font-bold">No.</th>
+                        <th className="px-3 py-2 text-left text-caleo-10 uppercase tracking-wide font-bold">Produk / SKU</th>
+                        <th className="px-3 py-2 text-right text-caleo-10 uppercase tracking-wide font-bold">Qty</th>
+                        <th className="px-3 py-2 text-right text-caleo-10 uppercase tracking-wide font-bold">Harga Satuan</th>
+                        <th className="px-3 py-2 text-right text-caleo-10 uppercase tracking-wide font-bold">Subtotal</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -136,7 +136,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                           <td className="px-3 py-2 text-gray-400">{i + 1}</td>
                           <td className="px-3 py-2">
                             <div className="font-semibold text-gray-800">{item.name}</div>
-                            {item.sku && <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>}
+                            {item.sku && <div className="font-mono text-caleo-9 text-gray-400">{item.sku}</div>}
                           </td>
                           <td className="px-3 py-2 text-right font-semibold">{item.qty}</td>
                           <td className="px-3 py-2 text-right text-gray-500">
@@ -180,7 +180,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                         <span>{formatIDR((transaction.total_amount ?? transaction.subtotal))}</span>
                       </div>
                       {transaction.payment_method && (
-                        <div className="flex justify-between py-1 text-gray-500 text-[10px]">
+                        <div className="flex justify-between py-1 text-gray-500 text-caleo-10">
                           <span>Metode Bayar</span>
                           <span className="font-bold">{PAYMENT_LABEL[transaction.payment_method]}</span>
                         </div>
@@ -189,7 +189,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   </div>
 
                   {/* Footer */}
-                  <div className="text-center text-[10px] text-gray-400 font-sans border-t border-gray-100 pt-3 mt-2">
+                  <div className="text-center text-caleo-10 text-gray-400 font-sans border-t border-gray-100 pt-3 mt-2">
                     Terima kasih atas kepercayaan Anda · {store?.nama_toko ?? 'Toko Anda'}
                   </div>
                 </>

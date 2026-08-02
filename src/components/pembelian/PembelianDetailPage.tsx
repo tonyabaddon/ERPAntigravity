@@ -378,7 +378,7 @@ export default function PembelianDetailPage({
           <div className="px-6 py-4 border-b border-gray-200">
             <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Item Pembelian</p>
           </div>
-          <div className="grid grid-cols-6 px-3 py-2 bg-gray-50 border-b border-gray-200 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+          <div className="grid grid-cols-6 px-3 py-2 bg-gray-50 border-b border-gray-200 text-caleo-11 font-bold uppercase tracking-wide text-gray-500">
             <span className="col-span-2">Produk</span>
             <span className="text-center">Diterima</span>
             <span className="text-right">Harga Beli</span>
@@ -393,7 +393,7 @@ export default function PembelianDetailPage({
               <div key={item.id} className="grid grid-cols-6 px-3 py-2.5 border-b border-gray-100 items-center">
                 <div className="col-span-2">
                   <div className="font-semibold text-gray-800">{item.product_name}</div>
-                  <div className="font-mono text-[11px] text-gray-400">
+                  <div className="font-mono text-caleo-11 text-gray-400">
                     {item.sku}{item.qty_damaged > 0 && <span className="text-rose-500"> · {item.qty_damaged} rusak</span>}
                   </div>
                 </div>
@@ -406,7 +406,7 @@ export default function PembelianDetailPage({
               </div>
             );
           })}
-          <div className="flex justify-end gap-8 px-3 py-2.5 border-t-2 border-gray-200 bg-gray-50 text-[12px]">
+          <div className="flex justify-end gap-8 px-3 py-2.5 border-t-2 border-gray-200 bg-gray-50 text-xs">
             <div className="text-right text-gray-400 leading-relaxed">
               Subtotal<br />
               {po.tax_rate > 0 && <>PPN ({(po.tax_rate * 100).toFixed(0)}%)<br /></>}
@@ -425,11 +425,11 @@ export default function PembelianDetailPage({
           <div className="bg-white rounded border border-rose-200 overflow-hidden print:hidden">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-rose-100">
               <p className="text-xs font-bold uppercase tracking-wide text-rose-500">Barang Rusak</p>
-              <span className="bg-rose-100 text-rose-700 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+              <span className="bg-rose-100 text-rose-700 text-caleo-11 font-semibold px-2 py-0.5 rounded-full">
                 {damagedItems.reduce((s, i) => s + i.qty_damaged, 0)} item
               </span>
             </div>
-            <div className="grid grid-cols-12 px-3 py-2 bg-rose-50 border-b border-rose-200 text-[11px] font-bold uppercase tracking-wide text-rose-400">
+            <div className="grid grid-cols-12 px-3 py-2 bg-rose-50 border-b border-rose-200 text-caleo-11 font-bold uppercase tracking-wide text-rose-400">
               <span className="col-span-3">Produk</span>
               <span className="col-span-1 text-center">Qty</span>
               <span className="col-span-4">Catatan</span>
@@ -439,20 +439,20 @@ export default function PembelianDetailPage({
               <div key={item.id} className="grid grid-cols-12 px-3 py-2.5 items-center border-b border-rose-100 bg-white last:border-b-0">
                 <div className="col-span-3">
                   <div className="font-semibold text-gray-800">{item.product_name}</div>
-                  <div className="font-mono text-[11px] text-gray-400">{item.sku}</div>
+                  <div className="font-mono text-caleo-11 text-gray-400">{item.sku}</div>
                 </div>
                 <span className="col-span-1 text-center font-bold text-rose-600">{item.qty_damaged}</span>
-                <span className="col-span-4 text-gray-500 text-[12px]">{item.damage_notes ?? '—'}</span>
+                <span className="col-span-4 text-gray-500 text-xs">{item.damage_notes ?? '—'}</span>
                 <div className="col-span-4 flex justify-center items-center gap-2">
                   {item.damage_status === 'REPLACED' ? (
-                    <span className="text-[12px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">Replaced</span>
+                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">Replaced</span>
                   ) : (
                     <>
                       <select
                         value={item.damage_status}
                         disabled={updatingItemId === item.id}
                         onChange={e => handleDamageStatusChange(item, e.target.value)}
-                        className="text-[12px] border border-amber-200 rounded px-2 py-1 bg-amber-50 text-amber-700 font-semibold focus-visible:outline-none disabled:opacity-50"
+                        className="text-xs border border-amber-200 rounded px-2 py-1 bg-amber-50 text-amber-700 font-semibold focus-visible:outline-none disabled:opacity-50"
                       >
                         {DAMAGE_STATUS_OPTIONS.map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -461,7 +461,7 @@ export default function PembelianDetailPage({
                       {item.damage_status === 'RETURNED' && (
                         <button
                           onClick={() => setReplaceItem(item)}
-                          className="text-[12px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded whitespace-nowrap"
+                          className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded whitespace-nowrap"
                         >
                           Terima Pengganti
                         </button>
@@ -479,7 +479,7 @@ export default function PembelianDetailPage({
           <div className="bg-white rounded border border-gray-200 p-6 space-y-4 print:hidden">
             {po.invoice_url && (
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Invoice Supplier</div>
+                <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500 mb-2">Invoice Supplier</div>
                 <StorageImage
                   bucket="purchase-documents"
                   path={po.invoice_url}
@@ -492,7 +492,7 @@ export default function PembelianDetailPage({
             )}
             {po.payment_proof_url && (
               <div>
-                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Bukti Pembayaran</div>
+                <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500 mb-2">Bukti Pembayaran</div>
                 <StorageImage
                   bucket="purchase-documents"
                   path={po.payment_proof_url}

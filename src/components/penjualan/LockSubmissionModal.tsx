@@ -260,38 +260,38 @@ export default function LockSubmissionModal({
             <div key={d.id} className="border border-slate-200 rounded p-4 bg-slate-50/40">
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-start mb-3">
                 <div>
-                  <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Deskripsi</div>
+                  <div className="text-caleo-10 font-extrabold text-slate-500 uppercase tracking-widest mb-1">Deskripsi</div>
                   <input
                     type="text"
-                    className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-[13px]"
+                    className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-caleo-13"
                     value={d.description}
                     onChange={e => updateDraft(d.id, { description: e.target.value })}
                   />
                 </div>
                 <div>
-                  <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Harga Final</div>
+                  <div className="text-caleo-10 font-extrabold text-slate-500 uppercase tracking-widest mb-1">Harga Final</div>
                   <input
                     type="number"
                     min={0}
-                    className="w-32 bg-white border border-slate-200 rounded px-3 py-2 text-[13px]"
+                    className="w-32 bg-white border border-slate-200 rounded px-3 py-2 text-caleo-13"
                     value={d.finalPrice || ''}
                     onChange={e => updateDraft(d.id, { finalPrice: Number(e.target.value || 0) })}
                   />
                 </div>
                 <div>
-                  <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Mode</div>
+                  <div className="text-caleo-10 font-extrabold text-slate-500 uppercase tracking-widest mb-1">Mode</div>
                   <div className="inline-flex rounded bg-white border border-slate-200 p-0.5">
                     <button
                       type="button"
                       onClick={() => updateDraft(d.id, { trackingMode: 'detail' })}
-                      className={`px-3 py-1.5 rounded text-[12px] font-bold ${d.trackingMode === 'detail' ? 'bg-emerald-500 text-white' : 'text-slate-600'}`}
+                      className={`px-3 py-1.5 rounded text-xs font-bold ${d.trackingMode === 'detail' ? 'bg-emerald-500 text-white' : 'text-slate-600'}`}
                     >
                       Detail
                     </button>
                     <button
                       type="button"
                       onClick={() => updateDraft(d.id, { trackingMode: 'lumpsum' })}
-                      className={`px-3 py-1.5 rounded text-[12px] font-bold ${d.trackingMode === 'lumpsum' ? 'bg-emerald-500 text-white' : 'text-slate-600'}`}
+                      className={`px-3 py-1.5 rounded text-xs font-bold ${d.trackingMode === 'lumpsum' ? 'bg-emerald-500 text-white' : 'text-slate-600'}`}
                     >
                       Lumpsum
                     </button>
@@ -302,13 +302,13 @@ export default function LockSubmissionModal({
               {d.trackingMode === 'detail' ? (
                 <div className="bg-white border border-slate-200 rounded p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-widest">Komponen</span>
+                    <span className="text-caleo-11 font-extrabold text-slate-600 uppercase tracking-widest">Komponen</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-500">Labor Cost</span>
+                      <span className="text-caleo-10 text-slate-500">Labor Cost</span>
                       <input
                         type="number"
                         min={0}
-                        className="w-28 bg-white border border-slate-200 rounded px-2 py-1 text-[12px]"
+                        className="w-28 bg-white border border-slate-200 rounded px-2 py-1 text-xs"
                         value={d.laborCost || ''}
                         onChange={e => updateDraft(d.id, { laborCost: Number(e.target.value || 0) })}
                       />
@@ -316,19 +316,19 @@ export default function LockSubmissionModal({
                   </div>
 
                   {d.components.length === 0 && (
-                    <div className="text-[11px] text-slate-400 italic">Belum ada komponen. Cari SKU di bawah.</div>
+                    <div className="text-caleo-11 text-slate-400 italic">Belum ada komponen. Cari SKU di bawah.</div>
                   )}
 
                   {d.components.map(c => (
-                    <div key={c.key} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center text-[12px] bg-slate-50 rounded px-2 py-1.5">
+                    <div key={c.key} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center text-xs bg-slate-50 rounded px-2 py-1.5">
                       <div className="min-w-0">
                         <div className="font-bold truncate">{c.sku} — {c.name}</div>
-                        <div className="text-[10px] text-slate-500">FIFO {formatIDR(c.fifo_cost)}</div>
+                        <div className="text-caleo-10 text-slate-500">FIFO {formatIDR(c.fifo_cost)}</div>
                       </div>
                       <input
                         type="number"
                         min={1}
-                        className="w-16 bg-white border border-slate-200 rounded px-2 py-1 text-[12px]"
+                        className="w-16 bg-white border border-slate-200 rounded px-2 py-1 text-xs"
                         value={c.qty}
                         onChange={e => updateComponent(d.id, c.key, { qty: Number(e.target.value || 1) })}
                       />
@@ -351,24 +351,24 @@ export default function LockSubmissionModal({
                     <input
                       type="text"
                       placeholder="Cari SKU / nama komponen..."
-                      className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-[12px]"
+                      className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-xs"
                       value={skuQuery[d.id] ?? ''}
                       onChange={e => setSkuQuery(prev => ({ ...prev, [d.id]: e.target.value }))}
                     />
                     {(skuQuery[d.id]?.length ?? 0) > 0 && (
                       <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-48 overflow-y-auto">
                         {filteredOptions(d.id).length === 0 ? (
-                          <div className="px-3 py-2 text-[12px] text-slate-400 italic">Tidak ada SKU cocok.</div>
+                          <div className="px-3 py-2 text-xs text-slate-400 italic">Tidak ada SKU cocok.</div>
                         ) : (
                           filteredOptions(d.id).map(opt => (
                             <button
                               key={opt.sku}
                               type="button"
                               onClick={() => addComponent(d.id, opt)}
-                              className="w-full text-left px-3 py-2 text-[12px] hover:bg-slate-50 border-b last:border-b-0 border-slate-100"
+                              className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b last:border-b-0 border-slate-100"
                             >
                               <div className="font-bold">{opt.sku} — {opt.name}</div>
-                              <div className="text-[10px] text-slate-500">Atas: {opt.stock_atas} · Bawah: {opt.stock_bawah} · HPP {formatIDR(opt.harga_modal ?? 0)}</div>
+                              <div className="text-caleo-10 text-slate-500">Atas: {opt.stock_atas} · Bawah: {opt.stock_bawah} · HPP {formatIDR(opt.harga_modal ?? 0)}</div>
                             </button>
                           ))
                         )}
@@ -378,15 +378,15 @@ export default function LockSubmissionModal({
                 </div>
               ) : (
                 <div className="bg-white border border-slate-200 rounded p-3">
-                  <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Lump Sum HPP</div>
+                  <div className="text-caleo-10 font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Lump Sum HPP</div>
                   <input
                     type="number"
                     min={0}
-                    className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-[13px]"
+                    className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-caleo-13"
                     value={d.lumpSumHpp || ''}
                     onChange={e => updateDraft(d.id, { lumpSumHpp: Number(e.target.value || 0) })}
                   />
-                  <div className="text-[11px] text-slate-500 mt-1.5">
+                  <div className="text-caleo-11 text-slate-500 mt-1.5">
                     ℹ Total HPP fixed untuk line ini, tanpa per-komponen tracking.
                   </div>
                 </div>
@@ -396,14 +396,14 @@ export default function LockSubmissionModal({
         </div>
 
         <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded text-[13px] font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded text-caleo-13 font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">
             Batal
           </button>
           <button
             type="button"
             onClick={submit}
             disabled={!canSubmit || submitting}
-            className="px-4 py-2 rounded text-[13px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded text-caleo-13 font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting
               ? 'Mengirim…'

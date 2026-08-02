@@ -18,8 +18,8 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[var(--color-caleo-mist)] shadow-sm flex flex-col overflow-hidden">
       <div className="px-4 py-4 border-b border-[var(--color-caleo-mist)]">
         <div className="flex items-center justify-between">
-          <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">💵 Kas Tunai</div>
-          <span className="text-[10px] text-slate-500 font-bold">{matched}/{batches.length} batch</span>
+          <div className="text-caleo-11 font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">💵 Kas Tunai</div>
+          <span className="text-caleo-10 text-slate-500 font-bold">{matched}/{batches.length} batch</span>
         </div>
         <div className="h-1.5 mt-2 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600" style={{ width: pct + '%' }} />
@@ -38,7 +38,7 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
                   <div className="text-xs font-bold text-[var(--color-caleo-primary)]">
                     {b.deposit_date ? `Setoran ${new Date(b.deposit_date).toLocaleDateString('id-ID')}` : 'Belum disetor'}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                  <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">
                     Expected {fmt(b.expected_amount)} {hasVariance && `· Selisih ${fmt(b.variance)}`}
                   </div>
                 </div>
@@ -47,9 +47,9 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
                 </div>
               </div>
               <div className="flex gap-1.5 mt-2 items-center">
-                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${isDeposited ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{b.status}</span>
-                {!isDeposited && <button onClick={() => onFindDeposit(b.id)} className="ml-auto text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Cari setoran →</button>}
-                {hasVariance && <button onClick={() => onExplain(b.id)} className="ml-auto text-[10px] font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-red-700">Jelaskan</button>}
+                <span className={`text-caleo-10 font-extrabold uppercase px-2 py-0.5 rounded-full ${isDeposited ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{b.status}</span>
+                {!isDeposited && <button onClick={() => onFindDeposit(b.id)} className="ml-auto text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Cari setoran →</button>}
+                {hasVariance && <button onClick={() => onExplain(b.id)} className="ml-auto text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-red-700">Jelaskan</button>}
               </div>
             </div>
           );

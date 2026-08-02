@@ -52,7 +52,7 @@ export default function JournalEntryPreview({
       {/* Header: Eye icon + Title + Balanced chip */}
       <div className="flex items-center gap-2 mb-2">
         <Eye className="w-4 h-4 text-amber-800" />
-        <strong className="text-[13px] text-amber-900">Journal Entry Preview</strong>
+        <strong className="text-caleo-13 text-amber-900">Journal Entry Preview</strong>
 
         {/* Balanced / Imbalanced chip on right */}
         <span className={`chip-soft ml-auto ${
@@ -66,10 +66,10 @@ export default function JournalEntryPreview({
 
       {/* Inner table with white background */}
       <div className="bg-white rounded overflow-hidden">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-xs">
           {/* Header row */}
           <thead style={{ background: '#f9fafb' }}>
-            <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+            <tr className="text-caleo-10 uppercase font-extrabold text-gray-600">
               <th className="text-left py-2 px-3">#</th>
               <th className="text-left py-2 px-3">Akun</th>
               <th className="text-right py-2 px-3">Debit</th>
@@ -126,7 +126,7 @@ export default function JournalEntryPreview({
 
       {/* Optional caption below table */}
       {caption && (
-        <p className="text-[11px] text-amber-900 mt-2">
+        <p className="text-caleo-11 text-amber-900 mt-2">
           {caption}
         </p>
       )}

@@ -124,8 +124,8 @@ export default function LayananSection({ days }: Props) {
     <section className="bg-white rounded border border-slate-200 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-[15px] font-bold text-[var(--color-caleo-primary)]">🛠 Layanan</h3>
-          <p className="text-[12px] text-slate-500 mt-0.5">
+          <h3 className="text-caleo-15 font-bold text-[var(--color-caleo-primary)]">🛠 Layanan</h3>
+          <p className="text-xs text-slate-500 mt-0.5">
             Revenue, HPP, dan margin per layanan (Wiring Panel, Custom Panel,
             dst) dalam periode.
           </p>
@@ -133,21 +133,21 @@ export default function LayananSection({ days }: Props) {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-[13px] text-slate-500">
+        <div className="text-center py-8 text-caleo-13 text-slate-500">
           Memuat…
         </div>
       ) : error ? (
-        <div className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-4 py-3">
+        <div className="text-caleo-13 text-amber-700 bg-amber-50 border border-amber-200 rounded px-4 py-3">
           Gagal memuat: {error}
         </div>
       ) : rows.length === 0 ? (
-        <div className="text-center py-8 text-[13px] text-slate-500 border border-dashed border-slate-300 rounded">
+        <div className="text-center py-8 text-caleo-13 text-slate-500 border border-dashed border-slate-300 rounded">
           Belum ada layanan yang terjual dalam periode ini. Setup service
           catalog di Pengaturan → 🛠 Layanan lalu attach ke pesanan.
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-caleo-13">
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-3 py-2 text-left font-semibold text-slate-600">

@@ -91,27 +91,27 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
         <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <LinkIcon className="w-3.5 h-3.5 text-indigo-600" />
-            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Order Terkait</div>
+            <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500">Order Terkait</div>
           </div>
           <div className="text-sm font-bold text-indigo-700">{shortOrderRef(pi.order_id)}</div>
           <div className="text-xs text-gray-600 mt-1">{pi.order?.customer_name ?? ''}</div>
           {pi.order_id && (
-            <button onClick={() => onOrderClick(pi.order_id!)} className="text-[11px] text-indigo-600 font-semibold hover:underline mt-2">Lihat Order →</button>
+            <button onClick={() => onOrderClick(pi.order_id!)} className="text-caleo-11 text-indigo-600 font-semibold hover:underline mt-2">Lihat Order →</button>
           )}
         </div>
         <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <Store className="w-3.5 h-3.5 text-violet-600" />
-            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Supplier</div>
+            <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500">Supplier</div>
           </div>
           <div className="font-bold text-gray-800">{pi.supplier?.name}</div>
           <div className="text-xs text-gray-500 mt-1">Net {pi.supplier?.payment_term_days ?? 0} hari</div>
-          {pi.supplier_invoice_number && <div className="text-[11px] text-gray-600 mt-1">Faktur: <strong>{pi.supplier_invoice_number}</strong></div>}
+          {pi.supplier_invoice_number && <div className="text-caleo-11 text-gray-600 mt-1">Faktur: <strong>{pi.supplier_invoice_number}</strong></div>}
         </div>
         <div className="bg-white/78 backdrop-blur-xl rounded border border-amber-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock className="w-3.5 h-3.5 text-amber-600" />
-            <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Jatuh Tempo</div>
+            <div className="text-caleo-11 font-bold uppercase tracking-wide text-gray-500">Jatuh Tempo</div>
           </div>
           <div className="font-bold text-amber-700">{fmtDate(pi.payment_due_at)}</div>
           <div className="text-xs text-gray-500 mt-1">{pi.payment_method}</div>
@@ -124,7 +124,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
           <div className="flex gap-4 flex-wrap">
             {pi.supplier_invoice_photo_url && (
               <div className="flex flex-col gap-1">
-                <div className="text-[11px] font-semibold text-gray-600">Faktur Supplier</div>
+                <div className="text-caleo-11 font-semibold text-gray-600">Faktur Supplier</div>
                 <StorageImage
                   bucket="purchase-documents"
                   path={pi.supplier_invoice_photo_url}
@@ -137,7 +137,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
             )}
             {pi.payment_proof_url && (
               <div className="flex flex-col gap-1">
-                <div className="text-[11px] font-semibold text-gray-600">Bukti Bayar</div>
+                <div className="text-caleo-11 font-semibold text-gray-600">Bukti Bayar</div>
                 <StorageImage
                   bucket="purchase-documents"
                   path={pi.payment_proof_url}
@@ -157,11 +157,11 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
         <table className="w-full">
           <thead className="border-b border-gray-200">
             <tr>
-              <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">SKU / Nama</th>
-              <th className="text-center py-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Qty</th>
-              <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
-              <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Jual</th>
-              <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
+              <th className="text-left py-2 text-caleo-11 font-semibold text-gray-500 uppercase">SKU / Nama</th>
+              <th className="text-center py-2 w-20 text-caleo-11 font-semibold text-gray-500 uppercase">Qty</th>
+              <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Harga Beli</th>
+              <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Harga Jual</th>
+              <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Subtotal</th>
             </tr>
           </thead>
           <tbody>
@@ -191,15 +191,15 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-gray-50 rounded border border-gray-200 p-4">
-          <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Dibayar Ke Grosir</div>
+          <div className="text-caleo-11 text-gray-500 uppercase font-semibold">Total Dibayar Ke Grosir</div>
           <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(pi.total)}</div>
         </div>
         <div className="bg-indigo-50 rounded border border-indigo-200 p-4">
-          <div className="text-[11px] text-indigo-600 uppercase font-semibold">Pendapatan dari Order</div>
+          <div className="text-caleo-11 text-indigo-600 uppercase font-semibold">Pendapatan dari Order</div>
           <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(totalRev)}</div>
         </div>
         <div className="bg-green-50 rounded border border-green-200 p-4">
-          <div className="text-[11px] text-green-700 uppercase font-semibold">Profit ({margin.toFixed(1)}%)</div>
+          <div className="text-caleo-11 text-green-700 uppercase font-semibold">Profit ({margin.toFixed(1)}%)</div>
           <div className="text-xl font-extrabold mt-1 text-green-700">{formatIDR(profit)}</div>
         </div>
       </div>

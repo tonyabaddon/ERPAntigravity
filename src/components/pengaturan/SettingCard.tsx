@@ -19,19 +19,19 @@ export default function SettingCard({ icon, title, description, currentStat, imp
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg">{icon}</span>
           <div className="font-bold text-sm text-[var(--color-caleo-primary)]">{title}</div>
-          {highlight && <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full font-bold">AKTIF</span>}
+          {highlight && <span className="text-caleo-10 bg-emerald-600 text-white px-1.5 py-0.5 rounded-full font-bold">AKTIF</span>}
         </div>
         <div className="text-xs text-slate-600">{description}</div>
         {currentStat && (
-          <div className="text-[11px] text-slate-500 mt-2">📊 Saat ini: {currentStat}</div>
+          <div className="text-caleo-11 text-slate-500 mt-2">📊 Saat ini: {currentStat}</div>
         )}
         {impactSummary && impactSummary.level === 'warn' && (
-          <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mt-2 text-[11px] text-amber-800">
+          <div className="bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mt-2 text-caleo-11 text-amber-800">
             ⚠️ Kalau dimatikan: {impactSummary.message}
           </div>
         )}
         {impactSummary && impactSummary.level === 'info' && (
-          <div className="text-[11px] text-slate-500 mt-2">{impactSummary.message}</div>
+          <div className="text-caleo-11 text-slate-500 mt-2">{impactSummary.message}</div>
         )}
       </div>
       <div className="shrink-0">{children}</div>

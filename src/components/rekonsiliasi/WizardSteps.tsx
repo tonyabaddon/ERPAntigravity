@@ -26,8 +26,8 @@ export default function WizardSteps({ currentStep, counts, onJump }: Props) {
   return (
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[var(--color-caleo-mist)] shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🧭 Langkah Rekonsiliasi</div>
-        <div className="text-[10px] text-slate-500 font-bold">Step {currentStep} dari 6</div>
+        <div className="text-caleo-11 font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🧭 Langkah Rekonsiliasi</div>
+        <div className="text-caleo-10 text-slate-500 font-bold">Step {currentStep} dari 6</div>
       </div>
       <div className="flex rounded overflow-hidden border border-[var(--color-caleo-mist)]">
         {STEPS.map(s => {
@@ -43,9 +43,9 @@ export default function WizardSteps({ currentStep, counts, onJump }: Props) {
           const marker = s.n < currentStep ? '✓ ' : s.n === currentStep ? '▶ ' : '';
           return (
             <div key={s.n} onClick={() => onJump(s.n)} className={`flex-1 p-3 cursor-pointer transition ${cls}`}>
-              <div className="text-[10px] font-black">{marker}{s.label}</div>
-              <div className="text-[11px] font-bold mt-0.5">{s.sub}</div>
-              <div className="text-[10px] mt-0.5 opacity-70">{count}</div>
+              <div className="text-caleo-10 font-black">{marker}{s.label}</div>
+              <div className="text-caleo-11 font-bold mt-0.5">{s.sub}</div>
+              <div className="text-caleo-10 mt-0.5 opacity-70">{count}</div>
             </div>
           );
         })}

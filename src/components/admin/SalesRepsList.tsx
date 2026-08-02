@@ -31,7 +31,7 @@ function StatusBadge({ status }: { status: SalesRep['status'] }) {
   if (status === 'active') {
     return (
       <span
-        className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800"
+        className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold bg-emerald-100 text-emerald-800"
       >
         Aktif
       </span>
@@ -39,7 +39,7 @@ function StatusBadge({ status }: { status: SalesRep['status'] }) {
   }
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold"
+      className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold"
       style={{ background: '#F1F5F9', color: '#64748B' }}
     >
       Nonaktif
@@ -91,18 +91,18 @@ export function SalesRepsList() {
       <div className="flex justify-between items-center">
         <div>
           <h1
-            className="text-[16px] font-bold"
+            className="text-base font-bold"
             style={{ color: '#0B2545' }}
           >
             Sales Reps
           </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: '#9DB2CE' }}>
+          <p className="text-caleo-13 mt-0.5" style={{ color: '#9DB2CE' }}>
             {loading ? 'Memuat…' : `${rows.length} sales rep`}
           </p>
         </div>
         <button
           onClick={() => setCreateOpen(true)}
-          className="font-semibold rounded px-4 py-2 text-[13px] hover:opacity-90 transition-opacity"
+          className="font-semibold rounded px-4 py-2 text-caleo-13 hover:opacity-90 transition-opacity"
           style={{ background: '#0B2545', color: '#ffffff' }}
           data-testid="tambah-salesrep-btn"
         >
@@ -113,14 +113,14 @@ export function SalesRepsList() {
       {/* Error inline retry */}
       {error && !loading && (
         <div
-          className="border rounded px-4 py-3 text-[13px] flex items-center justify-between"
+          className="border rounded px-4 py-3 text-caleo-13 flex items-center justify-between"
           style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
           data-testid="salesreps-error"
         >
           <span>Gagal memuat sales rep: {error}</span>
           <button
             onClick={() => fetchSalesReps()}
-            className="ml-4 px-3 py-1 rounded border font-medium text-[12px] hover:opacity-80"
+            className="ml-4 px-3 py-1 rounded border font-medium text-xs hover:opacity-80"
             style={{ borderColor: '#991b1b', color: '#991b1b' }}
           >
             Coba lagi
@@ -133,7 +133,7 @@ export function SalesRepsList() {
         <SkeletonRows />
       ) : rows.length === 0 ? (
         <div
-          className="border rounded px-4 py-8 text-center text-[13px]"
+          className="border rounded px-4 py-8 text-center text-caleo-13"
           style={{ borderColor: '#ECEEF1', color: '#9DB2CE' }}
           data-testid="salesreps-empty"
         >
@@ -141,29 +141,29 @@ export function SalesRepsList() {
         </div>
       ) : (
         <div className="border rounded overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
-          <table className="w-full border-collapse text-[13px]" aria-label="Daftar sales rep">
+          <table className="w-full border-collapse text-caleo-13" aria-label="Daftar sales rep">
             <thead>
               <tr style={{ background: '#F8F9FA', borderBottom: '1px solid #ECEEF1' }}>
                 <th
-                  className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest"
+                  className="text-left px-4 py-2.5 text-caleo-11 font-bold uppercase tracking-widest"
                   style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
                 >
                   Nama
                 </th>
                 <th
-                  className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest"
+                  className="text-left px-4 py-2.5 text-caleo-11 font-bold uppercase tracking-widest"
                   style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
                 >
                   Email
                 </th>
                 <th
-                  className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest"
+                  className="text-left px-4 py-2.5 text-caleo-11 font-bold uppercase tracking-widest"
                   style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
                 >
                   Status
                 </th>
                 <th
-                  className="text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest"
+                  className="text-left px-4 py-2.5 text-caleo-11 font-bold uppercase tracking-widest"
                   style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
                 >
                   Ditambahkan
@@ -190,7 +190,7 @@ export function SalesRepsList() {
                   <td className="px-4 py-2.5">
                     <StatusBadge status={rep.status} />
                   </td>
-                  <td className="px-4 py-2.5 text-[12px]" style={{ color: '#9DB2CE' }}>
+                  <td className="px-4 py-2.5 text-xs" style={{ color: '#9DB2CE' }}>
                     {new Date(rep.created_at).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'short',
@@ -201,7 +201,7 @@ export function SalesRepsList() {
                     {rep.status === 'active' && (
                       <button
                         onClick={() => setDeactivateTarget(rep)}
-                        className="border rounded px-3 py-1 text-[12px] font-medium hover:bg-red-50 transition-colors"
+                        className="border rounded px-3 py-1 text-xs font-medium hover:bg-red-50 transition-colors"
                         style={{ borderColor: '#FCA5A5', color: '#DC2626' }}
                         data-testid={`nonaktifkan-btn-${rep.user_id}`}
                       >

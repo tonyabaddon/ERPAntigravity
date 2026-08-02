@@ -49,10 +49,10 @@ export function PendingPaymentsQueue() {
     <div className="flex flex-col gap-5 font-caleo" data-testid="pending-payments-queue">
       {/* Page header */}
       <div>
-        <h1 className="text-[14px] font-bold" style={{ color: '#0B2545' }}>
+        <h1 className="text-sm font-bold" style={{ color: '#0B2545' }}>
           Verifikasi Pembayaran
         </h1>
-        <p className="text-[12px] mt-1" style={{ color: '#6B7C93' }}>
+        <p className="text-xs mt-1" style={{ color: '#6B7C93' }}>
           Konfirmasi pembayaran yang direkam sales rep — verifikasi atau tolak.
         </p>
       </div>
@@ -80,7 +80,7 @@ export function PendingPaymentsQueue() {
       {/* Empty state */}
       {rows !== null && rows.length === 0 && (
         <div
-          className="border rounded px-4 py-4 text-[13px]"
+          className="border rounded px-4 py-4 text-caleo-13"
           style={{ background: '#F0FDF4', borderColor: '#86EFAC', color: '#166534' }}
           data-testid="pending-payments-empty"
         >
@@ -97,7 +97,7 @@ export function PendingPaymentsQueue() {
         >
           {/* Table header */}
           <div
-            className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest flex justify-between items-center"
+            className="px-4 py-2 text-caleo-11 font-bold uppercase tracking-widest flex justify-between items-center"
             style={{
               background: '#F8FAFC',
               color: '#6B7C93',
@@ -109,7 +109,7 @@ export function PendingPaymentsQueue() {
             <button
               type="button"
               onClick={handleRefresh}
-              className="text-[11px] font-semibold px-2 py-0.5 rounded transition-colors"
+              className="text-caleo-11 font-semibold px-2 py-0.5 rounded transition-colors"
               style={{ color: '#0B2545', border: '1px solid #CBD5E1' }}
               data-testid="refresh-btn"
             >

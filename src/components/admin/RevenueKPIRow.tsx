@@ -56,19 +56,19 @@ function RevenueKPICard({ title, value, subtitle }: KPICardProps) {
       style={{ borderColor: '#ECEEF1' }}
     >
       <div
-        className="text-[11px] font-bold uppercase tracking-widest mb-1.5"
+        className="text-caleo-11 font-bold uppercase tracking-widest mb-1.5"
         style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
       >
         {title}
       </div>
       <div
-        className="text-[22px] font-bold leading-none truncate"
+        className="text-2xl font-bold leading-none truncate"
         style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0B2545' }}
       >
         {value}
       </div>
       {subtitle && (
-        <div className="text-[11px] mt-1.5" style={{ color: '#5A6472' }}>
+        <div className="text-caleo-11 mt-1.5" style={{ color: '#5A6472' }}>
           {subtitle}
         </div>
       )}

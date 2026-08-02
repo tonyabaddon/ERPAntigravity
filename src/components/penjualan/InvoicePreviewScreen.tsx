@@ -280,7 +280,7 @@ export default function InvoicePreviewScreen({
                         : 'text-slate-400'
                       }`}
                     >
-                      <div className={`w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center ${
+                      <div className={`w-5 h-5 rounded-full text-white text-caleo-10 font-bold flex items-center justify-center ${
                         s.state === 'done' ? 'bg-emerald-600'
                         : s.state === 'wait' ? 'bg-amber-500'
                         : 'bg-slate-300'

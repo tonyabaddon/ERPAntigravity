@@ -43,11 +43,11 @@ export default function CariByFotoDropzone({ onFileSelected, onError }: Props) {
           <span className="material-symbols-outlined text-3xl text-violet-800">cloud_upload</span>
         </div>
         <div className="flex-1">
-          <p className="text-[10px] font-extrabold uppercase tracking-widest text-violet-700">Opsi 3 · BARU</p>
+          <p className="text-caleo-10 font-extrabold uppercase tracking-widest text-violet-700">Opsi 3 · BARU</p>
           <h4 className="text-sm font-extrabold text-violet-900 mt-0.5">
             {isDragging ? 'Lepas foto di sini' : 'Tarik &amp; lepas foto ke sini'}
           </h4>
-          <p className="text-[11px] text-violet-800 mt-1 leading-snug">Drag foto langsung dari File Explorer / Finder.</p>
+          <p className="text-caleo-11 text-violet-800 mt-1 leading-snug">Drag foto langsung dari File Explorer / Finder.</p>
         </div>
       </div>
     </button>

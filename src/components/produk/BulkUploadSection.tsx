@@ -244,7 +244,7 @@ export default function BulkUploadSection({
           <div>
             <h3 className="text-lg font-extrabold text-[var(--color-caleo-primary)] leading-tight flex items-center gap-2">
               Pembaruan Stok &amp; Harga Massal (Bulk Upload Excel)
-              <span className="text-[8px] font-black tracking-widest text-blue-700 uppercase bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-full">Template Diperbarui</span>
+              <span className="text-caleo-9 font-black tracking-widest text-blue-700 uppercase bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-full">Template Diperbarui</span>
             </h3>
             <p className="text-xs text-[#43474e] mt-1">
               Template hanya berisi kolom spesifikasi — SKU dan nama produk dibuat otomatis oleh sistem saat upload.
@@ -262,7 +262,7 @@ export default function BulkUploadSection({
             <Download className="w-6 h-6" />
           </div>
           <h4 className="font-extrabold text-[var(--color-caleo-primary)] text-xs uppercase tracking-wider">DOWNLOAD TEMPLATE</h4>
-          <p className="text-[11px] text-[#43474e] mt-1.5 font-medium">Template kosong untuk input produk baru. SKU &amp; nama auto.</p>
+          <p className="text-caleo-11 text-[#43474e] mt-1.5 font-medium">Template kosong untuk input produk baru. SKU &amp; nama auto.</p>
         </div>
 
         <div
@@ -273,7 +273,7 @@ export default function BulkUploadSection({
             <Download className="w-6 h-6" />
           </div>
           <h4 className="font-extrabold text-[var(--color-caleo-primary)] text-xs uppercase tracking-wider">EXPORT STOK</h4>
-          <p className="text-[11px] text-[#43474e] mt-1.5 font-medium">Export semua produk aktif dengan SKU. Edit lalu re-import untuk update.</p>
+          <p className="text-caleo-11 text-[#43474e] mt-1.5 font-medium">Export semua produk aktif dengan SKU. Edit lalu re-import untuk update.</p>
         </div>
 
         <label
@@ -285,7 +285,7 @@ export default function BulkUploadSection({
             <span className="material-symbols-outlined text-4xl">upload_file</span>
           </div>
           <h4 className="font-extrabold text-[var(--color-caleo-primary)] text-xs uppercase tracking-wider">Tarik &amp; lepas file CSV di sini...</h4>
-          <p className="text-[11px] text-[#2d8a4e] font-bold mt-1">Atau Tekan Disini untuk Unggah Otomatis (Max 25MB)</p>
+          <p className="text-caleo-11 text-[#2d8a4e] font-bold mt-1">Atau Tekan Disini untuk Unggah Otomatis (Max 25MB)</p>
         </label>
       </div>
 

@@ -112,9 +112,9 @@ export default function MappingDrawer({
         <div className="p-5 border-b border-[var(--color-caleo-mist)]" style={{ background: source.headerBg }}>
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: source.headerColor }}>🔍 Cari pasangan</div>
+              <div className="text-caleo-10 font-extrabold uppercase tracking-widest" style={{ color: source.headerColor }}>🔍 Cari pasangan</div>
               <div className="text-base font-black text-[var(--color-caleo-primary)] mt-1">{source.title}</div>
-              <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{source.meta}</div>
+              <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{source.meta}</div>
             </div>
             <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl font-extrabold">×</button>
           </div>
@@ -122,7 +122,7 @@ export default function MappingDrawer({
 
         {/* Multi-allocation balance bar */}
         {multiAllocation && (
-          <div className={`px-4 py-2 border-b border-[var(--color-caleo-mist)] flex items-center justify-between text-[11px] font-bold ${overTarget ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+          <div className={`px-4 py-2 border-b border-[var(--color-caleo-mist)] flex items-center justify-between text-caleo-11 font-bold ${overTarget ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
             <span>Dipilih: {fmt(selectedTotal)}</span>
             <span className="text-slate-500 font-semibold">Target: {fmt(target)}</span>
           </div>
@@ -167,8 +167,8 @@ export default function MappingDrawer({
                     <div className="flex-1 flex items-start justify-between">
                       <div>
                         <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
-                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{c.meta}</div>
-                        <div className={`text-[10px] font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>
+                        <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{c.meta}</div>
+                        <div className={`text-caleo-10 font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>
                           Skor {c.score.toFixed(2)} · {c.scoreBreakdown}
                         </div>
                         <div className="h-1 mt-1 bg-slate-200 rounded-full overflow-hidden">
@@ -190,15 +190,15 @@ export default function MappingDrawer({
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
-                    <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{c.meta}</div>
-                    <div className={`text-[10px] font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>Skor {c.score.toFixed(2)} · {c.scoreBreakdown}</div>
+                    <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{c.meta}</div>
+                    <div className={`text-caleo-10 font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>Skor {c.score.toFixed(2)} · {c.scoreBreakdown}</div>
                     <div className="h-1 mt-1 bg-slate-200 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: Math.round(c.score * 100) + '%' }} />
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(c.amount)}</div>
-                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded text-[10px] font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]'}`}>
+                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded text-caleo-10 font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]'}`}>
                       {c.best ? '✓ Pilih' : 'Pilih'}
                     </button>
                   </div>

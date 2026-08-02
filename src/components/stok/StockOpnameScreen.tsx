@@ -261,7 +261,7 @@ export default function StockOpnameScreen({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setCancelTarget(activeSession); }}
-                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-rose-700 hover:text-rose-800 hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-rose-700 hover:text-rose-800 hover:underline"
                   >
                     Batalkan sesi
                   </button>
@@ -281,7 +281,7 @@ export default function StockOpnameScreen({
               ) : (
                 <div className="text-right">
                   <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
-                  <p className="text-[11px] text-slate-400 italic">Tersembunyi selama sesi (blind count)</p>
+                  <p className="text-caleo-11 text-slate-400 italic">Tersembunyi selama sesi (blind count)</p>
                 </div>
               )}
             </div>

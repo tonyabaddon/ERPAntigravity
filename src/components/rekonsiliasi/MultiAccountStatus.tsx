@@ -21,10 +21,10 @@ export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAdd
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[var(--color-caleo-mist)] shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🏦 Rekening Aktif</div>
-          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{accounts.length} rekening terdaftar</div>
+          <div className="text-caleo-11 font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🏦 Rekening Aktif</div>
+          <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{accounts.length} rekening terdaftar</div>
         </div>
-        <button onClick={onAddAccount} className="bg-slate-50 border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)] px-3 py-1.5 rounded text-[10px] font-extrabold">+ Tambah</button>
+        <button onClick={onAddAccount} className="bg-slate-50 border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)] px-3 py-1.5 rounded text-caleo-10 font-extrabold">+ Tambah</button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {accounts.map(a => {
@@ -33,15 +33,15 @@ export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAdd
           return (
             <div key={a.id} className="rounded p-3 border" style={{ background: c.bg + '80', borderColor: c.border }}>
               <div className="flex items-center justify-between">
-                <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: c.bg, color: c.text }}>
+                <span className="text-caleo-9 font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: c.bg, color: c.text }}>
                   {a.bank_code}
                 </span>
-                <span className={`text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${uploaded ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                <span className={`text-caleo-9 font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${uploaded ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                   {uploaded ? '✓' : '⚠️'}
                 </span>
               </div>
               <div className="text-xs font-bold text-[var(--color-caleo-primary)] mt-1.5">{a.account_label}</div>
-              {!uploaded && <button onClick={() => onUpload(a)} className="mt-2 w-full bg-white border border-amber-300 text-amber-700 text-[10px] font-extrabold py-1 rounded">Upload PDF →</button>}
+              {!uploaded && <button onClick={() => onUpload(a)} className="mt-2 w-full bg-white border border-amber-300 text-amber-700 text-caleo-10 font-extrabold py-1 rounded">Upload PDF →</button>}
             </div>
           );
         })}

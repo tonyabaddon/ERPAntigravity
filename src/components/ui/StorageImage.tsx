@@ -218,7 +218,7 @@ export function StorageImage({
           title="Gagal memuat gambar"
         >
           <span className="text-gray-400 text-xl">⚠️</span>
-          <span className="text-[9px] text-gray-400 mt-1">Gagal muat</span>
+          <span className="text-caleo-9 text-gray-400 mt-1">Gagal muat</span>
         </div>
       )}
 

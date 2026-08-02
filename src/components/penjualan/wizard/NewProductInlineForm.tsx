@@ -63,21 +63,21 @@ export default function NewProductInlineForm(props: Props) {
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Produk Baru</div>
-          <div className="text-[11px] text-slate-600">Akan tersimpan ke daftar Produk &amp; Stok dengan stok awal 0.</div>
+          <div className="text-caleo-11 text-slate-600">Akan tersimpan ke daftar Produk &amp; Stok dengan stok awal 0.</div>
         </div>
         <button type="button" onClick={props.onCancel} className="text-slate-400 hover:text-slate-700 text-sm">×</button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="col-span-2">
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama Produk <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Nama Produk <span className="text-red-500">*</span></label>
           <input value={state.name}
             onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
             placeholder="Mis: MCB Schneider 25A 1P"
             className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Kategori <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Kategori <span className="text-red-500">*</span></label>
           <input list="np-cat-options" value={state.category}
             onChange={(e) => setState((s) => ({ ...s, category: e.target.value }))}
             placeholder="Mis: MCB"
@@ -87,7 +87,7 @@ export default function NewProductInlineForm(props: Props) {
           </datalist>
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Unit</label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Unit</label>
           <select value={state.unit}
             onChange={(e) => setState((s) => ({ ...s, unit: e.target.value }))}
             className="w-full px-3 py-2 border border-slate-300 rounded">
@@ -95,21 +95,21 @@ export default function NewProductInlineForm(props: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Harga Jual (Rp) <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Harga Jual (Rp) <span className="text-red-500">*</span></label>
           <input value={state.price}
             onChange={(e) => setState((s) => ({ ...s, price: e.target.value }))}
             placeholder="Mis: 45.000"
             className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Harga Modal / HPP (Rp)</label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Harga Modal / HPP (Rp)</label>
           <input value={state.hppText}
             onChange={(e) => setState((s) => ({ ...s, hppText: e.target.value }))}
             placeholder="Optional · recommend isi"
             className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div className="col-span-2">
-          <label className="block text-[11px] font-bold text-slate-600 mb-1">Sub-kategori / Brand (optional)</label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Sub-kategori / Brand (optional)</label>
           <div className="grid grid-cols-2 gap-2">
             <input value={subcategory} onChange={(e) => setSubcategory(e.target.value)}
               placeholder="Sub-kategori" className="w-full px-3 py-2 border border-slate-300 rounded" />
@@ -119,7 +119,7 @@ export default function NewProductInlineForm(props: Props) {
         </div>
       </div>
 
-      <p className="text-[11px] text-amber-700 mt-3 italic">
+      <p className="text-caleo-11 text-amber-700 mt-3 italic">
         ⚠️ Ini lite-create — foto, specs lengkap, min stock, dll. bisa di-set nanti via menu <strong>Produk &amp; Stok</strong>. Stok awal 0 (semua gudang) — pesanan ini otomatis pre-order sampai pembelian masuk.
       </p>
 

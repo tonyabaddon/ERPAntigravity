@@ -82,11 +82,11 @@ export function AdminLayout({ children, activePath }: AdminLayoutProps) {
         className="flex justify-between items-center px-4 py-3 shrink-0"
         style={{ background: '#0B2545', color: '#ffffff' }}
       >
-        <div className="flex items-center gap-2 text-[13px] font-semibold">
+        <div className="flex items-center gap-2 text-caleo-13 font-semibold">
           <ShieldCheck size={16} strokeWidth={1.8} strokeLinecap="round" style={{ color: '#F9B233' }} />
           <span>Caleo Admin</span>
         </div>
-        <div className="flex items-center gap-4 text-[12px]" style={{ color: '#9DB2CE' }}>
+        <div className="flex items-center gap-4 text-xs" style={{ color: '#9DB2CE' }}>
           {adminEmail && <span className="truncate max-w-[200px]">{adminEmail}</span>}
           <button
             onClick={handleLogout}
@@ -102,7 +102,7 @@ export function AdminLayout({ children, activePath }: AdminLayoutProps) {
       {/* Impersonation banner — shown only when active */}
       {impersonation.active && (
         <div
-          className="px-4 py-2 text-[12px] text-center flex items-center justify-center gap-2"
+          className="px-4 py-2 text-xs text-center flex items-center justify-center gap-2"
           style={{ background: '#F9B233', color: '#0B2545' }}
           data-testid="impersonation-banner"
         >

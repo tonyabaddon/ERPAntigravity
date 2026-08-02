@@ -147,7 +147,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
         </div>
 
         {/* View mode pills */}
-        <div className="flex gap-2 text-[12px]">
+        <div className="flex gap-2 text-xs">
           <button
             onClick={() => setViewMode('net')}
             className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
@@ -183,10 +183,10 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
 
       {/* ── Table ── */}
       <div className="p-6 overflow-x-auto">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-xs">
           {/* ── thead ── */}
           <thead style={{ background: 'var(--color-caleo-cloud)' }}>
-            <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+            <tr className="text-caleo-10 uppercase font-extrabold text-gray-600">
               <th
                 className="text-left py-2 px-3 sticky left-0"
                 style={{ background: 'var(--color-caleo-cloud)' }}

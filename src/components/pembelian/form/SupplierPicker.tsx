@@ -91,13 +91,13 @@ export default function SupplierPicker({
           <span className="text-base mr-2">🏪</span>
           <span className="flex-1">
             <span className="block text-sm font-semibold text-gray-800">{selected.name}</span>
-            <span className="block text-[11px] text-gray-500">
+            <span className="block text-caleo-11 text-gray-500">
               {selected.contact_name ? `${selected.contact_name} · ` : ''}
               {selected.phone ? `${selected.phone} · ` : ''}
               {selected.payment_term_days === 0 ? 'Cash' : `Net ${selected.payment_term_days} hari`}
             </span>
           </span>
-          <span className="text-[11px] font-semibold text-indigo-600 ml-2">Ganti</span>
+          <span className="text-caleo-11 font-semibold text-indigo-600 ml-2">Ganti</span>
         </button>
       </div>
     );
@@ -137,7 +137,7 @@ export default function SupplierPicker({
             ) : (
               <>
                 {/* State B/C: List with optional header */}
-                <div className="px-3 py-1.5 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+                <div className="px-3 py-1.5 bg-gray-50 text-caleo-10 font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
                   {search ? `${filtered.length} Hasil` : 'Sering Dipakai'}
                 </div>
                 {filtered.map((s, idx) => {
@@ -152,13 +152,13 @@ export default function SupplierPicker({
                       <span className="text-base">🏪</span>
                       <div className="flex-1">
                         <div className="text-sm font-semibold text-gray-800">{highlight(s.name)}</div>
-                        <div className="text-[11px] text-gray-500">
+                        <div className="text-caleo-11 text-gray-500">
                           {s.contact_name ? `${s.contact_name} · ` : ''}
                           {s.payment_term_days === 0 ? 'Cash' : `Net ${s.payment_term_days}`}
                         </div>
                       </div>
                       {usage > 0 && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${usage >= 3 ? 'text-emerald-700 bg-emerald-50' : 'text-gray-500 bg-gray-100'}`}>
+                        <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full ${usage >= 3 ? 'text-emerald-700 bg-emerald-50' : 'text-gray-500 bg-gray-100'}`}>
                           {usage} PO
                         </span>
                       )}
@@ -187,7 +187,7 @@ export default function SupplierPicker({
                       ? <>Buat baru: <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-indigo-200 text-indigo-700">"{search}"</span></>
                       : 'Tambah supplier baru'}
                 </div>
-                <div className="text-[11px] text-indigo-500">
+                <div className="text-caleo-11 text-indigo-500">
                   {filtered.length === 0 && search
                     ? 'Nama otomatis terisi, tinggal lengkapi kontak & term'
                     : 'Tidak ada di list? Buat di sini tanpa keluar dari PO'}

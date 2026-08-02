@@ -142,24 +142,24 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
         {/* Summary cards */}
         <div className="px-6 pt-5 grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div className="bg-amber-50 border border-amber-200 rounded p-3">
-            <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">SO Open</div>
+            <div className="text-caleo-10 font-bold text-amber-700 uppercase tracking-wider">SO Open</div>
             <div className="text-lg font-extrabold text-amber-900 mt-1">{counts.open}</div>
-            <div className="text-[11px] text-amber-700">{formatRp(counts.openTotal)} total</div>
+            <div className="text-caleo-11 text-amber-700">{formatRp(counts.openTotal)} total</div>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded p-3">
-            <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Converted (7 hari)</div>
+            <div className="text-caleo-10 font-bold text-emerald-700 uppercase tracking-wider">Converted (7 hari)</div>
             <div className="text-lg font-extrabold text-emerald-900 mt-1">{counts.converted}</div>
-            <div className="text-[11px] text-emerald-700">{formatRp(counts.convertedTotal)} menjadi SI</div>
+            <div className="text-caleo-11 text-emerald-700">{formatRp(counts.convertedTotal)} menjadi SI</div>
           </div>
           <div className="bg-slate-50 border border-slate-200 rounded p-3">
-            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Closed (7 hari)</div>
+            <div className="text-caleo-10 font-bold text-slate-600 uppercase tracking-wider">Closed (7 hari)</div>
             <div className="text-lg font-extrabold text-slate-700 mt-1">{counts.closed}</div>
-            <div className="text-[11px] text-slate-500">Lost deal</div>
+            <div className="text-caleo-11 text-slate-500">Lost deal</div>
           </div>
           <div className="bg-white border border-slate-200 rounded p-3">
-            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Conversion Rate</div>
+            <div className="text-caleo-10 font-bold text-slate-600 uppercase tracking-wider">Conversion Rate</div>
             <div className="text-lg font-extrabold text-[var(--color-caleo-primary)] mt-1">{counts.rate}%</div>
-            <div className="text-[11px] text-slate-500">{counts.converted} dari {counts.converted + counts.closed} decided</div>
+            <div className="text-caleo-11 text-slate-500">{counts.converted} dari {counts.converted + counts.closed} decided</div>
           </div>
         </div>
 
@@ -191,7 +191,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
           ) : (
             <div className="border border-slate-200 rounded overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <thead className="bg-slate-50 text-caleo-10 font-bold uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-4 py-2 text-left">SO Number</th>
                     <th className="px-4 py-2 text-left">Customer</th>
@@ -207,12 +207,12 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                       <td className="px-4 py-3 font-bold text-[var(--color-caleo-primary)]">{r.so_number}</td>
                       <td className="px-4 py-3">
                         <div className="font-semibold">{r.customer_name}</div>
-                        <div className="text-[11px] text-slate-500">{r.customer_phone ?? '—'} · {r.channel}</div>
+                        <div className="text-caleo-11 text-slate-500">{r.customer_phone ?? '—'} · {r.channel}</div>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-[var(--color-caleo-primary)]">{formatRp(Number(r.subtotal))}</td>
                       <td className="px-4 py-3 text-slate-500">{new Date(r.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        <span className={`px-2 py-0.5 rounded-full text-caleo-10 font-bold ${
                           r.status === 'OPEN' ? 'bg-amber-100 text-amber-800'
                           : r.status === 'CONVERTED' ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-slate-200 text-slate-600'
@@ -221,13 +221,13 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                       <td className="px-4 py-3">
                         <div className="flex gap-1.5">
                           <button onClick={() => setViewSo(r)}
-                            className="px-2.5 py-1 text-[10px] font-bold rounded bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200">
+                            className="px-2.5 py-1 text-caleo-10 font-bold rounded bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200">
                             Lihat
                           </button>
                           {r.status === 'OPEN' && (
                             <>
                               <button onClick={() => onConvert(r)}
-                                className="px-2.5 py-1 text-[10px] font-bold rounded bg-[#2d8a4e] text-white hover:bg-[#236b3d]">
+                                className="px-2.5 py-1 text-caleo-10 font-bold rounded bg-[#2d8a4e] text-white hover:bg-[#236b3d]">
                                 → Jadi Sales Invoice
                               </button>
                               {/* Spacer prevents accidental clicks between the primary green Convert
@@ -237,19 +237,19 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                               <span className="w-3" aria-hidden="true" />
                               <button onClick={() => setCloseModal({ so: r, reason: '' })}
                                 title="Tandai SO sebagai LOST — customer batal / pilih supplier lain. Tidak bisa di-reopen."
-                                className="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-rose-300 text-rose-700 hover:bg-rose-50">
+                                className="px-2.5 py-1 text-caleo-10 font-bold rounded bg-white border border-rose-300 text-rose-700 hover:bg-rose-50">
                                 ✕ Batal (Lost)
                               </button>
                             </>
                           )}
                           {r.status === 'CLOSED' && r.closed_reason && (
-                            <span className="text-[10px] text-slate-500 italic">Lost: {r.closed_reason}</span>
+                            <span className="text-caleo-10 text-slate-500 italic">Lost: {r.closed_reason}</span>
                           )}
                           {r.status === 'CONVERTED' && r.converted_to_kasir_tx_id && (
-                            <span className="text-[10px] font-bold text-emerald-700">→ {r.converted_to_kasir_tx_id.slice(0, 8)}</span>
+                            <span className="text-caleo-10 font-bold text-emerald-700">→ {r.converted_to_kasir_tx_id.slice(0, 8)}</span>
                           )}
                           {r.status === 'CONVERTED' && r.converted_to_order_id && (
-                            <span className="text-[10px] font-bold text-emerald-700">→ TEMPO {r.converted_to_order_id.slice(0, 8)}</span>
+                            <span className="text-caleo-10 font-bold text-emerald-700">→ TEMPO {r.converted_to_order_id.slice(0, 8)}</span>
                           )}
                         </div>
                       </td>
@@ -259,7 +259,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               </table>
             </div>
           )}
-          <p className="text-[11px] text-slate-500 mt-3 italic">
+          <p className="text-caleo-11 text-slate-500 mt-3 italic">
             💡 SO yang sudah CLOSED tidak bisa di-reopen — bikin SO baru kalau customer berubah pikiran.
           </p>
         </div>
@@ -273,7 +273,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-base font-extrabold text-[var(--color-caleo-primary)]">{viewSo.so_number}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                <span className={`px-2 py-0.5 rounded-full text-caleo-10 font-bold ${
                   viewSo.status === 'OPEN' ? 'bg-amber-100 text-amber-800'
                   : viewSo.status === 'CONVERTED' ? 'bg-emerald-100 text-emerald-800'
                   : 'bg-slate-200 text-slate-600'
@@ -308,10 +308,10 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
 
               {/* Items table */}
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Item</div>
+                <div className="text-caleo-10 font-bold uppercase tracking-wider text-slate-500 mb-1.5">Item</div>
                 <div className="border border-slate-200 rounded overflow-hidden">
                   <table className="w-full text-xs">
-                    <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <thead className="bg-slate-50 text-caleo-10 font-bold uppercase tracking-wider text-slate-500">
                       <tr>
                         <th className="px-3 py-1.5 text-left">SKU</th>
                         <th className="px-3 py-1.5 text-left">Nama</th>
@@ -338,13 +338,13 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                   <span>TOTAL PENAWARAN</span>
                   <span>{formatRp(Number(viewSo.subtotal))}</span>
                 </div>
-                <div className="text-[10px] text-slate-400 italic px-1 mt-0.5">Belum termasuk ongkir</div>
+                <div className="text-caleo-10 text-slate-400 italic px-1 mt-0.5">Belum termasuk ongkir</div>
               </div>
 
               {/* Notes */}
               {viewSo.notes && (
                 <div className="bg-slate-50 rounded p-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Catatan</div>
+                  <div className="text-caleo-10 font-bold uppercase tracking-wider text-slate-500 mb-1">Catatan</div>
                   <p className="text-xs text-slate-700 whitespace-pre-wrap">{viewSo.notes}</p>
                 </div>
               )}
@@ -352,7 +352,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               {/* CONVERTED info */}
               {viewSo.status === 'CONVERTED' && (viewSo.converted_to_kasir_tx_id || viewSo.converted_to_order_id) && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded p-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Konversi ke</div>
+                  <div className="text-caleo-10 font-bold uppercase tracking-wider text-emerald-700 mb-1">Konversi ke</div>
                   {viewSo.converted_to_kasir_tx_id && (
                     <p className="text-xs font-bold text-emerald-800">{viewSo.converted_to_kasir_tx_id}</p>
                   )}
@@ -365,7 +365,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               {/* CLOSED info */}
               {viewSo.status === 'CLOSED' && viewSo.closed_reason && (
                 <div className="bg-slate-100 border border-slate-200 rounded p-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Alasan Tutup</div>
+                  <div className="text-caleo-10 font-bold uppercase tracking-wider text-slate-500 mb-1">Alasan Tutup</div>
                   <p className="text-xs text-slate-700">{viewSo.closed_reason}</p>
                 </div>
               )}
@@ -406,7 +406,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded shadow-2xl p-6 max-w-md w-full">
             <div className="text-lg font-extrabold text-rose-700 mb-1">Batalkan Sales Order (Lost Deal)</div>
-            <div className="text-[11px] text-slate-500 mb-3">
+            <div className="text-caleo-11 text-slate-500 mb-3">
               Bukan sama dengan &ldquo;Jadi Sales Invoice&rdquo; — pastikan Anda memilih yang benar.
             </div>
             <div className="text-xs text-slate-700 mb-4 bg-rose-50 border border-rose-200 rounded p-3">

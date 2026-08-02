@@ -67,13 +67,13 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
     >
       {/* Section heading */}
       <h2
-        className="text-[14px] font-bold mb-1"
+        className="text-sm font-bold mb-1"
         style={{ color: '#991b1b' }}
       >
         Zona Bahaya
       </h2>
       <p
-        className="text-[12px] mb-4"
+        className="text-xs mb-4"
         style={{ color: '#7f1d1d' }}
       >
         Aksi di bawah ini bersifat permanen dan tidak dapat dibatalkan.
@@ -86,13 +86,13 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
       >
         <div>
           <p
-            className="text-[13px] font-semibold"
+            className="text-caleo-13 font-semibold"
             style={{ color: '#0B2545' }}
           >
             Download semua data tenant
           </p>
           <p
-            className="text-[12px] mt-0.5"
+            className="text-xs mt-0.5"
             style={{ color: '#5A6472' }}
           >
             Export lengkap semua data tenant sebagai JSON. Wajib sebelum menghapus tenant, atau untuk memenuhi UU PDP hak subjek data.
@@ -102,7 +102,7 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
           type="button"
           onClick={handleExport}
           disabled={exporting}
-          className="font-bold rounded-full px-4 py-2 text-[13px] hover:opacity-90 transition-opacity flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="font-bold rounded-full px-4 py-2 text-caleo-13 hover:opacity-90 transition-opacity flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ background: '#0B2545', color: '#ffffff' }}
           data-testid="export-tenant-data-btn"
         >
@@ -117,13 +117,13 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
       >
         <div>
           <p
-            className="text-[13px] font-semibold"
+            className="text-caleo-13 font-semibold"
             style={{ color: '#0B2545' }}
           >
             Hapus tenant ini
           </p>
           <p
-            className="text-[12px] mt-0.5"
+            className="text-xs mt-0.5"
             style={{ color: '#5A6472' }}
           >
             Ini akan hapus semua data tenant permanen. Auth users tidak ikut terhapus.
@@ -132,7 +132,7 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="text-white font-bold rounded-full px-4 py-2 text-[13px] hover:opacity-90 transition-opacity flex-shrink-0"
+          className="text-white font-bold rounded-full px-4 py-2 text-caleo-13 hover:opacity-90 transition-opacity flex-shrink-0"
           style={{ background: '#DC2626' }}
           data-testid="open-delete-tenant-modal-btn"
         >

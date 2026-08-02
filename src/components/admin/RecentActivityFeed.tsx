@@ -22,7 +22,7 @@ export function RecentActivityFeed({ events }: Props) {
     <div className="border rounded overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
       {/* Header */}
       <div
-        className="px-4 py-2 text-[12px] font-bold uppercase tracking-widest"
+        className="px-4 py-2 text-xs font-bold uppercase tracking-widest"
         style={{
           background: '#FAF7F0',
           color: '#9DB2CE',
@@ -35,7 +35,7 @@ export function RecentActivityFeed({ events }: Props) {
 
       {events.length === 0 ? (
         <div
-          className="px-4 py-4 text-[13px]"
+          className="px-4 py-4 text-caleo-13"
           style={{ color: '#9DB2CE' }}
           data-testid="activity-feed-empty"
         >
@@ -46,12 +46,12 @@ export function RecentActivityFeed({ events }: Props) {
           {events.map((e) => (
             <div
               key={e.id}
-              className="px-4 py-2.5 flex items-start gap-3 text-[13px]"
+              className="px-4 py-2.5 flex items-start gap-3 text-caleo-13"
               style={{ borderBottom: '1px solid #ECEEF1' }}
             >
               {/* Timestamp badge */}
               <span
-                className="shrink-0 text-[11px] font-mono pt-0.5"
+                className="shrink-0 text-caleo-11 font-mono pt-0.5"
                 style={{ color: '#9DB2CE', minWidth: '55px' }}
               >
                 {relativeTime(e.ts)}
@@ -62,7 +62,7 @@ export function RecentActivityFeed({ events }: Props) {
                   {e.admin_email ?? 'system'}
                 </span>
                 <span> · </span>
-                <span className="font-mono text-[12px]" style={{ color: '#5A6472' }}>
+                <span className="font-mono text-xs" style={{ color: '#5A6472' }}>
                   {e.action_code}
                 </span>
                 {e.tenant_slug && (

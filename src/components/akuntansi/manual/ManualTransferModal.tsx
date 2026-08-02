@@ -349,11 +349,11 @@ export default function ManualTransferModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4 text-[13px]">
+        <div className="p-6 space-y-4 text-caleo-13">
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-[12px] text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-rose-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -368,9 +368,9 @@ export default function ManualTransferModal({
               </label>
               {cfg.sourceLocked ? (
                 /* Locked: sub-card display */
-                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded px-3 py-2 text-[12px]">
+                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded px-3 py-2 text-xs">
                   {accountLabel(sourceAccount)}
-                  <span className="ml-2 font-mono text-gray-500 text-[11px]">
+                  <span className="ml-2 font-mono text-gray-500 text-caleo-11">
                     Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
                   </span>
                 </div>
@@ -400,9 +400,9 @@ export default function ManualTransferModal({
               </label>
               {cfg.destLocked ? (
                 /* Locked: sub-card display */
-                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded px-3 py-2 text-[12px]">
+                <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded px-3 py-2 text-xs">
                   {accountLabel(sourceAccount)}
-                  <span className="ml-2 font-mono text-gray-500 text-[11px]">
+                  <span className="ml-2 font-mono text-gray-500 text-caleo-11">
                     Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
                   </span>
                 </div>
@@ -456,7 +456,7 @@ export default function ManualTransferModal({
                 className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-60"
               />
               {isFuture && (
-                <p className="text-[11px] text-amber-700 mt-1">
+                <p className="text-caleo-11 text-amber-700 mt-1">
                   ⚠ Tanggal di masa depan — entry tetap akan dicatat
                 </p>
               )}
@@ -484,7 +484,7 @@ export default function ManualTransferModal({
               Bukti transfer (opsional)
             </label>
             <div
-              className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-4 text-center text-[12px] text-gray-500"
+              className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-4 text-center text-xs text-gray-500"
               style={{ borderStyle: 'dashed' }}
             >
               <UploadCloud className="w-6 h-6 mx-auto text-blue-400 mb-1" />
@@ -500,7 +500,7 @@ export default function ManualTransferModal({
             <JournalEntryPreview lines={previewLines} />
           )}
           {previewLines.length === 0 && (
-            <div className="je-preview p-4 text-[12px] text-amber-800 text-center">
+            <div className="je-preview p-4 text-xs text-amber-800 text-center">
               Isi jumlah dan pilih akun untuk melihat preview journal entry
             </div>
           )}

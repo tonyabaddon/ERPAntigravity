@@ -115,7 +115,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
 
         {/* Sales rep name */}
         <p
-          className="text-[14px] font-semibold mb-3"
+          className="text-sm font-semibold mb-3"
           style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0B2545' }}
         >
           {salesRep.name}
@@ -123,7 +123,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
 
         {/* Warning callout */}
         <div
-          className="border-l-4 p-3 rounded mb-4 text-[13px]"
+          className="border-l-4 p-3 rounded mb-4 text-caleo-13"
           style={{ background: '#FEF3C7', borderColor: '#F59E0B', color: '#0B2545' }}
           role="alert"
         >
@@ -137,7 +137,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
           <div className="mb-6">
             <label
               htmlFor="deactivate-reason"
-              className="block text-[12px] font-semibold mb-1"
+              className="block text-xs font-semibold mb-1"
               style={{ color: '#0B2545' }}
             >
               Alasan nonaktifkan <span style={{ color: '#DC2626' }}>*</span>
@@ -153,11 +153,11 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
               disabled={submitting}
               rows={4}
               placeholder="Contoh: karyawan mengundurkan diri per 10 Juli 2026"
-              className="w-full border rounded px-3 py-2 text-[13px] placeholder:opacity-40 resize-none focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-caleo-13 placeholder:opacity-40 resize-none focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Alasan nonaktifkan"
             />
-            <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>
+            <p className="text-caleo-11 text-right mt-0.5" style={{ color: '#9DB2CE' }}>
               {reason.length}/500
             </p>
           </div>
@@ -168,7 +168,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="border rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="border rounded-full px-4 py-2.5 text-caleo-13 font-medium disabled:opacity-40 transition-colors"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
             >
               Batal
@@ -176,7 +176,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
             <button
               type="submit"
               disabled={submitting || !isReasonValid}
-              className="font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="font-extrabold rounded-full px-4 py-2.5 text-caleo-13 disabled:opacity-40 hover:opacity-90 transition-opacity"
               style={{ background: '#DC2626', color: '#ffffff' }}
             >
               {submitting ? 'Menyimpan…' : 'Nonaktifkan'}

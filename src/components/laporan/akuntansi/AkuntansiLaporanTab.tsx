@@ -40,7 +40,7 @@ export default function AkuntansiLaporanTab(props: AkuntansiLaporanTabProps): Re
             <button
               key={t.key}
               onClick={() => setActiveSubTab(t.key)}
-              className={`px-4 py-2.5 rounded-full text-[13px] font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
+              className={`px-4 py-2.5 rounded-full text-caleo-13 font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
                 activeSubTab === t.key
                   ? 'bg-[var(--color-caleo-primary)] text-white'
                   : 'border border-[var(--color-caleo-mist-dark)] bg-white text-[#1e3d60] hover:bg-[var(--color-caleo-cloud)]'

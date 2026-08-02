@@ -560,12 +560,12 @@ export default function PromoProdukPanel({ showToast }: Props) {
                   className="cursor-pointer"
                 />
               </th>
-              <th className="px-3 py-2 text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">SKU</th>
-              <th className="px-3 py-2 text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">Nama</th>
-              <th className="px-3 py-2 text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">Kategori</th>
-              <th className="px-3 py-2 text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">Promo</th>
-              <th className="px-3 py-2 text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">Berlaku hingga</th>
-              <th className="px-3 py-2 text-[10.5px] font-extrabold text-slate-600 uppercase tracking-wider">Status</th>
+              <th className="px-3 py-2 text-caleo-10 font-extrabold text-slate-600 uppercase tracking-wider">SKU</th>
+              <th className="px-3 py-2 text-caleo-10 font-extrabold text-slate-600 uppercase tracking-wider">Nama</th>
+              <th className="px-3 py-2 text-caleo-10 font-extrabold text-slate-600 uppercase tracking-wider">Kategori</th>
+              <th className="px-3 py-2 text-caleo-10 font-extrabold text-slate-600 uppercase tracking-wider">Promo</th>
+              <th className="px-3 py-2 text-caleo-10 font-extrabold text-slate-600 uppercase tracking-wider">Berlaku hingga</th>
+              <th className="px-3 py-2 text-caleo-10 font-extrabold text-slate-600 uppercase tracking-wider">Status</th>
               <th className="px-3 py-2 w-10"></th>
             </tr>
           </thead>

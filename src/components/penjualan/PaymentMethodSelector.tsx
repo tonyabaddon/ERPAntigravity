@@ -17,7 +17,7 @@ export interface PaymentMethodSelectorProps {
 export default function PaymentMethodSelector({ method, subtype, onMethodChange, onSubtypeChange }: PaymentMethodSelectorProps) {
   return (
     <div>
-      <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1 block mb-2">
+      <label className="text-caleo-11 font-extrabold text-slate-500 uppercase tracking-widest pl-1 block mb-2">
         Metode Pembayaran
       </label>
       <div className="grid grid-cols-3 gap-2">
@@ -30,7 +30,7 @@ export default function PaymentMethodSelector({ method, subtype, onMethodChange,
               if (m.key !== 'edc') onSubtypeChange(null);
               else if (subtype === null) onSubtypeChange('debit');
             }}
-            className={`border rounded py-3 px-2 text-[12px] font-bold flex flex-col items-center gap-1 ${
+            className={`border rounded py-3 px-2 text-xs font-bold flex flex-col items-center gap-1 ${
               method === m.key
                 ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                 : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'
@@ -48,7 +48,7 @@ export default function PaymentMethodSelector({ method, subtype, onMethodChange,
               key={s}
               type="button"
               onClick={() => onSubtypeChange(s)}
-              className={`px-3 py-1.5 text-[11px] font-bold rounded-full border ${
+              className={`px-3 py-1.5 text-caleo-11 font-bold rounded-full border ${
                 subtype === s
                   ? 'bg-amber-400 text-amber-900 border-amber-400'
                   : 'bg-white text-slate-500 border-slate-300'

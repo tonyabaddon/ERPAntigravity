@@ -21,7 +21,7 @@ export default function StokGudangInline({ total, warehouses, stockByWarehouseId
     <div className="flex flex-col items-center leading-tight">
       <span className={`text-sm font-extrabold ${totalColor}`}>{total}</span>
       {shown.length > 0 && (
-        <span className="text-[10.5px] text-slate-500 mt-0.5">
+        <span className="text-caleo-10 text-slate-500 mt-0.5">
           {shown.map((g, i) => (
             <React.Fragment key={g.name}>
               {i > 0 && <span className="mx-1 text-slate-300">·</span>}

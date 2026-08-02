@@ -189,7 +189,7 @@ function CartRow({
   return (
     <div
       key={item._key}
-      className={`p-3 bg-slate-50 border border-slate-200 rounded mb-2 items-start text-[12px] ${
+      className={`p-3 bg-slate-50 border border-slate-200 rounded mb-2 items-start text-xs ${
         modulDiskonOn
           ? 'grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2'
           : 'grid grid-cols-[1fr_auto_auto_auto_auto] gap-2'
@@ -200,7 +200,7 @@ function CartRow({
           <span className="font-extrabold">{item.name}</span>
           {preOrder && (
             <span
-              className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider"
+              className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-caleo-10 font-bold uppercase tracking-wider"
               title={`Stok kurang ${shortage} unit di gudang ini`}
             >
               ⏳ Pre-order · kurang {shortage}
@@ -211,13 +211,13 @@ function CartRow({
             const tierPrice = getTierPrice(stock, activeTier!);
             const hasExplicit = tierPrice !== stock.price;
             return !hasExplicit ? (
-              <span className="text-amber-600 text-[10px]">⚠ Harga tier ini belum di-set — pakai harga base</span>
+              <span className="text-amber-600 text-caleo-10">⚠ Harga tier ini belum di-set — pakai harga base</span>
             ) : null;
           })()}
         </div>
         {/* Item #4b: Promo Produk badge — shown when a promo applies to this SKU */}
         {showPromoBadge && promoDiscount && promo && (
-          <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-700 font-semibold">
+          <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-caleo-10 text-emerald-700 font-semibold">
             <span>🏷</span>
             <span>
               Promo:{' '}
@@ -232,14 +232,14 @@ function CartRow({
         <div className="flex items-center gap-2 flex-wrap mt-1">
           {item.qty_tier_applied && item.qty_tier_min_qty != null && (
             <span
-              className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700"
+              className="inline-block text-caleo-10 font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700"
               title={`Harga volume aktif — beli ${item.qty_tier_min_qty}+ jadi Rp ${item.unit_price.toLocaleString('id-ID')}`}
             >
               Vol {item.qty_tier_min_qty}+
             </span>
           )}
           {item.manual_override && (
-            <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
+            <span className="inline-block text-caleo-10 font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
               Manual
             </span>
           )}
@@ -249,7 +249,7 @@ function CartRow({
           const skuTiers = item.sku && stockQtyTiers ? stockQtyTiers[item.sku] : undefined;
           const upsellTier = skuTiers ? getNextUpsellTier(skuTiers, item.qty, item.unit_price) : null;
           return upsellTier ? (
-            <p className="text-[11px] text-slate-500 italic mt-1">
+            <p className="text-caleo-11 text-slate-500 italic mt-1">
               Tip: beli {upsellTier.min_qty}+ pcs jadi Rp {upsellTier.price.toLocaleString('id-ID')}/pcs
               <span className="text-emerald-600 ml-1">
                 (hemat Rp {(item.unit_price - upsellTier.price).toLocaleString('id-ID')}/pcs untuk customer)
@@ -260,7 +260,7 @@ function CartRow({
         {/* Harga input with List label above */}
         <div className="mt-1">
           {modulDiskonOn && masterPrice > 0 && (
-            <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">
+            <div className="text-caleo-10 text-slate-400 uppercase tracking-wide mb-0.5">
               List {formatRp(masterPrice)}
             </div>
           )}
@@ -269,7 +269,7 @@ function CartRow({
               <NumberInput
                 value={item.manual_override ? item.unit_price : binding.state.typed_price}
                 onChange={handlePriceChange}
-                className="w-28 text-right text-[12px] font-mono border border-slate-200 rounded px-2 py-1 bg-white"
+                className="w-28 text-right text-xs font-mono border border-slate-200 rounded px-2 py-1 bg-white"
               />
               <button
                 type="button"
@@ -290,7 +290,7 @@ function CartRow({
               </button>
             </div>
           ) : (
-            <div className="text-[11px] text-slate-400 mt-0.5">@ {formatRp(item.unit_price)}</div>
+            <div className="text-caleo-11 text-slate-400 mt-0.5">@ {formatRp(item.unit_price)}</div>
           )}
         </div>
       </div>
@@ -312,7 +312,7 @@ function CartRow({
           value={item.qty}
           emptyAs={1}
           onChange={n => { if (Number.isInteger(n) && n >= 1) onQtyChange(item._key, n); }}
-          className="w-10 text-center font-extrabold text-[12px] bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-10 text-center font-extrabold text-xs bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button type="button" onClick={() => onQtyChange(item._key, item.qty + 1)} className="w-6 h-6 rounded bg-slate-100 font-extrabold">+</button>
       </div>
@@ -327,7 +327,7 @@ function CartRow({
           />
         </div>
       )}
-      <div className="font-extrabold text-[var(--color-caleo-primary)] min-w-[90px] text-right text-[13px] pt-1">
+      <div className="font-extrabold text-[var(--color-caleo-primary)] min-w-[90px] text-right text-caleo-13 pt-1">
         {formatRp(modulDiskonOn ? lineAfterDiscount : item.subtotal)}
       </div>
       <button type="button" onClick={() => onRemove(item._key)} className="text-slate-300 hover:text-rose-500 text-lg leading-none pt-1">✕</button>
@@ -378,7 +378,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
   // for a jasa-only cart even though their subtotal flowed into Total Invoice.
   if (totalLineCount === 0) {
     return (
-      <div className="px-6 py-8 text-center text-slate-400 text-[13px] bg-slate-50 border border-dashed border-slate-300 rounded">
+      <div className="px-6 py-8 text-center text-slate-400 text-caleo-13 bg-slate-50 border border-dashed border-slate-300 rounded">
         Belum ada item. Tambahkan dari hasil pencarian di atas.
       </div>
     );
@@ -387,11 +387,11 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
   return (
     <>
       <div className="bg-emerald-50 border border-emerald-300 rounded px-3 py-2 mb-2 flex justify-between items-center">
-        <div className="font-extrabold text-emerald-700 text-[13px] flex items-center gap-2">
+        <div className="font-extrabold text-emerald-700 text-caleo-13 flex items-center gap-2">
           🧺 Keranjang
-          <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-[11px] font-extrabold">{totalLineCount} item</span>
+          <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-caleo-11 font-extrabold">{totalLineCount} item</span>
         </div>
-        <div className="font-extrabold text-emerald-700 text-[13px]">{formatRp(subtotalNet + rakitSubtotal)}</div>
+        <div className="font-extrabold text-emerald-700 text-caleo-13">{formatRp(subtotalNet + rakitSubtotal)}</div>
       </div>
 
       {items.map(item => {
@@ -421,7 +421,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
 
       {rakitLines && rakitLines.length > 0 && (
         <>
-          <div className="text-[10px] font-extrabold text-orange-700 uppercase tracking-widest mb-2 mt-3 flex items-center gap-2">
+          <div className="text-caleo-10 font-extrabold text-orange-700 uppercase tracking-widest mb-2 mt-3 flex items-center gap-2">
             <span>🛠 Jasa</span>
             <span className="flex-1 border-t border-dotted border-slate-300" />
           </div>
@@ -431,7 +431,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             return (
               <div
                 key={r.id}
-                className="rounded p-3 mb-2 grid grid-cols-[1fr_auto_auto] gap-3 items-center text-[12px]"
+                className="rounded p-3 mb-2 grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs"
                 style={{
                   background: isCustom
                     ? 'linear-gradient(90deg, rgba(14,165,233,0.08), rgba(14,165,233,0.02) 80%)'
@@ -441,18 +441,18 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
               >
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-caleo-10 font-extrabold uppercase tracking-wider ${
                       isCustom
                         ? 'bg-sky-50 text-sky-700 border border-sky-200'
                         : 'bg-orange-50 text-orange-700 border border-orange-200'
                     }`}>
                       {isCustom ? '📦' : '⚡'} {label}
                     </span>
-                    <span className="font-extrabold text-[13px]">{r.description}</span>
+                    <span className="font-extrabold text-caleo-13">{r.description}</span>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">Estimasi · final di-adjust admin saat lock</div>
+                  <div className="text-caleo-11 text-slate-500 mt-0.5">Estimasi · final di-adjust admin saat lock</div>
                 </div>
-                <div className={`font-extrabold text-[14px] ${isCustom ? 'text-sky-700' : 'text-amber-700'}`}>
+                <div className={`font-extrabold text-sm ${isCustom ? 'text-sky-700' : 'text-amber-700'}`}>
                   {formatRp(r.estimatedPrice)}
                 </div>
                 <button

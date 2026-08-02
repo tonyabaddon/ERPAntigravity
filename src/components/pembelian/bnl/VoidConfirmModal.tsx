@@ -46,7 +46,7 @@ export default function VoidConfirmModal({ pi, onClose, onVoided, showToast }: P
             <textarea value={reason} onChange={e => setReason(e.target.value)}
               rows={3} placeholder="Contoh: Customer batal beli, barang sudah dikembalikan ke grosir"
               className="w-full text-sm px-3 py-2 rounded border border-gray-300 focus:border-red-400 focus-visible:outline-none" />
-            <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
+            <div className="text-caleo-11 text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">

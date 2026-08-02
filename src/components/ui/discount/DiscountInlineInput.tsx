@@ -41,7 +41,7 @@ export const DiscountInlineInput: React.FC<DiscountInlineInputProps> = ({
 
   const display = value == null ? '' : String(value);
   const segPillCls = 'inline-flex border border-slate-300 rounded overflow-hidden bg-white';
-  const btnBase = 'text-[11px] font-bold leading-none px-1.5 py-1 cursor-pointer';
+  const btnBase = 'text-caleo-11 font-bold leading-none px-1.5 py-1 cursor-pointer';
   const btnActive = 'bg-orange-700 text-white';
   const btnIdle = 'bg-white text-slate-600 hover:bg-slate-100';
   const isRp = type === 'AMOUNT';
@@ -57,7 +57,7 @@ export const DiscountInlineInput: React.FC<DiscountInlineInputProps> = ({
         onChange={handleInputChange}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-16 text-right text-[12px] font-mono border rounded px-2 py-1 ${
+        className={`w-16 text-right text-xs font-mono border rounded px-2 py-1 ${
           type ? 'border-orange-700 font-bold text-orange-700' : 'border-slate-200 text-slate-400'
         }`}
       />

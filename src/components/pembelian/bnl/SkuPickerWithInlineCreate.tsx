@@ -113,7 +113,7 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
                 <NumberInput value={draftSellPrice} onChange={setDraftSellPrice}
                   className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
               </div>
-              <div className="text-[11px] text-gray-500">
+              <div className="text-caleo-11 text-gray-500">
                 Kategori = "Pass-through" • Stok = 0 • HPP = harga beli grosir yang diketik di form.
               </div>
             </div>

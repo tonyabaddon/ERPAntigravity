@@ -70,13 +70,13 @@ export default function JenisJasaCrudPanel({ showToast }: Props) {
             </div>
             <div>
               <div className="font-bold text-sm text-[var(--color-caleo-primary)]">{s.name}</div>
-              <div className="text-[11px] text-slate-600 mt-0.5">
+              <div className="text-caleo-11 text-slate-600 mt-0.5">
                 {s.pricing_model.replace('_', ' ')} · {s.requires_material_lock ? '🔒 Lock material Owner approval' : 'Tanpa lock'} · <code className="bg-slate-100 px-1 rounded">{s.code}</code>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${s.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+            <span className={`text-caleo-11 font-bold px-2 py-0.5 rounded-full ${s.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
               {s.is_active ? 'AKTIF' : 'NON-AKTIF'}
             </span>
             <button onClick={() => setEditing(s)} className="text-xs font-semibold text-slate-500 hover:text-[var(--color-caleo-primary)] px-2 py-1">Edit</button>
@@ -134,23 +134,23 @@ function JasaEditModal({ item, onClose, onSave, colorOptions }: ModalProps) {
         <h3 className="font-bold text-base text-[var(--color-caleo-primary)] mb-4">{item ? 'Edit' : 'Tambah'} Jenis Jasa</h3>
         <div className="space-y-3">
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Nama Jasa</label>
+            <label className="block text-caleo-11 font-bold text-slate-500 uppercase mb-1">Nama Jasa</label>
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded" />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Kode Internal</label>
+            <label className="block text-caleo-11 font-bold text-slate-500 uppercase mb-1">Kode Internal</label>
             <input value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded font-mono bg-slate-50"
                    placeholder="custom_panel" />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Penjelasan</label>
+            <label className="block text-caleo-11 font-bold text-slate-500 uppercase mb-1">Penjelasan</label>
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
                       rows={2} className="w-full px-3 py-2 text-sm border border-slate-300 rounded" />
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Model Harga</label>
+            <label className="block text-caleo-11 font-bold text-slate-500 uppercase mb-1">Model Harga</label>
             <div className="grid grid-cols-4 gap-2">
               {(['LUMP_SUM', 'PER_HOUR', 'PER_METER', 'PER_UNIT'] as const).map(m => (
                 <button key={m} onClick={() => setForm({ ...form, pricing_model: m })}
@@ -169,10 +169,10 @@ function JasaEditModal({ item, onClose, onSave, colorOptions }: ModalProps) {
                    onChange={e => setForm({ ...form, requires_material_lock: e.target.checked })}
                    className="mt-0.5" />
             <span><strong>Butuh lock material?</strong><br />
-              <span className="text-[11px] text-slate-500">Saat dipakai, Owner approve dulu untuk lock material di gudang.</span></span>
+              <span className="text-caleo-11 text-slate-500">Saat dipakai, Owner approve dulu untuk lock material di gudang.</span></span>
           </label>
           <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Warna Tombol di Wizard</label>
+            <label className="block text-caleo-11 font-bold text-slate-500 uppercase mb-1">Warna Tombol di Wizard</label>
             <div className="flex gap-2">
               {colorOptions.map(c => (
                 <button key={c.hex} onClick={() => setForm({ ...form, color_hex: c.hex })} title={c.label}

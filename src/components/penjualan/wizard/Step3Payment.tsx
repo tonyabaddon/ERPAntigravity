@@ -189,7 +189,7 @@ export default function Step3Payment(props: Props) {
               placeholder="Mis: Penawaran berlaku selama harga komponen tidak naik. Garansi pabrik 1 tahun. Ongkir dihitung saat di-convert jadi invoice."
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 focus:border-[var(--color-caleo-primary)]"
             />
-            <p className="text-[11px] text-slate-500 mt-1.5 italic">Note ini tampil di PDF Penawaran dan di Daftar Penawaran.</p>
+            <p className="text-caleo-11 text-slate-500 mt-1.5 italic">Note ini tampil di PDF Penawaran dan di Daftar Penawaran.</p>
           </div>
         </div>
 
@@ -204,7 +204,7 @@ export default function Step3Payment(props: Props) {
               <span>TOTAL PENAWARAN</span>
               <span className="text-xl">{formatRp(props.subtotal)}</span>
             </div>
-            <div className="text-[10px] text-amber-700 italic mt-2">
+            <div className="text-caleo-10 text-amber-700 italic mt-2">
               ⚠️ Total ini belum termasuk ongkir. Ongkir dihitung saat di-convert ke Sales Invoice.
             </div>
           </div>
@@ -214,7 +214,7 @@ export default function Step3Payment(props: Props) {
             {submitting ? 'Menyimpan…' : '✓ Simpan Sales Order'}
           </button>
           {!validation.ok && validation.errors?.[0] && (
-            <p className="text-[11px] text-rose-600 text-center">{validation.errors[0]}</p>
+            <p className="text-caleo-11 text-rose-600 text-center">{validation.errors[0]}</p>
           )}
         </div>
       </div>
@@ -243,7 +243,7 @@ export default function Step3Payment(props: Props) {
                 }`}
               >
                 <div className="font-bold text-sm">LUNAS</div>
-                <div className={`text-[11px] ${props.paymentType === 'FULL' ? 'text-[var(--color-caleo-primary)]/80' : 'text-slate-500'}`}>Bayar penuh sekarang</div>
+                <div className={`text-caleo-11 ${props.paymentType === 'FULL' ? 'text-[var(--color-caleo-primary)]/80' : 'text-slate-500'}`}>Bayar penuh sekarang</div>
               </button>
               <button
                 type="button"
@@ -255,7 +255,7 @@ export default function Step3Payment(props: Props) {
                 }`}
               >
                 <div className="font-bold text-sm">DP</div>
-                <div className={`text-[11px] ${props.paymentType === 'DP' ? 'text-amber-700' : 'text-slate-500'}`}>Bayar muka sebagian</div>
+                <div className={`text-caleo-11 ${props.paymentType === 'DP' ? 'text-amber-700' : 'text-slate-500'}`}>Bayar muka sebagian</div>
               </button>
               {allowsTempo && (
                 <button
@@ -268,7 +268,7 @@ export default function Step3Payment(props: Props) {
                   }`}
                 >
                   <div className="font-bold text-sm">TEMPO</div>
-                  <div className={`text-[11px] ${isTempo ? 'text-amber-700' : 'text-slate-500'}`}>Bayar nanti (kredit)</div>
+                  <div className={`text-caleo-11 ${isTempo ? 'text-amber-700' : 'text-slate-500'}`}>Bayar nanti (kredit)</div>
                 </button>
               )}
             </div>
@@ -282,27 +282,27 @@ export default function Step3Payment(props: Props) {
               </div>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div>
-                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-[10px] uppercase tracking-wider`}>Limit</div>
+                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Limit</div>
                   <div className={`font-bold text-base ${overLimit ? 'text-rose-900' : 'text-amber-900'}`}>{formatRp(limit)}</div>
                 </div>
                 <div>
-                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-[10px] uppercase tracking-wider`}>Outstanding</div>
+                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Outstanding</div>
                   <div className={`font-bold text-base ${overLimit ? 'text-rose-900' : 'text-amber-900'}`}>{formatRp(used)}</div>
                 </div>
                 <div>
-                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-[10px] uppercase tracking-wider`}>Sisa Tersedia</div>
+                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Sisa Tersedia</div>
                   <div className={`font-bold text-base ${overLimit ? 'text-rose-900' : 'text-emerald-700'}`}>{formatRp(available)}</div>
                 </div>
               </div>
-              <div className={`text-[11px] mt-3 ${overLimit ? 'text-rose-800' : 'text-amber-800'}`}>
+              <div className={`text-caleo-11 mt-3 ${overLimit ? 'text-rose-800' : 'text-amber-800'}`}>
                 💳 Term: <strong>{termDays} hari</strong> · Jatuh tempo: <strong>{jatuhTempoStr}</strong>
               </div>
               {overLimit ? (
-                <div className="text-[11px] text-rose-700 mt-1 font-semibold">
+                <div className="text-caleo-11 text-rose-700 mt-1 font-semibold">
                   ⚠️ Over limit. Pesanan {formatRp(props.totalInvoice)} melebihi sisa kredit {formatRp(available)}.
                 </div>
               ) : (
-                <div className="text-[11px] text-emerald-700 mt-1 font-semibold">
+                <div className="text-caleo-11 text-emerald-700 mt-1 font-semibold">
                   ✓ Pesanan {formatRp(props.totalInvoice)} cukup di sisa kredit.
                 </div>
               )}
@@ -340,7 +340,7 @@ export default function Step3Payment(props: Props) {
                 placeholder={props.dpInputType === 'PERCENT' ? 'Mis: 30' : 'Mis: 1.000.000'}
                 className="w-full px-3 py-2 text-sm border border-amber-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
-              <div className="text-[11px] text-amber-800 mt-2">
+              <div className="text-caleo-11 text-amber-800 mt-2">
                 Bayar sekarang: <strong>{formatRp(props.effectiveDp)}</strong> · Sisa pelunasan: <strong>{formatRp(props.sisaPelunasan)}</strong>
               </div>
             </div>
@@ -369,7 +369,7 @@ export default function Step3Payment(props: Props) {
               ))}
             </div>
             {isTempo && (
-              <p className="text-[11px] text-slate-500 mt-1.5 italic">Optional — bisa di-set saat pelunasan via Catat Bayar.</p>
+              <p className="text-caleo-11 text-slate-500 mt-1.5 italic">Optional — bisa di-set saat pelunasan via Catat Bayar.</p>
             )}
           </div>
 
@@ -393,7 +393,7 @@ export default function Step3Payment(props: Props) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Ongkir</label>
-              <label className="flex items-center gap-1 text-[11px] text-slate-600">
+              <label className="flex items-center gap-1 text-caleo-11 text-slate-600">
                 <input type="checkbox" checked={props.ongkirOn} onChange={(e) => props.onOngkirToggle(e.target.checked)} /> Pakai ongkir
               </label>
             </div>
@@ -485,12 +485,12 @@ export default function Step3Payment(props: Props) {
                   <span className="text-xl">{formatRp(props.totalInvoice)}</span>
                 </div>
                 {isDp && (
-                  <div className="text-[11px] mt-2 opacity-80">
+                  <div className="text-caleo-11 mt-2 opacity-80">
                     Bayar sekarang: <strong>{formatRp(props.effectiveDp)}</strong> · Sisa pelunasan: <strong>{formatRp(props.sisaPelunasan)}</strong>
                   </div>
                 )}
                 {isTempo && (
-                  <div className="text-[11px] mt-2 opacity-80">
+                  <div className="text-caleo-11 mt-2 opacity-80">
                     Jatuh tempo: <strong>{jatuhTempoStr}</strong> · Outstanding setelah: <strong>{formatRp(outstandingAfter)}</strong>
                   </div>
                 )}
@@ -530,7 +530,7 @@ export default function Step3Payment(props: Props) {
                   {submitting ? 'Menyimpan…' : '✓ Simpan Sales Invoice'}
                 </button>
                 {saveHint && (
-                  <p className="text-[11px] text-rose-600 text-center">{saveHint}</p>
+                  <p className="text-caleo-11 text-rose-600 text-center">{saveHint}</p>
                 )}
               </>
             );

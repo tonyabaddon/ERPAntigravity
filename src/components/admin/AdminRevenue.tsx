@@ -191,12 +191,12 @@ export function AdminRevenue() {
           className="rounded border p-6 flex flex-col items-center gap-3"
           style={{ borderColor: '#FCA5A5', background: '#FEF2F2' }}
         >
-          <p className="text-[14px] font-medium" style={{ color: '#991B1B' }}>
+          <p className="text-sm font-medium" style={{ color: '#991B1B' }}>
             {error}
           </p>
           <button
             onClick={fetchAll}
-            className="px-4 py-2 rounded-full text-[13px] font-semibold bg-caleo-navy text-white hover:opacity-90 transition-opacity"
+            className="px-4 py-2 rounded-full text-caleo-13 font-semibold bg-caleo-navy text-white hover:opacity-90 transition-opacity"
           >
             Coba lagi
           </button>
@@ -217,7 +217,7 @@ export function AdminRevenue() {
         <h1 className="text-xl font-bold" style={{ color: '#0B2545' }}>
           Pendapatan
         </h1>
-        <p className="text-[13px] mt-0.5" style={{ color: '#5A6472' }}>
+        <p className="text-caleo-13 mt-0.5" style={{ color: '#5A6472' }}>
           Tahun {currentYear} sejauh ini · {formatIDR(ytd)} YTD
         </p>
       </div>
@@ -248,12 +248,12 @@ export function AdminRevenue() {
             data-testid="coverage-gaps-callout"
           >
             <h3
-              className="text-[12px] font-bold uppercase tracking-widest mb-3"
+              className="text-xs font-bold uppercase tracking-widest mb-3"
               style={{ fontFamily: 'JetBrains Mono, monospace', color: '#991B1B' }}
             >
               Kesenjangan pembayaran
             </h3>
-            <p className="text-[13px] mb-4" style={{ color: '#7F1D1D' }}>
+            <p className="text-caleo-13 mb-4" style={{ color: '#7F1D1D' }}>
               {gapTenants.length} tenant dengan status{' '}
               <strong>OVERDUE</strong> — belum ada pembayaran yang menutup periode berjalan.
             </p>
@@ -270,14 +270,14 @@ export function AdminRevenue() {
                   >
                     <div>
                       <span
-                        className="text-[13px] font-semibold"
+                        className="text-caleo-13 font-semibold"
                         style={{ color: '#0B2545' }}
                       >
                         {gap.tenant_name}
                       </span>
                       {tenantRow?.plan_code && (
                         <span
-                          className="ml-2 text-[11px] font-medium"
+                          className="ml-2 text-caleo-11 font-medium"
                           style={{ color: '#9DB2CE' }}
                         >
                           {tenantRow.plan_code}
@@ -287,7 +287,7 @@ export function AdminRevenue() {
                     <div className="flex items-center gap-2">
                       <a
                         href={`/admin/tenants/${gap.tenant_slug}?tab=pembayaran`}
-                        className="text-[12px] font-semibold underline"
+                        className="text-xs font-semibold underline"
                         style={{ color: '#DC2626' }}
                         onClick={(e) => {
                           if (tenantRow) {

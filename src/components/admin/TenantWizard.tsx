@@ -244,7 +244,7 @@ export function TenantWizard() {
 
       {error && (
         <div
-          className="p-3 rounded text-[13px]"
+          className="p-3 rounded text-caleo-13"
           style={{ background: '#FEF2F2', color: C.red, border: `1px solid #FCA5A5` }}
         >
           {error}
@@ -256,7 +256,7 @@ export function TenantWizard() {
           {step !== 'tenant' ? (
             <button
               onClick={goBack}
-              className="px-4 py-2 rounded text-[13px] font-semibold"
+              className="px-4 py-2 rounded text-caleo-13 font-semibold"
               style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.navy }}
             >
               ← Kembali
@@ -268,7 +268,7 @@ export function TenantWizard() {
             <button
               onClick={submit}
               disabled={submitting}
-              className="px-6 py-2 rounded text-[13px] font-bold disabled:opacity-50"
+              className="px-6 py-2 rounded text-caleo-13 font-bold disabled:opacity-50"
               style={{ background: C.gold, color: C.navy }}
             >
               {submitting ? 'Memproses…' : 'Onboard tenant'}
@@ -276,7 +276,7 @@ export function TenantWizard() {
           ) : (
             <button
               onClick={goNext}
-              className="px-6 py-2 rounded text-[13px] font-bold"
+              className="px-6 py-2 rounded text-caleo-13 font-bold"
               style={{ background: C.navy, color: '#FFFFFF' }}
             >
               Lanjut →
@@ -300,10 +300,10 @@ function Header({ step }: { step: Step }) {
   const currentIdx = steps.findIndex(s => s.key === step);
   return (
     <div>
-      <h1 className="text-[20px] font-extrabold" style={{ color: C.navy }}>
+      <h1 className="text-xl font-extrabold" style={{ color: C.navy }}>
         Onboard tenant baru
       </h1>
-      <p className="text-[13px] mt-1" style={{ color: C.muted }}>
+      <p className="text-caleo-13 mt-1" style={{ color: C.muted }}>
         Wizard ini onboard tenant baru via Edge Function. Owner auth.users dibuat
         otomatis via email invite — tidak perlu buat manual di Dashboard.
       </p>
@@ -311,7 +311,7 @@ function Header({ step }: { step: Step }) {
         {steps.map((s, idx) => (
           <div
             key={s.key}
-            className="flex-1 py-2 rounded text-[11px] font-bold text-center uppercase tracking-widest"
+            className="flex-1 py-2 rounded text-caleo-11 font-bold text-center uppercase tracking-widest"
             style={{
               background: idx <= currentIdx ? C.navy : C.cream,
               color: idx <= currentIdx ? '#FFFFFF' : C.muted,
@@ -344,7 +344,7 @@ function TenantStep({ form, update }: StepProps) {
           value={form.slug}
           onChange={e => update('slug', e.target.value.toLowerCase())}
           placeholder="warung-sinar-rezeki"
-          className="w-full border rounded px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-caleo-13"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -354,7 +354,7 @@ function TenantStep({ form, update }: StepProps) {
           value={form.name}
           onChange={e => update('name', e.target.value)}
           placeholder="Warung Sinar Rezeki"
-          className="w-full border rounded px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-caleo-13"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -373,10 +373,10 @@ function TenantStep({ form, update }: StepProps) {
                   background: selected ? C.cream : C.bg,
                 }}
               >
-                <div className="font-bold text-[13px]" style={{ color: C.navy }}>
+                <div className="font-bold text-caleo-13" style={{ color: C.navy }}>
                   {p.label}
                 </div>
-                <div className="text-[11px] mt-1" style={{ color: C.muted }}>
+                <div className="text-caleo-11 mt-1" style={{ color: C.muted }}>
                   {p.blurb}
                 </div>
               </button>
@@ -400,10 +400,10 @@ function TenantStep({ form, update }: StepProps) {
                   background: selected ? C.cream : C.bg,
                 }}
               >
-                <div className="font-bold text-[13px]" style={{ color: C.navy }}>
+                <div className="font-bold text-caleo-13" style={{ color: C.navy }}>
                   {m} Bulan
                 </div>
-                <div className="text-[11px] mt-1" style={{ color: C.green }}>
+                <div className="text-caleo-11 mt-1" style={{ color: C.green }}>
                   {savings}
                 </div>
               </button>
@@ -428,7 +428,7 @@ function TenantStep({ form, update }: StepProps) {
                     update('discountMode', o.mode);
                     if (o.mode === 'none') update('discountValue', 0);
                   }}
-                  className="py-2 rounded border-2 text-[12px] font-semibold transition-all"
+                  className="py-2 rounded border-2 text-xs font-semibold transition-all"
                   style={{
                     borderColor: selected ? C.gold : C.border,
                     background: selected ? C.cream : C.bg,
@@ -445,7 +445,7 @@ function TenantStep({ form, update }: StepProps) {
               allowDecimal={form.discountMode === 'percent'}
               value={form.discountValue}
               onChange={n => update('discountValue', n)}
-              className="w-full border rounded px-3 py-2 text-[13px]"
+              className="w-full border rounded px-3 py-2 text-caleo-13"
               style={{ borderColor: C.border }}
             />
           )}
@@ -461,7 +461,7 @@ function OwnerStep({ form, update }: StepProps) {
   return (
     <section className="space-y-4">
       <div
-        className="p-3 rounded text-[12px]"
+        className="p-3 rounded text-xs"
         style={{ background: C.cream, color: C.navy, border: `1px solid ${C.gold}` }}
       >
         <strong>Info:</strong> Edge Function akan kirim email invite otomatis ke
@@ -473,7 +473,7 @@ function OwnerStep({ form, update }: StepProps) {
           value={form.ownerName}
           onChange={e => update('ownerName', e.target.value)}
           placeholder="Budi Santoso"
-          className="w-full border rounded px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-caleo-13"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -483,7 +483,7 @@ function OwnerStep({ form, update }: StepProps) {
           value={form.ownerEmail}
           onChange={e => update('ownerEmail', e.target.value)}
           placeholder="budi@warungsinar.com"
-          className="w-full border rounded px-3 py-2 text-[13px]"
+          className="w-full border rounded px-3 py-2 text-caleo-13"
           style={{ borderColor: C.border }}
         />
       </Field>
@@ -502,9 +502,9 @@ function ReviewStep({ form }: { form: WizardForm }) {
         : `Rp ${form.discountValue.toLocaleString('id-ID')}`;
   return (
     <section className="space-y-3">
-      <p className="text-[13px]" style={{ color: C.muted }}>
+      <p className="text-caleo-13" style={{ color: C.muted }}>
         Cek ulang. Setelah klik <strong>Onboard tenant</strong>, Edge Function{' '}
-        <code className="font-mono text-[11px]">create-tenant-owner</code> akan
+        <code className="font-mono text-caleo-11">create-tenant-owner</code> akan
         buat auth.users invite + seed 4 tabel atomik.
       </p>
       <ReviewRow label="Slug" value={form.slug} />
@@ -532,11 +532,11 @@ function ReviewRow({
       className="flex justify-between items-center py-2 border-b"
       style={{ borderColor: C.border }}
     >
-      <span className="text-[12px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
+      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.muted }}>
         {label}
       </span>
       <span
-        className={`text-[13px] ${mono ? 'font-mono' : 'font-semibold'}`}
+        className={`text-caleo-13 ${mono ? 'font-mono' : 'font-semibold'}`}
         style={{ color: C.navy }}
       >
         {value}
@@ -558,17 +558,17 @@ function ResultStep({ result }: { result: ProvisionResult }) {
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-[16px]"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-base"
             style={{ background: C.green, color: '#FFFFFF' }}
             aria-hidden
           >
             ✓
           </div>
           <div>
-            <h2 className="text-[18px] font-extrabold" style={{ color: C.navy }}>
+            <h2 className="text-lg font-extrabold" style={{ color: C.navy }}>
               Tenant berhasil di-onboard
             </h2>
-            <p className="text-[12px]" style={{ color: C.muted }}>
+            <p className="text-xs" style={{ color: C.muted }}>
               Rows tersimpan di tenants + tenant_subscriptions + tenant_users + admin_users.
               Email invite terkirim ke owner.
             </p>
@@ -586,7 +586,7 @@ function ResultStep({ result }: { result: ProvisionResult }) {
         <div className="flex gap-3 pt-2">
           <a
             href={detailUrl}
-            className="flex-1 text-center py-2 rounded text-[13px] font-bold"
+            className="flex-1 text-center py-2 rounded text-caleo-13 font-bold"
             style={{ background: C.navy, color: '#FFFFFF' }}
           >
             Buka detail tenant →
@@ -595,14 +595,14 @@ function ResultStep({ result }: { result: ProvisionResult }) {
             href={tenantUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 text-center py-2 rounded text-[13px] font-bold"
+            className="flex-1 text-center py-2 rounded text-caleo-13 font-bold"
             style={{ background: C.bg, color: C.navy, border: `1px solid ${C.border}` }}
           >
             Preview dashboard ↗
           </a>
         </div>
 
-        <p className="text-[11px] pt-2" style={{ color: C.muted }}>
+        <p className="text-caleo-11 pt-2" style={{ color: C.muted }}>
           Owner akan menerima email invite untuk set password dan login pertama kali.
         </p>
       </div>
@@ -634,12 +634,12 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-[11px] font-bold uppercase tracking-widest" style={{ color: C.navy }}>
+      <label className="text-caleo-11 font-bold uppercase tracking-widest" style={{ color: C.navy }}>
         {label}
       </label>
       <div className="mt-1">{children}</div>
       {hint && (
-        <p className="text-[11px] mt-1" style={{ color: C.muted }}>
+        <p className="text-caleo-11 mt-1" style={{ color: C.muted }}>
           {hint}
         </p>
       )}

@@ -122,11 +122,11 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
         <NumberInput allowDecimal={false} value={it.qty}
           onChange={handleQtyChange}
           className={`w-full text-sm text-center py-1 px-2 rounded border ${overReceive ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-        <div className="text-[10px] text-gray-400 text-center mt-0.5">Sisa: {remaining}</div>
+        <div className="text-caleo-10 text-gray-400 text-center mt-0.5">Sisa: {remaining}</div>
       </td>
       <td className="py-3">
         {modulOn && it.master_unit_cost > 0 && (
-          <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">
+          <div className="text-caleo-10 text-slate-400 uppercase tracking-wide mb-0.5">
             List {formatIDR(it.master_unit_cost)}
           </div>
         )}
@@ -357,7 +357,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
             <div>
               <div className="font-bold text-sm text-indigo-800">{pesanan.pesanan_number}</div>
               <div className="text-xs text-gray-700 mt-1">{pesanan.supplier?.name} • Net {pesanan.supplier?.payment_term_days ?? 0} hari</div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-caleo-11 text-gray-500 mt-1">
                 {(pesanan.items ?? []).length} item • Total {formatIDR(pesanan.total)} • Estimasi datang {fmtDate(pesanan.expected_receive_at)}
               </div>
             </div>
@@ -383,12 +383,12 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
                     <div className="font-semibold text-sm text-indigo-800">{p.pesanan_number}</div>
-                    <div className="text-[11px] text-gray-500">{p.supplier?.name} • {formatIDR(p.total)}</div>
+                    <div className="text-caleo-11 text-gray-500">{p.supplier?.name} • {formatIDR(p.total)}</div>
                   </button>
                 ))}
               </div>
             )}
-            <div className="text-[11px] text-gray-500 mt-2">Tagihan stok wajib link ke Pesanan. Belum ada Pesanan? Buat Pesanan dulu.</div>
+            <div className="text-caleo-11 text-gray-500 mt-2">Tagihan stok wajib link ke Pesanan. Belum ada Pesanan? Buat Pesanan dulu.</div>
           </div>
         )}
       </div>
@@ -398,21 +398,21 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
         <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Barang yang Diterima</div>
-            <div className="text-[11px] text-gray-500">Isi qty Diterima per item (boleh 0 kalau belum datang)</div>
+            <div className="text-caleo-11 text-gray-500">Isi qty Diterima per item (boleh 0 kalau belum datang)</div>
           </div>
           <table className="w-full">
             <thead className="border-b border-gray-200">
               <tr>
-                <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">SKU / Nama</th>
-                <th className="text-center py-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Dipesan</th>
-                <th className="text-center py-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Sudah</th>
-                <th className="text-center py-2 w-24 text-[11px] font-semibold text-gray-500 uppercase">Diterima *</th>
-                <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
+                <th className="text-left py-2 text-caleo-11 font-semibold text-gray-500 uppercase">SKU / Nama</th>
+                <th className="text-center py-2 w-20 text-caleo-11 font-semibold text-gray-500 uppercase">Dipesan</th>
+                <th className="text-center py-2 w-20 text-caleo-11 font-semibold text-gray-500 uppercase">Sudah</th>
+                <th className="text-center py-2 w-24 text-caleo-11 font-semibold text-gray-500 uppercase">Diterima *</th>
+                <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Harga Beli</th>
                 {modulOn && (
-                  <th className="text-right py-2 w-36 text-[11px] font-semibold text-gray-500 uppercase">Diskon</th>
+                  <th className="text-right py-2 w-36 text-caleo-11 font-semibold text-gray-500 uppercase">Diskon</th>
                 )}
-                <th className="text-left py-2 w-40 text-[11px] font-semibold text-gray-500 uppercase">Gudang</th>
-                <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
+                <th className="text-left py-2 w-40 text-caleo-11 font-semibold text-gray-500 uppercase">Gudang</th>
+                <th className="text-right py-2 w-32 text-caleo-11 font-semibold text-gray-500 uppercase">Subtotal</th>
               </tr>
             </thead>
             <tbody>
@@ -502,7 +502,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
                 <label className="text-xs font-semibold text-fuchsia-700 block mb-1.5">Jatuh Tempo Bayar *</label>
                 <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)}
                   className="w-full text-sm py-2 px-3 rounded border border-fuchsia-200" />
-                <div className="text-[11px] text-fuchsia-700 mt-2">Auto-fill dari supplier Net {pesanan.supplier?.payment_term_days ?? 0} hari.</div>
+                <div className="text-caleo-11 text-fuchsia-700 mt-2">Auto-fill dari supplier Net {pesanan.supplier?.payment_term_days ?? 0} hari.</div>
               </div>
             )}
             {initialStatus === 'LUNAS' && (

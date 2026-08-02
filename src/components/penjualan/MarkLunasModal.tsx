@@ -46,17 +46,17 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="px-4 py-3 bg-amber-500 text-white flex justify-between items-center">
-          <div className="font-extrabold text-[14px]">💰 Tandai Lunas — {transaction.invoice_number}</div>
+          <div className="font-extrabold text-sm">💰 Tandai Lunas — {transaction.invoice_number}</div>
           <button onClick={onClose}><X className="w-4 h-4" /></button>
         </div>
 
         <div className="p-5 space-y-4">
           {/* Summary */}
-          <div className="bg-slate-50 rounded p-3 text-[12px]">
+          <div className="bg-slate-50 rounded p-3 text-xs">
             <div className="flex justify-between"><span>Pelanggan</span><strong>{transaction.customer_name}</strong></div>
             <div className="flex justify-between"><span>Total Tagihan</span><span>{formatRp(baseTotal)}</span></div>
             <div className="flex justify-between"><span>DP Diterima</span><span>{formatRp(transaction.dp_amount ?? 0)}</span></div>
-            <div className="flex justify-between font-extrabold text-amber-700 text-[14px] mt-1 pt-1 border-t border-slate-300">
+            <div className="flex justify-between font-extrabold text-amber-700 text-sm mt-1 pt-1 border-t border-slate-300">
               <span>Sisa Pelunasan</span><span>{formatRp(sisa)}</span>
             </div>
           </div>
@@ -69,7 +69,7 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
           />
 
           <div>
-            <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1 block mb-2">
+            <label className="text-caleo-11 font-extrabold text-slate-500 uppercase tracking-widest pl-1 block mb-2">
               Penyesuaian Ongkir (opsional)
             </label>
             <input
@@ -77,16 +77,16 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
               value={ongkirAdjust || ''}
               onChange={e => setOngkirAdjust(Number(e.target.value || 0))}
               placeholder="0"
-              className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[13px]"
+              className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-caleo-13"
             />
-            <p className="text-[11px] text-slate-400 mt-1">Tambahan biaya kirim saat pelunasan (boleh negatif untuk koreksi).</p>
+            <p className="text-caleo-11 text-slate-400 mt-1">Tambahan biaya kirim saat pelunasan (boleh negatif untuk koreksi).</p>
           </div>
 
           <button
             type="button"
             onClick={handleConfirm}
             disabled={saving}
-            className="w-full py-3 rounded bg-[#2d8a4e] text-white font-extrabold text-[14px] flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full py-3 rounded bg-[#2d8a4e] text-white font-extrabold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
           >
             <Check className="w-4 h-4" />
             {saving ? 'Memproses...' : 'Konfirmasi & Cetak Invoice Lunas'}

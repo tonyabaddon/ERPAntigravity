@@ -285,11 +285,11 @@ export default function ManualExpenseModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-3 text-[13px]">
+        <div className="p-6 space-y-3 text-caleo-13">
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-orange-200 bg-orange-50 rounded p-3 text-[12px] text-orange-700">
+            <div className="border border-orange-200 bg-orange-50 rounded p-3 text-xs text-orange-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -366,7 +366,7 @@ export default function ManualExpenseModal({
               className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2/50 disabled:opacity-60"
             />
             {isFuture && (
-              <p className="text-[11px] text-amber-700 mt-1">
+              <p className="text-caleo-11 text-amber-700 mt-1">
                 ⚠ Tanggal di masa depan — entry tetap akan dicatat
               </p>
             )}
@@ -386,7 +386,7 @@ export default function ManualExpenseModal({
               className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2/50 disabled:opacity-60"
             />
             {description.trim().length > 0 && description.trim().length < 3 && (
-              <p className="text-[11px] text-rose-700 mt-1">
+              <p className="text-caleo-11 text-rose-700 mt-1">
                 ⚠ Minimal 3 karakter
               </p>
             )}
@@ -398,7 +398,7 @@ export default function ManualExpenseModal({
               Bukti pengeluaran (opsional)
             </label>
             <div
-              className="border-2 border-slate-200 rounded px-3 py-3 text-center text-[12px] text-gray-500 flex flex-col items-center gap-1"
+              className="border-2 border-slate-200 rounded px-3 py-3 text-center text-xs text-gray-500 flex flex-col items-center gap-1"
               style={{ borderStyle: 'dashed' }}
             >
               <svg
@@ -423,12 +423,12 @@ export default function ManualExpenseModal({
             <JournalEntryPreview lines={previewLines} />
           )}
           {previewLines.length === 0 && amount > 0 && !selectedBebanInfo && (
-            <div className="je-preview p-4 text-[12px] text-amber-800 text-center">
+            <div className="je-preview p-4 text-xs text-amber-800 text-center">
               ⚠ Akun beban tidak ditemukan — hubungi admin
             </div>
           )}
           {previewLines.length === 0 && (amount === 0 || !selectedBebanId) && (
-            <div className="je-preview p-4 text-[12px] text-amber-800 text-center">
+            <div className="je-preview p-4 text-xs text-amber-800 text-center">
               Isi kategori dan jumlah untuk melihat preview journal entry
             </div>
           )}

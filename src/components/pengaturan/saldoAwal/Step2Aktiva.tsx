@@ -65,14 +65,14 @@ function CustomerPicker({
         onFocus={() => { setOpen(true); if (results.length === 0) void search(query); }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         placeholder="Nama pelanggan…"
-        className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
+        className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
       />
       {open && results.length > 0 && (
         <div className="absolute z-20 top-full left-0 right-0 mt-0.5 bg-white border border-slate-200 rounded shadow-lg max-h-40 overflow-y-auto">
           {results.map((r) => (
             <div
               key={r.id}
-              className="px-3 py-1.5 hover:bg-slate-50 cursor-pointer text-[12px]"
+              className="px-3 py-1.5 hover:bg-slate-50 cursor-pointer text-xs"
               onMouseDown={(e) => {
                 e.preventDefault();
                 setQuery(r.name);
@@ -183,8 +183,8 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-[13px] font-bold text-slate-800">Piutang Usaha</h4>
-            <p className="text-[12px] text-slate-500 mt-0.5">Total piutang ke pelanggan per cutover date</p>
+            <h4 className="text-caleo-13 font-bold text-slate-800">Piutang Usaha</h4>
+            <p className="text-xs text-slate-500 mt-0.5">Total piutang ke pelanggan per cutover date</p>
           </div>
           <div className="flex gap-1.5">
             {(['aggregate', 'detail'] as const).map((m) => (
@@ -192,7 +192,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
-                className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                className={`px-3 py-1 rounded-full text-caleo-11 font-bold border transition-colors ${
                   data.piutang.mode === m
                     ? 'bg-emerald-600 text-white border-emerald-600'
                     : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
@@ -206,33 +206,33 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
 
         {data.piutang.mode === 'aggregate' ? (
           <div className="flex items-center gap-3">
-            <label className="text-[12px] text-slate-600 font-medium shrink-0">Total Piutang Usaha</label>
+            <label className="text-xs text-slate-600 font-medium shrink-0">Total Piutang Usaha</label>
             <NumberInput
               value={data.piutang.aggregate_amount}
               onChange={(n) => onChange({ ...data, piutang: { ...data.piutang, aggregate_amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
-            <span className="text-[12px] text-slate-400">{formatIDR(data.piutang.aggregate_amount)}</span>
+            <span className="text-xs text-slate-400">{formatIDR(data.piutang.aggregate_amount)}</span>
           </div>
         ) : (
           <div className="space-y-2">
             <div className="border border-slate-200 rounded overflow-hidden">
-              <table className="w-full text-[12px]">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-left">
-                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-[10.5px]">Pelanggan</th>
-                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-[10.5px] text-right">Jumlah</th>
-                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-[10.5px]">Jatuh Tempo</th>
-                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-[10.5px]">No. Faktur</th>
+                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-caleo-10">Pelanggan</th>
+                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-caleo-10 text-right">Jumlah</th>
+                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-caleo-10">Jatuh Tempo</th>
+                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-caleo-10">No. Faktur</th>
                     <th className="px-3 py-2 w-8" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {(data.piutang.lines ?? []).length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-4 text-center text-slate-400 text-[12px]">
+                      <td colSpan={5} className="px-4 py-4 text-center text-slate-400 text-xs">
                         Belum ada baris. Klik + Tambah Baris.
                       </td>
                     </tr>
@@ -253,7 +253,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.amount}
                             onChange={(n) => updateARLine(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                             placeholder="0"
                           />
                         </td>
@@ -262,7 +262,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             type="date"
                             value={line.original_due_date ?? ''}
                             onChange={(e) => updateARLine(idx, { original_due_date: e.target.value || null })}
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                           />
                         </td>
                         <td className="px-3 py-2">
@@ -271,7 +271,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.invoice_ref ?? ''}
                             onChange={(e) => updateARLine(idx, { invoice_ref: e.target.value || null })}
                             placeholder="INV-001"
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -291,8 +291,8 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                 {(data.piutang.lines ?? []).length > 0 && (
                   <tfoot>
                     <tr className="bg-slate-50 border-t border-slate-200">
-                      <td className="px-3 py-2 text-[11px] font-bold text-slate-600">Total</td>
-                      <td className="px-3 py-2 text-right font-bold text-[12px] text-emerald-700">
+                      <td className="px-3 py-2 text-caleo-11 font-bold text-slate-600">Total</td>
+                      <td className="px-3 py-2 text-right font-bold text-xs text-emerald-700">
                         {formatIDR(arDetailTotal)}
                       </td>
                       <td colSpan={3} />
@@ -304,7 +304,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
             <button
               type="button"
               onClick={addARLine}
-              className="text-[12px] text-[var(--color-caleo-primary)] font-semibold hover:underline"
+              className="text-xs text-[var(--color-caleo-primary)] font-semibold hover:underline"
             >
               + Tambah Baris
             </button>
@@ -315,18 +315,18 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
       {/* ── Persediaan ─────────────────────────────────────────────────────────── */}
       <section className="space-y-3">
         <div>
-          <h4 className="text-[13px] font-bold text-slate-800">Persediaan</h4>
-          <p className="text-[12px] text-slate-500 mt-0.5">Nilai stok per cutover date (dihitung dari harga modal × qty)</p>
+          <h4 className="text-caleo-13 font-bold text-slate-800">Persediaan</h4>
+          <p className="text-xs text-slate-500 mt-0.5">Nilai stok per cutover date (dihitung dari harga modal × qty)</p>
         </div>
 
         <div className="border border-slate-200 rounded p-4 space-y-3 bg-slate-50/50">
           {autoLoading ? (
-            <p className="text-[12px] text-slate-400">Menghitung nilai persediaan otomatis…</p>
+            <p className="text-xs text-slate-400">Menghitung nilai persediaan otomatis…</p>
           ) : (
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-[12px] text-slate-600">Nilai auto (dari master stok):</div>
-                <div className="text-[14px] font-bold text-emerald-700 mt-0.5">
+                <div className="text-xs text-slate-600">Nilai auto (dari master stok):</div>
+                <div className="text-sm font-bold text-emerald-700 mt-0.5">
                   {autoValue === 0
                     ? <span className="text-slate-400">Rp 0 — belum ada master stok atau harga modal</span>
                     : formatIDR(autoValue ?? 0)}
@@ -348,7 +348,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                         },
                       });
                     }}
-                    className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                    className={`px-3 py-1 rounded-full text-caleo-11 font-bold border transition-colors ${
                       (m === 'auto' ? !data.persediaan.manual_override : data.persediaan.manual_override)
                         ? 'bg-emerald-600 text-white border-emerald-600'
                         : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
@@ -364,18 +364,18 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
           {data.persediaan.manual_override && (
             <div className="space-y-2 pt-2 border-t border-slate-200">
               <div className="flex items-center gap-3">
-                <label className="text-[12px] text-slate-600 font-medium shrink-0">Nilai Persediaan (Rp)</label>
+                <label className="text-xs text-slate-600 font-medium shrink-0">Nilai Persediaan (Rp)</label>
                 <NumberInput
                   value={data.persediaan.final_amount}
                   onChange={(n) => onChange({ ...data, persediaan: { ...data.persediaan, final_amount: n } })}
                   allowDecimal={false}
-                  className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
+                  className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
                   placeholder="0"
                 />
-                <span className="text-[12px] text-slate-400">{formatIDR(data.persediaan.final_amount)}</span>
+                <span className="text-xs text-slate-400">{formatIDR(data.persediaan.final_amount)}</span>
               </div>
               <div>
-                <label className="block text-[12px] text-slate-600 font-medium mb-1">Alasan override</label>
+                <label className="block text-xs text-slate-600 font-medium mb-1">Alasan override</label>
                 <input
                   type="text"
                   value={data.persediaan.override_reason ?? ''}
@@ -384,7 +384,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                     persediaan: { ...data.persediaan, override_reason: e.target.value || null },
                   })}
                   placeholder="Misal: Nilai stok dari laporan fisik opname"
-                  className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
+                  className="w-full border border-slate-200 rounded px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
                 />
               </div>
             </div>
@@ -395,29 +395,29 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
       {/* ── Aktiva Tetap ───────────────────────────────────────────────────────── */}
       <section className="space-y-3">
         <div>
-          <h4 className="text-[13px] font-bold text-slate-800">Aktiva Tetap (Nilai Buku Bersih)</h4>
-          <p className="text-[12px] text-slate-500 mt-0.5">Total aset tetap setelah penyusutan per cutover date</p>
+          <h4 className="text-caleo-13 font-bold text-slate-800">Aktiva Tetap (Nilai Buku Bersih)</h4>
+          <p className="text-xs text-slate-500 mt-0.5">Total aset tetap setelah penyusutan per cutover date</p>
         </div>
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <label className="text-[12px] text-slate-600 font-medium shrink-0">Nilai Aktiva Tetap</label>
+            <label className="text-xs text-slate-600 font-medium shrink-0">Nilai Aktiva Tetap</label>
             <NumberInput
               value={data.aktiva_tetap.amount}
               onChange={(n) => onChange({ ...data, aktiva_tetap: { ...data.aktiva_tetap, amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-caleo-13 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
-            <span className="text-[12px] text-slate-400">{formatIDR(data.aktiva_tetap.amount)}</span>
+            <span className="text-xs text-slate-400">{formatIDR(data.aktiva_tetap.amount)}</span>
           </div>
           <div>
-            <label className="block text-[12px] text-slate-600 font-medium mb-1">Keterangan (opsional)</label>
+            <label className="block text-xs text-slate-600 font-medium mb-1">Keterangan (opsional)</label>
             <input
               type="text"
               value={data.aktiva_tetap.notes}
               onChange={(e) => onChange({ ...data, aktiva_tetap: { ...data.aktiva_tetap, notes: e.target.value } })}
               placeholder="Misal: Rak gudang, forklift, PC toko"
-              className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+              className="w-full border border-slate-200 rounded px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             />
           </div>
         </div>
@@ -428,12 +428,12 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
         <button
           type="button"
           onClick={() => setLainLainOpen((v) => !v)}
-          className="flex items-center gap-2 text-[13px] font-semibold text-slate-700 hover:text-[var(--color-caleo-primary)]"
+          className="flex items-center gap-2 text-caleo-13 font-semibold text-slate-700 hover:text-[var(--color-caleo-primary)]"
         >
           <span className="text-slate-400">{lainLainOpen ? '▾' : '▸'}</span>
           Akun Aktiva lain (opsional)
           {data.lain_lain.length > 0 && (
-            <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold">
+            <span className="text-caleo-11 bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold">
               {data.lain_lain.length}
             </span>
           )}
@@ -441,21 +441,21 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
 
         {lainLainOpen && (
           <div className="mt-3 space-y-2">
-            <p className="text-[12px] text-slate-500">Piutang lain-lain, uang muka, biaya dibayar dimuka, dsb.</p>
+            <p className="text-xs text-slate-500">Piutang lain-lain, uang muka, biaya dibayar dimuka, dsb.</p>
             <div className="border border-slate-200 rounded overflow-hidden">
-              <table className="w-full text-[12px]">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-left">
-                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-[10.5px]">Akun (COA)</th>
-                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-[10.5px] text-right">Jumlah</th>
-                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-[10.5px]">Keterangan</th>
+                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-caleo-10">Akun (COA)</th>
+                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-caleo-10 text-right">Jumlah</th>
+                    <th className="px-3 py-2 font-extrabold text-slate-500 uppercase tracking-wider text-caleo-10">Keterangan</th>
                     <th className="px-3 py-2 w-8" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {data.lain_lain.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-4 text-center text-slate-400 text-[12px]">
+                      <td colSpan={4} className="px-4 py-4 text-center text-slate-400 text-xs">
                         Belum ada baris.
                       </td>
                     </tr>
@@ -478,7 +478,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.amount}
                             onChange={(n) => updateLainLain(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                             placeholder="0"
                           />
                         </td>
@@ -488,7 +488,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.notes}
                             onChange={(e) => updateLainLain(idx, { notes: e.target.value })}
                             placeholder="Keterangan…"
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -510,7 +510,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
             <button
               type="button"
               onClick={addLainLain}
-              className="text-[12px] text-[var(--color-caleo-primary)] font-semibold hover:underline"
+              className="text-xs text-[var(--color-caleo-primary)] font-semibold hover:underline"
             >
               + Tambah Baris
             </button>

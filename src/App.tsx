@@ -973,7 +973,7 @@ export default function App() {
   // Platform admin area: /admin/*
   if (pathRoute.isPlatformAdminArea) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-caleo">Memuat admin…</div>}>
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center text-caleo-13 text-slate-500 font-caleo">Memuat admin…</div>}>
         <AdminRoutes />
       </React.Suspense>
     );
@@ -997,7 +997,7 @@ export default function App() {
         ? `Masuk sebagai tenant ${pathRoute.tenantSlug}…`
         : 'Memeriksa akses tenant…';
       return (
-        <div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-caleo">
+        <div className="min-h-screen flex items-center justify-center text-caleo-13 text-slate-500 font-caleo">
           {label}
         </div>
       );
@@ -1153,12 +1153,12 @@ export default function App() {
                 </Suspense>
               </div>
               <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
-                <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
+                <p className="text-caleo-10 uppercase font-bold tracking-widest text-[#43474e]/60">
                   © 2026 Caleo ERP • Powered by DeepMind &amp; Gemini AI
                 </p>
                 <div className="flex gap-4">
-                  <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>
-                  <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Kebijakan Privasi CRM Enkripsi GPN Aktif.", 'info')}>Privacy</span>
+                  <span className="text-caleo-10 text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>
+                  <span className="text-caleo-10 text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Kebijakan Privasi CRM Enkripsi GPN Aktif.", 'info')}>Privacy</span>
                 </div>
               </footer>
             </main>
@@ -1306,12 +1306,12 @@ export default function App() {
 
         {/* Global Footer credits */}
         <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
-          <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
+          <p className="text-caleo-10 uppercase font-bold tracking-widest text-[#43474e]/60">
             © 2026 Caleo ERP • Powered by DeepMind &amp; Gemini AI
           </p>
           <div className="flex gap-4">
-            <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("📜 Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>
-            <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("🔒 Kebijakan Privasi CRM Enkripsi GPN Aktif.", 'info')}>Privacy</span>
+            <span className="text-caleo-10 text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("📜 Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>
+            <span className="text-caleo-10 text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("🔒 Kebijakan Privasi CRM Enkripsi GPN Aktif.", 'info')}>Privacy</span>
           </div>
         </footer>
       </main>

@@ -79,7 +79,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
               placeholder="Jelaskan kenapa invoice ini tidak bisa ditagih lagi (min 10 karakter)..."
               className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             />
-            <div className={`text-[11px] mt-1 ${reasonOk ? 'text-gray-500' : 'text-red-600'}`}>
+            <div className={`text-caleo-11 mt-1 ${reasonOk ? 'text-gray-500' : 'text-red-600'}`}>
               {trimmed.length} / {MIN_REASON_LEN} karakter minimum
             </div>
           </div>

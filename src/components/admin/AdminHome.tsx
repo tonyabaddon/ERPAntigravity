@@ -105,14 +105,14 @@ export function AdminHome() {
   if (error && !stats) {
     return (
       <div
-        className="border rounded p-5 text-[13px] flex items-center justify-between"
+        className="border rounded p-5 text-caleo-13 flex items-center justify-between"
         style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
         data-testid="admin-home-error"
       >
         <span>Gagal memuat dashboard: {error}</span>
         <button
           onClick={() => fetchAll()}
-          className="ml-4 px-3 py-1 rounded border font-medium text-[12px] hover:opacity-80 transition-opacity"
+          className="ml-4 px-3 py-1 rounded border font-medium text-xs hover:opacity-80 transition-opacity"
           style={{ borderColor: '#991b1b', color: '#991b1b' }}
         >
           Coba lagi
@@ -134,19 +134,19 @@ export function AdminHome() {
       <div className="flex justify-between items-start">
         <div>
           <h1
-            className="text-[16px] font-bold"
+            className="text-base font-bold"
             style={{ color: '#0B2545' }}
           >
             Beranda
           </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: '#9DB2CE' }}>
+          <p className="text-caleo-13 mt-0.5" style={{ color: '#9DB2CE' }}>
             Ringkasan platform — {stats.active_count} tenant aktif
           </p>
         </div>
         <a
           href="/admin/tenants/new"
           onClick={(e) => handleAdminSPAClick(e, '/admin/tenants/new')}
-          className="rounded px-4 py-2 font-semibold text-[13px] transition-opacity hover:opacity-90"
+          className="rounded px-4 py-2 font-semibold text-caleo-13 transition-opacity hover:opacity-90"
           style={{ background: '#F9B233', color: '#0B2545' }}
         >
           + Onboard tenant baru
@@ -197,7 +197,7 @@ export function AdminHome() {
       {/* Attention queue — shown even in empty state (just displays "Semua tenteram") */}
       <div>
         <div
-          className="text-[11px] font-bold uppercase tracking-widest mb-2"
+          className="text-caleo-11 font-bold uppercase tracking-widest mb-2"
           style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
         >
           Butuh perhatian

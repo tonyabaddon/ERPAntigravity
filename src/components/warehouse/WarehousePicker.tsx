@@ -35,7 +35,7 @@ export default function WarehousePicker(props: Props) {
     const w = eligible[0];
     const qty = props.skuQtyByWarehouseId?.[w.id];
     return (
-      <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-extrabold border border-blue-200">
+      <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-caleo-11 font-extrabold border border-blue-200">
         {w.name}{qty !== undefined && <span className="opacity-70 ml-1">· {qty}</span>}
       </span>
     );
@@ -55,9 +55,9 @@ export default function WarehousePicker(props: Props) {
               key={w.id} type="button"
               disabled={props.disabled}
               onClick={() => props.onChange(w.id)}
-              className={`px-2 py-1 rounded text-[11px] font-extrabold flex items-center gap-1 ${palette}`}
+              className={`px-2 py-1 rounded text-caleo-11 font-extrabold flex items-center gap-1 ${palette}`}
             >
-              {w.name} {qty !== undefined && <span className="text-[10px] opacity-70">{qty}</span>}
+              {w.name} {qty !== undefined && <span className="text-caleo-10 opacity-70">{qty}</span>}
             </button>
           );
         })}
@@ -71,7 +71,7 @@ export default function WarehousePicker(props: Props) {
         value={props.value ?? ''}
         onChange={e => props.onChange(e.target.value)}
         disabled={props.disabled}
-        className="appearance-none bg-white border border-slate-200 rounded px-3 py-1.5 pr-8 text-[11px] font-extrabold text-slate-700 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold disabled:opacity-50"
+        className="appearance-none bg-white border border-slate-200 rounded px-3 py-1.5 pr-8 text-caleo-11 font-extrabold text-slate-700 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold disabled:opacity-50"
       >
         <option value="" disabled>Pilih gudang…</option>
         {eligible.map(w => {

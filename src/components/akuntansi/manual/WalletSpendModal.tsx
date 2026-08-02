@@ -306,11 +306,11 @@ export default function WalletSpendModal({
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-3 text-[13px]">
+        <div className="p-6 space-y-3 text-caleo-13">
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-[12px] text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-rose-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -320,9 +320,9 @@ export default function WalletSpendModal({
             <label className="block font-bold mb-1" style={{ color: '#be123c' }}>
               Wallet *
             </label>
-            <div className="border border-rose-200 bg-rose-50 rounded px-3 py-2 text-[12px]">
+            <div className="border border-rose-200 bg-rose-50 rounded px-3 py-2 text-xs">
               {accountLabel(walletAccount)}
-              <span className="ml-2 font-mono text-gray-600 text-[11px]">
+              <span className="ml-2 font-mono text-gray-600 text-caleo-11">
                 Rp {new Intl.NumberFormat('id-ID').format(walletAccount.current_balance)}
               </span>
             </div>
@@ -367,7 +367,7 @@ export default function WalletSpendModal({
                 </option>
               ))}
             </select>
-            <p className="text-[10px] text-gray-500 mt-1">
+            <p className="text-caleo-10 text-gray-500 mt-1">
               Untuk tracking ongkir customer dengan order tertentu.
             </p>
           </div>
@@ -403,7 +403,7 @@ export default function WalletSpendModal({
               className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2/50 disabled:opacity-60"
             />
             {isFuture && (
-              <p className="text-[11px] text-amber-700 mt-1">
+              <p className="text-caleo-11 text-amber-700 mt-1">
                 ⚠ Tanggal di masa depan — entry tetap akan dicatat
               </p>
             )}
@@ -429,12 +429,12 @@ export default function WalletSpendModal({
             <JournalEntryPreview lines={previewLines} />
           )}
           {previewLines.length === 0 && amount > 0 && !selectedBebanInfo && (
-            <div className="je-preview p-4 text-[12px] text-amber-800 text-center">
+            <div className="je-preview p-4 text-xs text-amber-800 text-center">
               ⚠ Akun beban tidak ditemukan — hubungi admin
             </div>
           )}
           {previewLines.length === 0 && (amount === 0 || !selectedCategory) && (
-            <div className="je-preview p-4 text-[12px] text-amber-800 text-center">
+            <div className="je-preview p-4 text-xs text-amber-800 text-center">
               Isi kategori dan jumlah untuk melihat preview journal entry
             </div>
           )}
