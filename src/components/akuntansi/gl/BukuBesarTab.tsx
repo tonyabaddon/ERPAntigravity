@@ -9,6 +9,8 @@ import {
   fetchGeneralLedger,
   fetchCoaTree,
 } from '../../../lib/akuntansi/glQueries';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 import type { CoaTreeRow } from '../../../lib/akuntansi/glQueries';
 import type { GeneralLedgerRow, AccountType, NormalBalance } from '../../../lib/akuntansi/types';
 import { formatRp, wibDateString } from '../../../lib/format';
@@ -388,10 +390,10 @@ export default function BukuBesarTab({
       <div className="p-6">
         {!accountId ? (
           /* No account selected */
-          <div className="py-16 text-center text-caleo-13 text-gray-500">
-            <BookOpen className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-            <p>Pilih akun di atas untuk melihat Buku Besar.</p>
-          </div>
+          <EmptyState
+            message="Pilih akun di atas untuk melihat Buku Besar."
+            icon={BookOpen}
+          />
         ) : (
           <>
             {/* ── 3-stat sub-cards ── */}
@@ -447,14 +449,12 @@ export default function BukuBesarTab({
               style={{ border: '1px solid var(--color-caleo-mist-dark)' }}
             >
               {loadingRows ? (
-                <div className="py-16 text-center text-caleo-13 text-gray-500">
-                  Memuat buku besar...
-                </div>
+                <LoadingState label="Memuat buku besar..." />
               ) : rows.length === 0 ? (
-                <div className="py-16 text-center text-caleo-13 text-gray-500">
-                  <BookOpen className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-                  <p>Belum ada transaksi di akun ini untuk periode ini.</p>
-                </div>
+                <EmptyState
+                  message="Belum ada transaksi di akun ini untuk periode ini."
+                  icon={BookOpen}
+                />
               ) : (
                 <>
                   <table className="w-full text-xs">

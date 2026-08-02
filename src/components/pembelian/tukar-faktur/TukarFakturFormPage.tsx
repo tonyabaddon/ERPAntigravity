@@ -8,6 +8,8 @@
 // Edit-header lives on Detail page (Q3 split actions).
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Plus, X, Search, Layers, Sparkles } from 'lucide-react';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 import { tukarFakturService } from '../../../lib/tukarFakturService';
 import { supplierService } from '../../../lib/pembelianService';
 import type {
@@ -430,9 +432,7 @@ export default function TukarFakturFormPage({
         </div>
 
         {!supplier ? (
-          <div className="p-6 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded">
-            Pilih supplier dulu untuk mulai cari Faktur outstanding.
-          </div>
+          <EmptyState message="Pilih supplier dulu untuk mulai cari Faktur outstanding." inline />
         ) : (
           <>
             <div className="relative">
@@ -445,15 +445,13 @@ export default function TukarFakturFormPage({
                   className="flex-1 text-sm outline-none"
                 />
                 {outstandingLoading && (
-                  <span className="text-caleo-10 text-gray-400">Memuat...</span>
+                  <LoadingState label="Memuat..." inline />
                 )}
               </div>
               {(searchQuery.length > 0 || searchMatches.length > 0) && (
                 <div className="absolute z-20 left-0 right-0 mt-1 bg-white rounded border border-gray-200 shadow-lg max-h-80 overflow-auto">
                   {searchMatches.length === 0 ? (
-                    <div className="p-3 text-xs text-gray-500">
-                      Tidak ada Faktur outstanding cocok.
-                    </div>
+                    <EmptyState message="Tidak ada Faktur outstanding cocok." inline />
                   ) : (
                     searchMatches.map(t => (
                       <button

@@ -5,6 +5,7 @@
 // are handled gracefully.
 import { useEffect, useState, useCallback } from 'react';
 import { Bot, Users, TrendingUp, ArrowRight } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
 import { supabase } from '../../lib/supabaseClient';
 import { captureError } from '../../lib/captureError';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
@@ -128,9 +129,7 @@ const CHART_INNER_H = SVG_H - BAR_PAD_TOP - BAR_PAD_BOTTOM;
 function FaqBarChart({ items }: FaqBarChartProps) {
   if (items.length === 0) {
     return (
-      <p className="text-caleo-13 py-6 text-center" style={{ color: '#9DB2CE' }}>
-        Belum ada FAQ hits (30 hari terakhir).
-      </p>
+      <EmptyState message="Belum ada FAQ hits (30 hari terakhir)." inline />
     );
   }
 
@@ -248,9 +247,7 @@ function EscalationTrend({ days }: EscalationTrendProps) {
   return (
     <div style={{ overflowX: 'auto' }}>
       {allZero ? (
-        <p className="text-caleo-13 py-4 text-center" style={{ color: '#9DB2CE' }}>
-          Belum ada sesi dalam 7 hari terakhir.
-        </p>
+        <EmptyState message="Belum ada sesi dalam 7 hari terakhir." inline />
       ) : (
         <svg
           viewBox={`0 0 ${ESC_W} ${ESC_H}`}

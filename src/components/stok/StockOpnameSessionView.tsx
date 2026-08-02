@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 import {
   fetchOpnameCounts,
   getOpnameSession,
@@ -297,7 +299,7 @@ export default function StockOpnameSessionView({
         <button onClick={onClose} className="text-sm text-slate-500 mb-3">
           ← Kembali
         </button>
-        <p className="text-sm text-slate-500">Memuat sesi…</p>
+        <LoadingState label="Memuat sesi…" inline />
       </div>
     );
   }
@@ -374,10 +376,8 @@ export default function StockOpnameSessionView({
 
       {/* Counts cards (grouped per SKU) */}
       {groupedBySku.size === 0 ? (
-        <div className="bg-white border border-slate-200 rounded px-3 py-6 text-sm text-slate-500 text-center">
-          {counts.length === 0
-            ? 'Sesi ini belum punya scope. Kembali ke daftar.'
-            : 'Tidak ada SKU cocok dengan pencarian.'}
+        <div className="bg-white border border-slate-200 rounded">
+          <EmptyState message={counts.length === 0 ? 'Sesi ini belum punya scope. Kembali ke daftar.' : 'Tidak ada SKU cocok dengan pencarian.'} inline />
         </div>
       ) : (
         <div className="space-y-2">

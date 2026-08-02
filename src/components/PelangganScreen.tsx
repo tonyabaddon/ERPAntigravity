@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Pencil, Check, X, UserPlus } from 'lucide-react';
+import EmptyState from './ui/EmptyState';
+import LoadingState from './ui/LoadingState';
 import { ActivePage, DbCustomerWithStats, DbCustomerProfile, DbTenantSettings } from '../types';
 import { customersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
@@ -262,13 +264,12 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
 
           <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
             {loading ? (
-              <div className="p-6 text-center text-sm text-gray-400">Memuat...</div>
+              <LoadingState inline />
             ) : filtered.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-400">
-                {customers.length === 0
-                  ? 'Belum ada data pelanggan.'
-                  : 'Tidak ada pelanggan yang cocok dengan pencarian.'}
-              </div>
+              <EmptyState
+                message={customers.length === 0 ? 'Belum ada data pelanggan.' : 'Tidak ada pelanggan yang cocok dengan pencarian.'}
+                inline
+              />
             ) : (
               filtered.map(c => {
                 const isSelected = selectedId === c.id;
@@ -332,7 +333,9 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
               </div>
             </div>
           ) : loadingProfile ? (
-            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Memuat profil...</div>
+            <div className="flex-1 flex items-center justify-center">
+              <LoadingState label="Memuat profil..." inline />
+            </div>
           ) : profile ? (
             <>
               {/* Profile header */}
@@ -469,7 +472,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   Riwayat Pesanan ({salesEntries.length})
                 </div>
                 {salesEntries.length === 0 ? (
-                  <p className="text-sm text-gray-400">Belum ada pesanan.</p>
+                  <EmptyState message="Belum ada pesanan." inline />
                 ) : (
                   salesEntries.map(entry => {
                     const badge = STATUS_BADGE[entry.status] ??
@@ -506,7 +509,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   Leads ({profile.leads.length})
                 </div>
                 {profile.leads.length === 0 ? (
-                  <p className="text-sm text-gray-400">Belum ada lead.</p>
+                  <EmptyState message="Belum ada lead." inline />
                 ) : (
                   profile.leads.map(lead => {
                     const badge = LEAD_BADGE[lead.status] ?? LEAD_BADGE.NEW;

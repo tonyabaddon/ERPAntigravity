@@ -9,6 +9,8 @@
 //  4. Running total = sum(selected amounts). Submit via pembayaranService.record.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Upload, ArrowLeft, Layers } from 'lucide-react';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 import { pembayaranService } from '../../../lib/pembayaranService';
 import { supplierService } from '../../../lib/pembelianService';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
@@ -330,9 +332,9 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
             </div>
           </div>
           {loadingOutstanding ? (
-            <div className="p-6 text-center text-sm text-gray-500">Memuat outstanding...</div>
+            <LoadingState label="Memuat outstanding..." inline />
           ) : (rows.length === 0) ? (
-            <div className="p-6 text-center text-sm text-gray-500">Supplier ini tidak punya Tagihan / Tukar Faktur outstanding.</div>
+            <EmptyState message="Supplier ini tidak punya Tagihan / Tukar Faktur outstanding." inline />
           ) : (
             <div className="space-y-5">
               {/* --- Tagihan section --- */}
@@ -341,7 +343,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                   Tagihan Outstanding <span className="text-gray-400 font-semibold">({outstandingTagihan.length})</span>
                 </div>
                 {outstandingTagihan.length === 0 ? (
-                  <div className="text-xs text-gray-400 italic py-2">Tidak ada Tagihan loose (semua sudah ter-bundle ke TF atau lunas).</div>
+                  <EmptyState message="Tidak ada Tagihan loose (semua sudah ter-bundle ke TF atau lunas)." inline />
                 ) : (
                   <table className="w-full">
                     <thead className="border-b border-gray-200">
@@ -397,7 +399,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                   Tukar Faktur Outstanding <span className="text-gray-400 font-semibold">({outstandingTf.length})</span>
                 </div>
                 {outstandingTf.length === 0 ? (
-                  <div className="text-xs text-gray-400 italic py-2">Tidak ada Tukar Faktur outstanding untuk supplier ini.</div>
+                  <EmptyState message="Tidak ada Tukar Faktur outstanding untuk supplier ini." inline />
                 ) : (
                   <table className="w-full">
                     <thead className="border-b border-gray-200">

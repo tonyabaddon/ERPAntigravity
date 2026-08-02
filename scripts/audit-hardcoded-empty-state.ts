@@ -34,40 +34,35 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/KasirScreen.tsx',
   'src/components/ManajemenGudangScreen.tsx', // false-positive: showToast('Tidak ada perubahan', ...) at line 128 — toast string, not JSX empty-state node (Rule 2 skip); all real empty states swept in batch 6
   'src/components/OrderHistoryScreen.tsx',
-  'src/components/PelangganScreen.tsx',
   'src/components/PembelianScreen.tsx',
   'src/components/PengaturanScreen.tsx',
   'src/components/RekonsiliasiScreen.tsx',
   'src/components/SalesInboxScreen.tsx',
   'src/components/WhatsappAiScreen.tsx',
-  'src/components/admin/CaleoBotDashboard.tsx',
   'src/components/admin/PendingPaymentRow.tsx',
   'src/components/admin/PlansManagement.tsx', // false-positive: adminToast.success('Tidak ada perubahan.') at line ~233 — JS string in toast call, not JSX empty-state node (Rule 2 skip); real empty states swept in batch 8
-  'src/components/admin/TenantDetail/PembayaranTab.tsx',
+  'src/components/admin/TenantDetail/PembayaranTab.tsx', // batch 9 Rule 2 skip: wrapper div has data-testid="pembayaran-tab-empty" with live test coverage; empty CTA uses bespoke gold bg-caleo-gold design EmptyState can't match
   'src/components/admin/TenantsList.tsx', // false-positive: 'Belum ada grant aktif...' at line 212 — JS string in toast branch, not JSX node (Rule 2 skip)
   'src/components/akuntansi/CashAccountPicker.tsx', // loading/error in <option> tags (can't embed components); empty-state is amber instructional div (visual change if replaced)
   'src/components/akuntansi/OpeningBalanceWizard.tsx', // all "Belum ada" are inside amber/emerald intentional callout panels — Rule 2 skip (batch 7)
-  'src/components/akuntansi/gl/BukuBesarTab.tsx',
   'src/components/akuntansi/manual/ManualTransferModal.tsx',
   'src/components/dashboard/PreOrderFulfillmentsCard.tsx',
   'src/components/feedback/CustomerFeedbackScreen.tsx',
   'src/components/kasbank/AccountDetailScreen.tsx',
   'src/components/kasir/HasilCariFotoModal.tsx',
   'src/components/pembelian/form/SupplierPicker.tsx', // CTA button sub-description 'Tidak ada di list?...' — button copy, not empty-state; main empty states swept
-  'src/components/pembelian/pembayaran/PembayaranFormPage.tsx',
-  'src/components/pembelian/tagihan/TagihanFormPage.tsx',
+  'src/components/pembelian/tagihan/TagihanFormPage.tsx', // batch 9 Rule 2 skip: only hit is "Belum ada Pesanan?" in field-level hint caption under input — not a JSX empty-state node
   'src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx',
-  'src/components/pembelian/tukar-faktur/TukarFakturFormPage.tsx',
   'src/components/pengaturan/PromoProdukPanel.tsx',
   'src/components/piutang/PiutangScreen.tsx',
   'src/components/produk/BulkUploadSection.tsx', // "Belum ada produk" is inside showToast() call — not a JSX empty-state node
   'src/components/produk/ProductForm.tsx',
-  'src/components/produk/StockTableView.tsx',
-  'src/components/sales/DaftarPesananScreen.tsx',
+  'src/components/sales/DaftarPesananScreen.tsx', // batch 9: real hit (Memuat pesanan...) swept; remaining false-positives: 2× alert() JS strings at lines ~223/370 (Rule 2 skip), <h3> WhatsApp fallback modal heading at line ~604 (Rule 2: intentional custom callout)
   'src/components/stok/PriceChangeRequestModal.tsx',
   'src/components/stok/StockAdjustmentModal.tsx', // false-positive: 'Tidak ada user aktif' is a toast string, not JSX
   'src/components/stok/StockOpnameScreen.tsx', // false-positive: showToast('Tidak ada user aktif', ...) at line ~165 — toast string, not JSX empty-state node (Rule 2 skip); real empty states swept in batch 8
-  'src/components/stok/StockOpnameSessionView.tsx',
+  'src/components/stok/StockOpnameSessionView.tsx', // batch 9: real hits (Memuat sesi…, grouped empty) swept; remaining false-positive: showToast('Belum ada count...') at line ~277 — toast string, not JSX (Rule 2 skip)
+  'src/components/pembelian/tukar-faktur/TukarFakturFormPage.tsx', // batch 9: real hits swept; remaining false-positive: file comment "// 3. Tidak ada? Buat Tagihan baru" at line 5 — button copy in comment, not JSX (Rule 2 skip)
   'src/components/warehouseTransfer/WarehouseTransferCreateScreen.tsx', // "Belum ada penerima" is a field-level inline caption under a form control with an embedded link — Rule 2 skip
 ]);
 
