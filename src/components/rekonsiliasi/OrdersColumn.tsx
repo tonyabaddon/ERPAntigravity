@@ -4,6 +4,7 @@ import type { PayableSlot, SalesChannel } from '../../types';
 import { CHANNEL_GROUPS, CHANNEL_VISUAL, getChannelDef } from '../../lib/salesChannels';
 import { useSalesChannels } from '../../contexts/SalesChannelsContext';
 import ChannelIcon from '../icons/ChannelIcon';
+import EmptyState from '../ui/EmptyState';
 
 type FilterGroup = 'all' | 'offline' | 'marketplace' | 'direct' | 'piutang';
 type Filter = FilterGroup | SalesChannel;
@@ -145,7 +146,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
             </div>
           );
         })}
-        {filtered.length === 0 && <div className="text-center text-xs text-slate-400 font-semibold py-4">Tidak ada order untuk filter ini.</div>}
+        {filtered.length === 0 && <EmptyState inline message="Tidak ada order untuk filter ini." />}
       </div>
     </div>
   );

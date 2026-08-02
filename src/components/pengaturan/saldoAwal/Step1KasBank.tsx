@@ -11,6 +11,8 @@ import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
 import { wibDateString } from '../../../lib/format';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 
 interface Props {
   data: Step1Cash;
@@ -47,19 +49,15 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
   }, []);
 
   if (loading) {
-    return (
-      <div className="py-10 text-center text-caleo-13 text-slate-400">Memuat akun Kas & Bank…</div>
-    );
+    return <LoadingState label="Memuat akun Kas & Bank…" />;
   }
 
   if (accounts.length === 0) {
     return (
-      <div className="py-10 text-center space-y-2">
-        <p className="text-caleo-13 text-slate-600 font-medium">Belum ada akun Kas & Bank.</p>
-        <p className="text-xs text-slate-500">
-          Setup akun Kas & Bank di menu Kas & Bank terlebih dahulu sebelum mengisi Saldo Awal.
-        </p>
-      </div>
+      <EmptyState
+        message="Belum ada akun Kas & Bank."
+        hint="Setup akun Kas & Bank di menu Kas & Bank terlebih dahulu sebelum mengisi Saldo Awal."
+      />
     );
   }
 

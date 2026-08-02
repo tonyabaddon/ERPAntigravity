@@ -9,6 +9,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 interface HistoryRow {
   id: string;
@@ -68,10 +70,10 @@ export function TemplateHistoryModal({ templateId, onClose, onRestore }: Props) 
         </header>
 
         {loading && (
-          <p className="thm-empty" role="status" aria-busy="true">Memuat riwayat...</p>
+          <LoadingState label="Memuat riwayat…" inline className="thm-empty" />
         )}
         {!loading && rows.length === 0 && (
-          <p className="thm-empty">Belum ada perubahan tersimpan untuk template ini.</p>
+          <EmptyState inline message="Belum ada perubahan tersimpan untuk template ini." className="thm-empty" />
         )}
         {!loading && rows.map((r) => (
           <div key={r.id} className="thm-row">

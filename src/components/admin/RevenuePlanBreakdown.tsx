@@ -3,6 +3,7 @@
 // Hand-rolled SVG — no recharts dependency.
 import type { RevenueStats } from '../../lib/paymentsTypes';
 import { formatIDR } from '../../lib/formatIDR';
+import EmptyState from '../ui/EmptyState';
 
 interface RevenuePlanBreakdownProps {
   /** Revenue stats grouped by plan (group_by: 'plan'). */
@@ -45,13 +46,9 @@ export function RevenuePlanBreakdown({ planStats }: RevenuePlanBreakdownProps) {
       </h3>
 
       {sorted.length === 0 ? (
-        <p
-          className="text-caleo-13 py-4 text-center"
-          style={{ color: '#9DB2CE' }}
-          data-testid="plan-breakdown-empty"
-        >
-          Belum ada data pembayaran.
-        </p>
+        <div data-testid="plan-breakdown-empty">
+          <EmptyState inline message="Belum ada data pembayaran." className="py-4 justify-center" />
+        </div>
       ) : (
         <div className="flex flex-col gap-4" role="list">
           {sorted.map((row) => {
