@@ -33,6 +33,8 @@ import { navigate } from '../lib/urlRoute';
 import type { DbPurchaseInvoice } from '../types';
 import { formatIDR } from '../lib/formatIDR';
 import { captureError } from '../lib/captureError';
+import LoadingState from './ui/LoadingState';
+import EmptyState from './ui/EmptyState';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -680,7 +682,7 @@ export default function PembelianScreen({
 
             {/* Legacy PO Orders tab + Suppliers tab */}
             {tab === 'orders' && (loading ? (
-              <div className="text-center py-12 text-sm text-gray-400">Memuat data...</div>
+              <LoadingState label="Memuat data..." />
             ) : (
               <OrdersTab
                 orders={orders}
@@ -697,7 +699,7 @@ export default function PembelianScreen({
               />
             ))}
             {tab === 'suppliers' && (loading ? (
-              <div className="text-center py-12 text-sm text-gray-400">Memuat data...</div>
+              <LoadingState label="Memuat data..." />
             ) : (
               <SuppliersTab
                 suppliers={suppliers}
@@ -844,15 +846,11 @@ function OrdersTab({
           </div>
 
           {filtered.length === 0 ? (
-            <div className="py-16 text-center">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 text-gray-400 mb-3">
-                <SearchX className="w-6 h-6" />
-              </div>
-              <p className="text-sm text-gray-500">
-                Tidak ada purchase order di periode <span className="font-semibold">{periodLabel}</span>.
-              </p>
-              <p className="text-xs text-gray-400 mt-1">Coba periode lain, atau buat PO baru.</p>
-            </div>
+            <EmptyState
+              icon={SearchX}
+              message={`Tidak ada purchase order di periode ${periodLabel}.`}
+              hint="Coba periode lain, atau buat PO baru."
+            />
           ) : (
             filtered.map(po => (
               <div key={po.id} className={`grid grid-cols-8 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${
@@ -1002,7 +1000,7 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
           </button>
         </div>
         {filtered.length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-400">Belum ada supplier.</div>
+          <EmptyState message="Belum ada supplier." />
         ) : (
           <>
             <div className="grid grid-cols-5 px-4 py-2 bg-gray-50 border-b border-gray-200 text-caleo-10 font-bold uppercase tracking-wide text-gray-500">
