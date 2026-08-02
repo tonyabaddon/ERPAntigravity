@@ -381,6 +381,46 @@ do NOT remove existing observability during a refactor.
 
 ---
 
+## Protocol: Visual approval gate (FE PRs)
+
+Any PR that:
+- Touches >5 files under `src/`, OR
+- Touches ANY user-visible surface (component, page, style, token, layout)
+
+MUST generate a visual-diff HTML report and receive founder "go" BEFORE merge.
+
+### Flow
+
+1. Implement on a branch (or worktree). Take screenshots via `chrome-devtools`
+   MCP:
+   - Baseline: current prod (`app.caleo.id`) as Toko Jaya Makmur test tenant
+   - Candidate: local `npm run dev` OR your branch's Cloud Run tag URL
+2. Save pairs to `public/visual-diff/<slug>/{before,after}/<screenname>.png`.
+3. Write manifest: `public/visual-diff/<slug>/manifest.json` (schema per spec
+   `docs/superpowers/specs/2026-08-02-visual-approval-gate-design.md` §6.2).
+4. Generate report: `npm run visual-diff:build -- --manifest=public/visual-diff/<slug>/manifest.json`.
+5. Present the printed absolute path in chat with "open this and reply
+   go / adjust X / reject".
+6. On "go" → open PR, merge, promote per Ship & verify below.
+7. On "adjust" → iterate on branch, regenerate report, re-present.
+8. Bypass conditions (documented, not routine):
+   - Genuine prod incident (rollback path) — skip gate, note in `progress.md`.
+   - Non-visual change (backend-only, config-only, docs-only) — no gate needed.
+
+### Module → path config
+
+Screenshot targets are declared in `.claude/visual-diff.config.json`. Add
+new module paths as you sweep them; keep the file in sync with the modules
+you own.
+
+### Reference
+- Spec: `docs/superpowers/specs/2026-08-02-visual-approval-gate-design.md`
+- Tool: `scripts/build-visual-diff-html.tsx`
+- Related discipline: manual promote-to-prod (memory
+  `manual_prod_gate_after_real_tenant`) — visual gate is upstream of that.
+
+---
+
 ## Ship & verify — staged flow
 
 Every finished build follows this before being called "done". Skipping = violation.
