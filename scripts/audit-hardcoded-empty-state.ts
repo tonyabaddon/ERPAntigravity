@@ -33,7 +33,6 @@ function walk(dir: string, out: string[]): void {
 const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/KasirScreen.tsx',
   'src/components/ManajemenGudangScreen.tsx', // false-positive: showToast('Tidak ada perubahan', ...) at line 128 — toast string, not JSX empty-state node (Rule 2 skip); all real empty states swept in batch 6
-  'src/components/NotificationSettingsScreen.tsx',
   'src/components/OrderHistoryScreen.tsx',
   'src/components/PelangganScreen.tsx',
   'src/components/PembelianScreen.tsx',
@@ -47,36 +46,28 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/admin/TenantDetail/PembayaranTab.tsx',
   'src/components/admin/TenantsList.tsx', // false-positive: 'Belum ada grant aktif...' at line 212 — JS string in toast branch, not JSX node (Rule 2 skip)
   'src/components/akuntansi/CashAccountPicker.tsx', // loading/error in <option> tags (can't embed components); empty-state is amber instructional div (visual change if replaced)
-  'src/components/akuntansi/OpeningBalanceWizard.tsx',
+  'src/components/akuntansi/OpeningBalanceWizard.tsx', // all "Belum ada" are inside amber/emerald intentional callout panels — Rule 2 skip (batch 7)
   'src/components/akuntansi/gl/BukuBesarTab.tsx',
-  'src/components/akuntansi/gl/TrialBalanceTab.tsx',
   'src/components/akuntansi/manual/ManualTransferModal.tsx',
   'src/components/dashboard/PreOrderFulfillmentsCard.tsx',
   'src/components/feedback/CustomerFeedbackScreen.tsx',
   'src/components/kasbank/AccountDetailScreen.tsx',
-  'src/components/kasbank/KasBankScreen.tsx',
   'src/components/kasir/HasilCariFotoModal.tsx',
   'src/components/laporan/akuntansi/LabaRugiTab.tsx',
   'src/components/laporan/akuntansi/MutasiTab.tsx',
   'src/components/laporan/akuntansi/NeracaTab.tsx',
-  'src/components/pembelian/KlaimSupplierPanel.tsx',
   'src/components/pembelian/form/SupplierPicker.tsx', // CTA button sub-description 'Tidak ada di list?...' — button copy, not empty-state; main empty states swept
   'src/components/pembelian/pembayaran/PembayaranFormPage.tsx',
   'src/components/pembelian/tagihan/TagihanFormPage.tsx',
   'src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx',
   'src/components/pembelian/tukar-faktur/TukarFakturFormPage.tsx',
   'src/components/pengaturan/PromoProdukPanel.tsx',
-  'src/components/pengaturan/SupportAccessPanel.tsx',
   'src/components/pengaturan/saldoAwal/Step2Aktiva.tsx',
-  'src/components/pengaturan/saldoAwal/Step3Kewajiban.tsx',
   'src/components/penjualan/CartRows.tsx',
-  'src/components/penjualan/DaftarPenawaranScreen.tsx',
-  'src/components/penjualan/LockSubmissionModal.tsx',
   'src/components/piutang/PiutangScreen.tsx',
   'src/components/produk/BulkUploadSection.tsx', // "Belum ada produk" is inside showToast() call — not a JSX empty-state node
   'src/components/produk/ProductForm.tsx',
   'src/components/produk/StockTableView.tsx',
-  'src/components/sales/ActionPanel.tsx',
   'src/components/sales/DaftarPesananScreen.tsx',
   'src/components/stok/PriceChangeRequestModal.tsx',
   'src/components/stok/StockAdjustmentModal.tsx', // false-positive: 'Tidak ada user aktif' is a toast string, not JSX

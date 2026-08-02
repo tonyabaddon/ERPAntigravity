@@ -10,6 +10,7 @@ import { formatIDR } from '../../../lib/formatIDR';
 import { supabase } from '../../../lib/supabaseClient';
 import CoAPicker from './CoAPicker';
 import type { CoaOption } from './CoAPicker';
+import EmptyState from '../../ui/EmptyState';
 
 interface Props {
   data: Step3KewajibanType;
@@ -196,8 +197,8 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                 <tbody className="divide-y divide-slate-100">
                   {(data.hutang_usaha.lines ?? []).length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-4 text-center text-slate-400 text-xs">
-                        Belum ada baris. Klik + Tambah Baris.
+                      <td colSpan={5}>
+                        <EmptyState inline message="Belum ada baris. Klik + Tambah Baris." />
                       </td>
                     </tr>
                   ) : (
@@ -308,8 +309,8 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                 <tbody className="divide-y divide-slate-100">
                   {data.lain_lain.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-4 text-center text-slate-400 text-xs">
-                        Belum ada baris.
+                      <td colSpan={4}>
+                        <EmptyState inline message="Belum ada baris." />
                       </td>
                     </tr>
                   ) : (

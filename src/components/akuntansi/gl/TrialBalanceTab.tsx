@@ -13,6 +13,8 @@ import type { TrialBalanceRowWithMetadata } from '../../../lib/akuntansi/glQueri
 import type { AccountingPeriod, AccountType } from '../../../lib/akuntansi/types';
 import { formatRp } from '../../../lib/format';
 import { captureError } from '../../../lib/captureError';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -303,11 +305,9 @@ export default function TrialBalanceTab({
       <div className="px-6 pb-6 mt-6">
         <div className="rounded border border-[var(--color-caleo-mist-dark)] overflow-hidden">
           {loading ? (
-            <div className="py-16 text-center text-caleo-13 text-gray-500">Memuat...</div>
+            <LoadingState label="Memuat..." />
           ) : rows.length === 0 ? (
-            <div className="py-16 text-center text-caleo-13 text-gray-500">
-              Belum ada transaksi di periode ini
-            </div>
+            <EmptyState message="Belum ada transaksi di periode ini." />
           ) : (
             <table className="w-full text-xs">
               <thead style={{ background: 'var(--color-caleo-cloud)' }}>

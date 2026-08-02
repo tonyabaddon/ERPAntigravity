@@ -6,6 +6,8 @@ import { fetchSalesOrders, closeSalesOrder } from '../../lib/salesOrderService';
 import SalesInvoicePDF, { type InvoicePrintMode } from './SalesInvoicePDF';
 import { captureError } from '../../lib/captureError';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 // Adapt DbSalesOrder → the KasirTransaction shape SalesInvoicePDF expects.
 // Only fields used by variant='quotation' need to be populated; the rest are
@@ -185,9 +187,9 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
         {/* Table */}
         <div className="px-6 py-4">
           {loading ? (
-            <p className="text-center text-slate-400 py-8 text-sm">Memuat...</p>
+            <LoadingState label="Memuat..." />
           ) : filtered.length === 0 ? (
-            <p className="text-center text-slate-400 py-8 text-sm">Tidak ada Sales Order.</p>
+            <EmptyState message="Tidak ada Sales Order." />
           ) : (
             <div className="border border-slate-200 rounded overflow-x-auto">
               <table className="w-full text-xs">

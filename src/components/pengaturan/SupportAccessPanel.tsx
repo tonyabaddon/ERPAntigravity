@@ -16,6 +16,8 @@ import {
 } from '../../lib/impersonationGrantsService';
 import { captureError } from '../../lib/captureError';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -186,18 +188,14 @@ export default function SupportAccessPanel({ showToast }: Props) {
       <section>
         <h4 className="text-caleo-13 font-semibold text-slate-800 mb-2">Akses aktif</h4>
         {loading && (
-          <div className="rounded border border-slate-200 p-4 text-caleo-13 text-slate-500">
-            Memuat…
-          </div>
+          <LoadingState inline label="Memuat…" className="rounded border border-slate-200 p-4" />
         )}
         {!loading && active.length === 0 && (
-          <div className="rounded border border-dashed border-slate-300 p-6 text-center text-caleo-13 text-slate-500 space-y-1">
-            <div className="text-slate-700 font-semibold">Belum ada akses support aktif.</div>
-            <div>
-              Klik <b>Beri akses baru</b> di atas kalau tim Caleo perlu bantu debug atau
-              setup akun.
-            </div>
-          </div>
+          <EmptyState
+            message="Belum ada akses support aktif."
+            hint="Klik Beri akses baru di atas kalau tim Caleo perlu bantu debug atau setup akun."
+            className="rounded border border-dashed border-slate-300"
+          />
         )}
         {!loading && active.length > 0 && (
           <div className="space-y-2">
@@ -239,7 +237,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
       <section>
         <h4 className="text-caleo-13 font-semibold text-slate-800 mb-2">Riwayat</h4>
         {!loading && historical.length === 0 && (
-          <div className="text-caleo-13 text-slate-400 italic">Belum ada riwayat.</div>
+          <EmptyState inline message="Belum ada riwayat." />
         )}
         {historical.length > 0 && (
           <div className="rounded border border-slate-200 overflow-hidden">

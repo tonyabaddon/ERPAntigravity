@@ -19,6 +19,8 @@ import type { CashAccount, CashAccountBalance, CashAccountType } from '../../lib
 import { formatRp } from '../../lib/format';
 import AccountFormModal from './AccountFormModal';
 import { captureError } from '../../lib/captureError';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -152,7 +154,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
         <div className="mt-3 text-caleo-11 text-gray-500">
           {account.movements_this_month > 0
             ? `${account.movements_this_month} mutasi GL bulan ini`
-            : 'Belum ada mutasi'}
+            : <EmptyState inline message="Belum ada mutasi." />}
         </div>
       </div>
     );
@@ -204,7 +206,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
           <Activity className="w-3 h-3" />
           {account.movements_this_month > 0
             ? `${account.movements_this_month} mutasi GL`
-            : 'Belum ada mutasi'}
+            : <EmptyState inline message="Belum ada mutasi." />}
         </span>
         {hasPendingIn && (
           <span className="text-amber-700 font-bold flex items-center gap-1">
@@ -283,8 +285,8 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
   if (loading) {
     return (
-      <div className="p-8 text-caleo-13 text-[#43474e]">
-        Memuat data kas &amp; bank...
+      <div className="p-8">
+        <LoadingState label="Memuat data kas & bank..." />
       </div>
     );
   }
@@ -350,17 +352,11 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
         </div>
 
         {businessAccounts.length === 0 ? (
-          <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-8 text-center text-caleo-13 text-gray-500">
-            Belum ada akun bisnis.{' '}
-            {isOwner && (
-              <button
-                onClick={openAddModal}
-                className="text-[var(--color-caleo-primary)] font-bold hover:underline"
-              >
-                + Tambah Akun
-              </button>
-            )}
-          </div>
+          <EmptyState
+            message="Belum ada akun bisnis."
+            className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded"
+            action={isOwner ? { label: '+ Tambah Akun', onClick: openAddModal } : undefined}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {businessAccounts.map(account => (
@@ -404,22 +400,13 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
       {/* Full empty state — no accounts at all */}
       {accounts.length === 0 && (
-        <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-12 text-center text-caleo-13 text-gray-500 mt-2">
-          <Wallet className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-          <p className="font-bold text-gray-700 mb-1">Belum ada akun kas atau bank</p>
-          <p className="text-gray-500 text-xs mb-4">
-            Tambahkan rekening bank, kas toko, atau e-wallet untuk mulai mencatat saldo.
-          </p>
-          {isOwner && (
-            <button
-              onClick={openAddModal}
-              className="inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-[var(--color-caleo-primary)] text-white hover:bg-[#01365e] transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Tambah Akun Pertama
-            </button>
-          )}
-        </div>
+        <EmptyState
+          message="Belum ada akun kas atau bank"
+          hint="Tambahkan rekening bank, kas toko, atau e-wallet untuk mulai mencatat saldo."
+          icon={Wallet}
+          className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded mt-2"
+          action={isOwner ? { label: '+ Tambah Akun Pertama', onClick: openAddModal } : undefined}
+        />
       )}
 
       {/* Add/Edit Account Modal (Task 7) */}
