@@ -1,0 +1,171 @@
+// Scan src/ for inline "Belum ada" / "Tidak ada" text in JSX that should
+// use the shared <EmptyState /> component from src/components/ui/.
+//
+// Rule: consistent visual + copy for empty states = MSME trust. Ad-hoc
+// scattered text = drift.
+//
+// Usage: npm run audit:hardcoded-empty-state
+// Exit 0 = baseline clean. Exit 1 = NEW hardcoded empty-state text added.
+
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+const ROOT = 'src';
+// Match text nodes in JSX (loose approximation — full parse would be over-eager).
+const EMPTY_RE = /(?:>|['"`])(Belum ada|Tidak ada)[^<'"]*(?:<|['"`])/g;
+
+function walk(dir: string, out: string[]): void {
+  for (const entry of readdirSync(dir)) {
+    if (entry.startsWith('.')) continue;
+    const full = join(dir, entry);
+    const st = statSync(full);
+    if (st.isDirectory()) walk(full, out);
+    else if (/\.tsx$/.test(entry) && !/\.test\./.test(entry)) out.push(full);
+  }
+}
+
+const BASELINE_ALLOWLIST = new Set<string>([
+  'src/components/DashboardScreen.tsx',
+  'src/components/KasirScreen.tsx',
+  'src/components/LaporanScreen.tsx',
+  'src/components/ManajemenGudangScreen.tsx',
+  'src/components/NotificationSettingsScreen.tsx',
+  'src/components/OrderHistoryScreen.tsx',
+  'src/components/OwnerDecisionInbox.tsx',
+  'src/components/PelangganScreen.tsx',
+  'src/components/PembelianScreen.tsx',
+  'src/components/PengaturanScreen.tsx',
+  'src/components/RekonsiliasiScreen.tsx',
+  'src/components/SalesInboxScreen.tsx',
+  'src/components/SelectTenantScreen.tsx',
+  'src/components/WhatsappAiScreen.tsx',
+  'src/components/admin/AuditTable.tsx',
+  'src/components/admin/CaleoBotDashboard.tsx',
+  'src/components/admin/CostDashboard.tsx',
+  'src/components/admin/PendingPaymentRow.tsx',
+  'src/components/admin/PendingPaymentsQueue.tsx',
+  'src/components/admin/PlansManagement.tsx',
+  'src/components/admin/RecentActivityFeed.tsx',
+  'src/components/admin/RevenueMonthlyTrend.tsx',
+  'src/components/admin/RevenuePlanBreakdown.tsx',
+  'src/components/admin/RevenueTopTenants.tsx',
+  'src/components/admin/SalesRepsList.tsx',
+  'src/components/admin/TenantDetail/ModuleTogglePanel.tsx',
+  'src/components/admin/TenantDetail/PembayaranTab.tsx',
+  'src/components/admin/TenantDetail/UsersTab.tsx',
+  'src/components/admin/TenantsList.tsx',
+  'src/components/admin/TenantsTable.tsx',
+  'src/components/akuntansi/CashAccountPicker.tsx',
+  'src/components/akuntansi/OpeningBalanceWizard.tsx',
+  'src/components/akuntansi/gl/BukuBesarTab.tsx',
+  'src/components/akuntansi/gl/COAManagementTab.tsx',
+  'src/components/akuntansi/gl/TrialBalanceTab.tsx',
+  'src/components/akuntansi/gl/TutupBukuTab.tsx',
+  'src/components/akuntansi/manual/ManualTransferModal.tsx',
+  'src/components/dashboard/PreOrderFulfillmentsCard.tsx',
+  'src/components/feedback/CustomerFeedbackScreen.tsx',
+  'src/components/kasbank/AccountDetailScreen.tsx',
+  'src/components/kasbank/KasBankScreen.tsx',
+  'src/components/kasir/HasilCariFotoModal.tsx',
+  'src/components/laporan/LayananSection.tsx',
+  'src/components/laporan/SlowMoverTable.tsx',
+  'src/components/laporan/TopCustomerTable.tsx',
+  'src/components/laporan/akuntansi/CashFlowTab.tsx',
+  'src/components/laporan/akuntansi/LabaRugiTab.tsx',
+  'src/components/laporan/akuntansi/MutasiTab.tsx',
+  'src/components/laporan/akuntansi/NeracaTab.tsx',
+  'src/components/notification/TemplateHistoryModal.tsx',
+  'src/components/pembelian/KlaimSupplierPanel.tsx',
+  'src/components/pembelian/beranda/BerandaPembelian.tsx',
+  'src/components/pembelian/bnl/BelanjaNumpangLewatList.tsx',
+  'src/components/pembelian/bnl/OrderBnlSection.tsx',
+  'src/components/pembelian/form/SupplierPicker.tsx',
+  'src/components/pembelian/pembayaran/PembayaranFormPage.tsx',
+  'src/components/pembelian/pembayaran/PembayaranList.tsx',
+  'src/components/pembelian/pesanan/PesananList.tsx',
+  'src/components/pembelian/tagihan/TagihanFormPage.tsx',
+  'src/components/pembelian/tagihan/TagihanList.tsx',
+  'src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx',
+  'src/components/pembelian/tukar-faktur/TukarFakturFormPage.tsx',
+  'src/components/pembelian/tukar-faktur/TukarFakturList.tsx',
+  'src/components/pengaturan/ClipMonitorPanel.tsx',
+  'src/components/pengaturan/PromoProdukPanel.tsx',
+  'src/components/pengaturan/RekeningBankCard.tsx',
+  'src/components/pengaturan/SaldoAwalPanel.tsx',
+  'src/components/pengaturan/SupportAccessPanel.tsx',
+  'src/components/pengaturan/layanan/ComponentPicker.tsx',
+  'src/components/pengaturan/layanan/ServiceCatalogList.tsx',
+  'src/components/pengaturan/saldoAwal/CoAPicker.tsx',
+  'src/components/pengaturan/saldoAwal/Step1KasBank.tsx',
+  'src/components/pengaturan/saldoAwal/Step2Aktiva.tsx',
+  'src/components/pengaturan/saldoAwal/Step3Kewajiban.tsx',
+  'src/components/penjualan/CartRows.tsx',
+  'src/components/penjualan/DaftarPenawaranScreen.tsx',
+  'src/components/penjualan/LockSubmissionModal.tsx',
+  'src/components/penjualan/TambahLayananModal.tsx',
+  'src/components/piutang/PiutangScreen.tsx',
+  'src/components/produk/BulkUploadSection.tsx',
+  'src/components/produk/CatalogGridView.tsx',
+  'src/components/produk/CatalogListView.tsx',
+  'src/components/produk/ProductForm.tsx',
+  'src/components/produk/StockTableView.tsx',
+  'src/components/rekonsiliasi/CashColumn.tsx',
+  'src/components/rekonsiliasi/JournalColumn.tsx',
+  'src/components/rekonsiliasi/MappingDrawer.tsx',
+  'src/components/rekonsiliasi/MultiAccountStatus.tsx',
+  'src/components/rekonsiliasi/MutasiColumn.tsx',
+  'src/components/rekonsiliasi/OrdersColumn.tsx',
+  'src/components/rekonsiliasi/POSellThrough.tsx',
+  'src/components/rekonsiliasi/TallyBar.tsx',
+  'src/components/sales/ActionPanel.tsx',
+  'src/components/sales/DaftarPesananScreen.tsx',
+  'src/components/sales/EditOrderModal.tsx',
+  'src/components/sales/PaymentProofThumbnail.tsx',
+  'src/components/stok/PriceChangeRequestModal.tsx',
+  'src/components/stok/StockAdjustmentModal.tsx',
+  'src/components/stok/StockOpnameScreen.tsx',
+  'src/components/stok/StockOpnameSessionView.tsx',
+  'src/components/warehouse/WarehousePicker.tsx',
+  'src/components/warehouseTransfer/WarehouseTransferCreateScreen.tsx',
+  'src/components/warehouseTransfer/WarehouseTransferListScreen.tsx',
+]);
+
+const files: string[] = [];
+walk(ROOT, files);
+
+interface Hit {
+  file: string;
+  line: number;
+  text: string;
+}
+
+const violations: Hit[] = [];
+for (const f of files) {
+  if (BASELINE_ALLOWLIST.has(f)) continue;
+  if (f.endsWith('DesignSystemPage.tsx')) continue;
+  if (f.endsWith('EmptyState.tsx')) continue;
+
+  const body = readFileSync(f, 'utf8');
+  const lines = body.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    EMPTY_RE.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = EMPTY_RE.exec(lines[i])) !== null) {
+      violations.push({ file: f, line: i + 1, text: m[0].slice(0, 60) });
+    }
+  }
+}
+
+if (violations.length === 0) {
+  console.log(`✓ clean — no NEW hardcoded "Belum ada"/"Tidak ada" (baseline ${BASELINE_ALLOWLIST.size} files allowlisted)`);
+  process.exit(0);
+}
+
+console.error(`✗ ${violations.length} hardcoded empty-state text(s) outside allowlist:`);
+console.error('');
+for (const v of violations.slice(0, 20)) {
+  console.error(`  ${v.file}:${v.line}  ${v.text}`);
+}
+console.error('');
+console.error('Fix: use <EmptyState message="..." /> from src/components/ui/EmptyState.tsx');
+process.exit(1);
