@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, ShoppingBag, Receipt, DollarSign, BarChart2 } from 'lucide-react';
+import EmptyState from './ui/EmptyState';
+import ErrorState from './ui/ErrorState';
 import KpiCard from './ui/KpiCard';
 import AkuntansiLaporanTab from './laporan/akuntansi/AkuntansiLaporanTab';
 import SlowMoverTable from './laporan/SlowMoverTable';
@@ -172,9 +174,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
 
       {/* KPI cards */}
       {perfSummary === false ? (
-        <div className="bg-red-50 border border-red-200 rounded p-4 text-sm text-red-700" role="alert">
-          Gagal memuat ringkasan performa. Coba pilih periode lagi atau periksa koneksi.
-        </div>
+        <ErrorState message="Gagal memuat ringkasan performa. Coba pilih periode lagi atau periksa koneksi." />
       ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
@@ -239,7 +239,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
           <div className="flex-1 h-[280px]">
             {revenueChartError ? (
               <div className="h-full flex items-center justify-center">
-                <p className="text-sm text-red-600 italic" role="alert">Gagal memuat grafik revenue. Coba pilih periode lagi.</p>
+                <ErrorState message="Gagal memuat grafik revenue. Coba pilih periode lagi." inline />
               </div>
             ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -262,9 +262,9 @@ export default function LaporanScreen(props: LaporanScreenProps) {
           <div className="lg:w-64 flex flex-col">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Profit per Channel</p>
             {profitPerChannel === false ? (
-              <p className="text-xs text-red-600 italic" role="alert">Gagal memuat data channel.</p>
+              <ErrorState message="Gagal memuat data channel." inline />
             ) : profitPerChannel.length === 0 ? (
-              <p className="text-xs text-gray-300 italic">Belum ada data</p>
+              <EmptyState message="Belum ada data" inline />
             ) : (
               <div className="space-y-2">
                 {profitPerChannel.map((row) => (
@@ -288,9 +288,10 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         <div className="bg-white rounded p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Produk Terlaris</h4>
           {topProducts.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">
-              {isSupabaseConfigured ? 'Belum ada data produk untuk periode ini.' : '—'}
-            </p>
+            <EmptyState
+              message={isSupabaseConfigured ? 'Belum ada data produk untuk periode ini.' : '—'}
+              inline
+            />
           ) : (
             <table className="w-full text-sm">
               <thead>

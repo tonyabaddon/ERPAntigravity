@@ -4,6 +4,7 @@
 // Founder-only: requires platform_admin JWT (enforced server-side).
 import { useEffect, useState, useCallback } from 'react';
 import { RefreshCw, AlertTriangle, DollarSign } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
 import {
   listTenantCosts,
   backfillTenantCostDaily,
@@ -108,11 +109,11 @@ function CostTable({
   if (rows.length === 0) {
     return (
       <div
-        className="rounded p-8 text-center text-caleo-13"
-        style={{ background: '#F8FAFC', border: '1px solid #ECEEF1', color: '#64748B' }}
+        className="rounded"
+        style={{ background: '#F8FAFC', border: '1px solid #ECEEF1' }}
         data-testid="cost-empty"
       >
-        Tidak ada data tenant aktif.
+        <EmptyState message="Tidak ada data tenant aktif." />
       </div>
     );
   }
