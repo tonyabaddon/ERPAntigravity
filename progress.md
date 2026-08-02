@@ -1,6 +1,27 @@
 # ERP Antigravity — Implementation Progress
 
 
+## 2026-08-02 — Visual approval gate infra shipped (SDD)
+
+**Result:** every downstream FE PR now generates `public/visual-diff-<slug>.html` for founder review before merge. Bootstrap infra committed via 4-task SDD run.
+
+**PR shipped:**
+- **PR #92** (`3f0dca6`, merged, no promote needed — ships no runtime code): helper script `scripts/build-visual-diff-html.tsx` (pure renderer + CLI, 6 vitest tests, XSS-safe, self-contained HTML) + config `.claude/visual-diff.config.json` (7 seed modules) + `.gitignore` for ephemeral artifacts + `package.json` npm script + `CLAUDE.md` "Protocol: Visual approval gate (FE PRs)" section (40 lines, inserted before Ship & verify).
+
+**Why:** mechanical semantic-equivalence (hex→token, focus:→focus-visible:) is not visual equivalence. Prior codemod incidents (miss-log Entry #10 jsPDF CSS var → build fail; radius 2px reversal after founder view) proved need for pre-merge visual review. Gate closes the loop.
+
+**Bootstrap chicken-and-egg handled:** PR #92 can't gate itself. Ad-hoc bootstrap E2E validation used placeholder PNG (MCP browser was locked; validation focused on tool's HTML generation, not screenshot capture). All downstream PRs (design-system rollout: focus-ring, typography, semantic-color, 13 module sweeps) will use real tool + real MCP screenshots.
+
+**SDD ledger entries:** Task 1 (config scaffolding), Task 2 (renderer TDD 6/6 tests), Task 3 (E2E validation), Task 4 (CLAUDE.md rule + PR) — all reviewed, all approved, all in `.superpowers/sdd/progress.md`.
+
+**Spec:** `docs/superpowers/specs/2026-08-02-visual-approval-gate-design.md`
+**Plan:** `docs/superpowers/plans/2026-08-02-visual-approval-gate.md`
+
+**Next in queue (uses this gate):** focus-ring standardization PR (design already approved earlier this session).
+
+---
+
+
 ## 2026-08-02 — slog observability class-fix + HEARTBEAT root cause diagnosed (SHIPPED)
 
 **Result:** BE prod now shows real error messages instead of `error={}`. HEARTBEAT broadcast root cause identified — WA session unpaired, not a code bug.
