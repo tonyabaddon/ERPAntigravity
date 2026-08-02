@@ -128,7 +128,7 @@ func (p *Poller) tick(ctx context.Context) {
 
 	msg, err := tmpl.Build(ctx, params)
 	if err != nil {
-		slog.ErrorContext(ctx, "[HEARTBEAT] template render error", slog.Any("error", err))
+		slog.ErrorContext(ctx, "[HEARTBEAT] template render error", slog.String("error", err.Error()))
 		return
 	}
 
@@ -136,7 +136,7 @@ func (p *Poller) tick(ctx context.Context) {
 	// in main.go ignores this arg until multi-tenant migration in Sprint 2+.
 	filter := notification.RecipientFilter{Role: "owner", CritLevel: "normal"}
 	if err := p.notifier.BroadcastToStaff(ctx, tenantID, filter, msg); err != nil {
-		slog.ErrorContext(ctx, "[HEARTBEAT] broadcast error", slog.Any("error", err))
+		slog.ErrorContext(ctx, "[HEARTBEAT] broadcast error", slog.String("error", err.Error()))
 	}
 
 	p.lastFiredAt = now

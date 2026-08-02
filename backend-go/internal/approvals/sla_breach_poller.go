@@ -86,7 +86,7 @@ func (p *SLABreachPoller) runOnce(ctx context.Context) {
 		ORDER BY ar.tenant_id, ar.requested_at ASC
 	`, defaultMinutes)
 	if err != nil {
-		log.ErrorContext(ctx, "breach query failed", slog.Any("error", err))
+		log.ErrorContext(ctx, "breach query failed", slog.String("error", err.Error()))
 		return
 	}
 	defer rows.Close()
@@ -97,7 +97,7 @@ func (p *SLABreachPoller) runOnce(ctx context.Context) {
 	for rows.Next() {
 		var r breachedRow
 		if err := rows.Scan(&r.tenantID, &r.id, &r.requestType, &r.requestedAt); err != nil {
-			log.ErrorContext(ctx, "row scan failed", slog.Any("error", err))
+			log.ErrorContext(ctx, "row scan failed", slog.String("error", err.Error()))
 			continue
 		}
 		if _, seen := tenantRows[r.tenantID]; !seen {
@@ -106,7 +106,7 @@ func (p *SLABreachPoller) runOnce(ctx context.Context) {
 		tenantRows[r.tenantID] = append(tenantRows[r.tenantID], r)
 	}
 	if err := rows.Err(); err != nil {
-		log.ErrorContext(ctx, "rows iteration error", slog.Any("error", err))
+		log.ErrorContext(ctx, "rows iteration error", slog.String("error", err.Error()))
 	}
 
 	var broadcastCount, stampCount int
@@ -134,7 +134,7 @@ func (p *SLABreachPoller) runOnce(ctx context.Context) {
 		if buildErr != nil {
 			log.ErrorContext(ctx, "template build failed",
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", buildErr))
+				slog.String("error", buildErr.Error()))
 			continue
 		}
 
@@ -146,7 +146,7 @@ func (p *SLABreachPoller) runOnce(ctx context.Context) {
 		if sendErr != nil {
 			log.ErrorContext(ctx, "broadcast failed",
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", sendErr))
+				slog.String("error", sendErr.Error()))
 			// Still stamp the rows so we don't spam on next tick if WA is flaky.
 			// Owner will see the breach on next login even if WA failed.
 		} else {
@@ -193,7 +193,7 @@ func (p *SLABreachPoller) stampBreached(ctx context.Context, ids []int64) int {
 	res, err := p.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		slog.Default().ErrorContext(ctx, "stamp sla_breach_notified_at failed",
-			slog.Any("error", err))
+			slog.String("error", err.Error()))
 		return 0
 	}
 	n, _ := res.RowsAffected()

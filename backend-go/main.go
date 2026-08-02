@@ -216,7 +216,7 @@ func main() {
 		pingCtx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 		if err := dbClient.DB.PingContext(pingCtx); err != nil {
-			slog.WarnContext(r.Context(), "[READY] DB ping failed", slog.Any("error", err))
+			slog.WarnContext(r.Context(), "[READY] DB ping failed", slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte("db unreachable"))
 			return
@@ -331,7 +331,7 @@ func main() {
 		// else WA server returns 400 (see whatsmeow pair-code.go:88-89).
 		code, err := waClient.WA.PairPhone(r.Context(), cleaned, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 		if err != nil {
-			slog.ErrorContext(r.Context(), "[WA] PairPhone error", slog.String("phone", cleaned), slog.Any("error", err))
+			slog.ErrorContext(r.Context(), "[WA] PairPhone error", slog.String("phone", cleaned), slog.String("error", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -398,7 +398,7 @@ func main() {
 		handler := sh.Handle(api.SecurityHeadersMiddleware(api.RequestContextMiddleware(rateLimiter.Wrap(api.VersionRouter(mux)))))
 		if err := http.Serve(ln, handler); err != nil {
 			sentry.CaptureException(err)
-			slog.Error("[MAIN] HTTP error", slog.Any("error", err))
+			slog.Error("[MAIN] HTTP error", slog.String("error", err.Error()))
 		}
 	}()
 
@@ -426,7 +426,7 @@ func main() {
 		if err == nil {
 			break
 		}
-		slog.Error("[MAIN] Gemini init attempt failed — retrying in 10s", slog.Int("attempt", attempt), slog.Any("error", err))
+		slog.Error("[MAIN] Gemini init attempt failed — retrying in 10s", slog.Int("attempt", attempt), slog.String("error", err.Error()))
 		time.Sleep(10 * time.Second)
 	}
 	defer geminiClient.Close()
@@ -481,7 +481,7 @@ func main() {
 			fatal(dbClient, "[CALISTA] Gemini auth probe FAILED — check GEMINI_API_KEY", probeErr)
 		}
 		if probeErr != nil {
-			slog.Warn("[CALISTA] Gemini probe non-fatal error (proceeding)", slog.Any("error", probeErr))
+			slog.Warn("[CALISTA] Gemini probe non-fatal error (proceeding)", slog.String("error", probeErr.Error()))
 		} else {
 			slog.Info("[CALISTA] Gemini auth probe OK")
 		}
@@ -514,7 +514,7 @@ func main() {
 			fatal(dbClient, "[CALISTA] OpenRouter auth probe FAILED — check OPENROUTER_API_KEY", probeErr)
 		}
 		if probeErr != nil {
-			slog.Warn("[CALISTA] OpenRouter probe non-fatal error (proceeding)", slog.Any("error", probeErr))
+			slog.Warn("[CALISTA] OpenRouter probe non-fatal error (proceeding)", slog.String("error", probeErr.Error()))
 		} else {
 			slog.Info("[CALISTA] OpenRouter auth probe OK")
 		}
@@ -579,7 +579,7 @@ func main() {
 			ctx := context.Background()
 			order, err := dbClient.GetOrderByID(orderID)
 			if err != nil {
-				slog.Error("[MAIN] Reminder: lookup failed", slog.String("order_id", orderID), slog.Any("error", err))
+				slog.Error("[MAIN] Reminder: lookup failed", slog.String("order_id", orderID), slog.String("error", err.Error()))
 				return
 			}
 			tmpl := templates.BookingExpiry{}
@@ -594,11 +594,11 @@ func main() {
 				"invoice_no":    invoiceNo,
 			})
 			if err != nil {
-				slog.ErrorContext(ctx, "[MAIN] Reminder: template render failed", slog.String("order_id", orderID), slog.Any("error", err))
+				slog.ErrorContext(ctx, "[MAIN] Reminder: template render failed", slog.String("order_id", orderID), slog.String("error", err.Error()))
 				return
 			}
 			if err := notifier.NotifyCustomer(ctx, order.TenantID, order.ConversationID, order.CustomerPhone, "id", msg); err != nil {
-				slog.ErrorContext(ctx, "[MAIN] Reminder: NotifyCustomer failed", slog.String("order_id", orderID), slog.Any("error", err))
+				slog.ErrorContext(ctx, "[MAIN] Reminder: NotifyCustomer failed", slog.String("order_id", orderID), slog.String("error", err.Error()))
 			}
 			dbClient.MarkReminderSent(orderID)
 			dbClient.UpdateConversationState(order.ConversationID, models.StateTimeoutReminder)
@@ -744,7 +744,7 @@ func main() {
 	// Restore booking timers after restart
 	bookings, err := dbClient.ListActiveBookings()
 	if err != nil {
-		slog.Error("[MAIN] RestoreOnBoot: list bookings error", slog.Any("error", err))
+		slog.Error("[MAIN] RestoreOnBoot: list bookings error", slog.String("error", err.Error()))
 	} else {
 		entries := make([]scheduler.BookingEntry, len(bookings))
 		for i, b := range bookings {
@@ -759,7 +759,7 @@ func main() {
 			slog.Info("[MAIN] Admin message in conversation", slog.String("conversation_id", conversationID))
 			msg, err := dbClient.GetMessageByID(messageID)
 			if err != nil {
-				slog.Error("[MAIN] GetMessageByID failed", slog.String("message_id", messageID), slog.Any("error", err))
+				slog.Error("[MAIN] GetMessageByID failed", slog.String("message_id", messageID), slog.String("error", err.Error()))
 				return
 			}
 			var customerPhone, waNumID, tenantIDForConv string
@@ -783,11 +783,11 @@ func main() {
 			tmpl := templates.AdminForward{}
 			rendered, err := tmpl.Build(ctx, map[string]any{"text": msg.Text})
 			if err != nil {
-				slog.ErrorContext(ctx, "[MAIN] admin_forward render failed", slog.Any("error", err))
+				slog.ErrorContext(ctx, "[MAIN] admin_forward render failed", slog.String("error", err.Error()))
 				return
 			}
 			if err := notifier.NotifyCustomer(ctx, tenantIDForConv, conversationID, customerPhone, "id", rendered); err != nil {
-				slog.ErrorContext(ctx, "[MAIN] admin_forward send failed", slog.Any("error", err))
+				slog.ErrorContext(ctx, "[MAIN] admin_forward send failed", slog.String("error", err.Error()))
 			}
 		},
 		OnOrderApproved: func(orderID, conversationID string, shippingFee float64) {
@@ -818,7 +818,7 @@ func main() {
 			if err != nil {
 				slog.ErrorContext(ctx, "[MAIN] approval_card render failed",
 					slog.String("approval_id", evt.ApprovalID),
-					slog.Any("error", err))
+					slog.String("error", err.Error()))
 				return
 			}
 			filter := notification.RecipientFilter{Role: "owner", CritLevel: "critical"}
@@ -826,7 +826,7 @@ func main() {
 				slog.ErrorContext(ctx, "[MAIN] approval broadcast failed",
 					slog.String("approval_id", evt.ApprovalID),
 					slog.String("tenant_id", evt.TenantID),
-					slog.Any("error", err))
+					slog.String("error", err.Error()))
 				return
 			}
 			// Dedup: mark sent so a restart doesn't re-broadcast pending approvals.
@@ -837,7 +837,7 @@ func main() {
 			); dbErr != nil {
 				slog.ErrorContext(ctx, "[MAIN] approval sent_wa_card_at update failed",
 					slog.String("approval_id", evt.ApprovalID),
-					slog.Any("error", dbErr))
+					slog.String("error", dbErr.Error()))
 			}
 		},
 
@@ -863,7 +863,7 @@ func main() {
 			if err != nil {
 				slog.ErrorContext(ctx, "[MAIN] order_created: lookup failed",
 					slog.String("order_id", evt.OrderID),
-					slog.Any("error", err))
+					slog.String("error", err.Error()))
 				return
 			}
 			if customerPhone == "" {
@@ -882,13 +882,13 @@ func main() {
 			if buildErr != nil {
 				slog.ErrorContext(ctx, "[MAIN] order_created: template build failed",
 					slog.String("order_id", evt.OrderID),
-					slog.Any("error", buildErr))
+					slog.String("error", buildErr.Error()))
 				return
 			}
 			if err := notifier.NotifyCustomer(ctx, evt.TenantID, evt.ConversationID, customerPhone, "id", msg); err != nil {
 				slog.ErrorContext(ctx, "[MAIN] order_created: send failed",
 					slog.String("order_id", evt.OrderID),
-					slog.Any("error", err))
+					slog.String("error", err.Error()))
 			}
 		},
 
@@ -915,7 +915,7 @@ func main() {
 			if err != nil {
 				slog.ErrorContext(ctx, "[MAIN] order_shipped: lookup failed",
 					slog.String("order_id", evt.OrderID),
-					slog.Any("error", err))
+					slog.String("error", err.Error()))
 				return
 			}
 			if customerPhone == "" {
@@ -933,13 +933,13 @@ func main() {
 			if buildErr != nil {
 				slog.ErrorContext(ctx, "[MAIN] order_shipped: template build failed",
 					slog.String("order_id", evt.OrderID),
-					slog.Any("error", buildErr))
+					slog.String("error", buildErr.Error()))
 				return
 			}
 			if err := notifier.NotifyCustomer(ctx, evt.TenantID, evt.ConversationID, customerPhone, "id", msg); err != nil {
 				slog.ErrorContext(ctx, "[MAIN] order_shipped: send failed",
 					slog.String("order_id", evt.OrderID),
-					slog.Any("error", err))
+					slog.String("error", err.Error()))
 			}
 		},
 	}); err != nil {
@@ -957,7 +957,7 @@ func main() {
 	// Do NOT set this env var on customer-tenant deployments.
 	if os.Getenv("CALEO_ADMIN_WA_PHONE") != "" {
 		if err := caleobot.StartCaleoAdminSession(ctx, dbClient.DB, waClient.WA); err != nil {
-			slog.Warn("[MAIN] Caleo Admin bot init failed — skipping bot", slog.Any("error", err))
+			slog.Warn("[MAIN] Caleo Admin bot init failed — skipping bot", slog.String("error", err.Error()))
 		}
 	} else {
 		slog.Info("[MAIN] CALEO_ADMIN_WA_PHONE not set — Caleo Admin bot disabled")
@@ -965,7 +965,7 @@ func main() {
 
 	// Connect WhatsApp (non-blocking: QR loop runs in goroutine, stored for /api/wa/qr)
 	if err := waClient.Connect(ctx); err != nil {
-		slog.Warn("[MAIN] WA connect failed — daemon will keep running with HTTP only", slog.Any("error", err))
+		slog.Warn("[MAIN] WA connect failed — daemon will keep running with HTTP only", slog.String("error", err.Error()))
 	}
 
 	quit := make(chan os.Signal, 1)
@@ -1024,7 +1024,7 @@ func getEnvIntDefault(key string, def int) int {
 	}
 	n, err := strconv.Atoi(v)
 	if err != nil {
-		slog.Warn("[CONFIG] bad env value, using default", slog.String("key", key), slog.String("value", v), slog.Int("default", def), slog.Any("error", err))
+		slog.Warn("[CONFIG] bad env value, using default", slog.String("key", key), slog.String("value", v), slog.Int("default", def), slog.String("error", err.Error()))
 		return def
 	}
 	return n

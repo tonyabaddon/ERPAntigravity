@@ -42,6 +42,33 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #11 — 2026-08-02 — `slog.Any("error", err)` in backend-go renders as `error={}` in prod logs (197 sites)
+
+**Context:** While investigating recurring `[HEARTBEAT] broadcast send failed` errors in Cloud Run logs, noticed the log entries showed `error={};feature=broadcast_staff;message=broadcast send failed for recipient` — the error field was an empty JSON object, giving zero information about what actually failed. Grep across `backend-go/` found 197 sites using the `slog.Any("error", err)` pattern.
+
+**Root cause:** Go's `slog.Any(key, value)` renders values via reflection. For an `error` interface, the underlying struct's exported fields serialize — but many error types (`errors.New(...)`, `fmt.Errorf(...)`, `*errors.errorString`) have only unexported fields, so `slog.Any` produces `error={}`. `slog.String("error", err.Error())` calls `err.Error()` explicitly and captures the actual message.
+
+This is the Go equivalent of the FE `String(err) → "[object Object]"` class-error (Entry #5, `audit:no-string-err-fallback`). Same failure mode: an "it looks like it logs" pattern that silently produces useless output in prod, because the local dev run never exercises the error path.
+
+**Real-world impact:** For 197 log sites across `notification/`, `heartbeat/`, `jobs/`, `whatsapp/`, `feedback/`, `hutang/`, `piutang/`, `recon/`, `caleobot/`, `approvals/`, `sentryutil/`, `main.go`, etc. — every error branch in production was flying blind. Root cause of HEARTBEAT broadcast failures was undebuggable until this was fixed. Class-recurrence: Entry #5 was the FE version; this is 3rd occurrence of the pattern-family — third occurrence triggers class-fix (codemod + audit) per CLAUDE.md.
+
+**Root cause of the miss:**
+- BE codebase copy-pasted the pattern for ~a year — no CI catch, no lint rule
+- `slog.Any` is the "right-looking" choice for a value of unknown type; it never fails at compile time
+- Real error content only visible in prod, and we rarely tail Go slog output outside incidents
+- Entry #5 fixed the FE side but didn't have a rule mapping "same class-error might exist in BE"
+
+**Prevention (this PR):**
+1. Codemod: perl `-i -pe 's/slog\.Any\("error", ([a-zA-Z_]*(?:err|Err))\)/slog.String("error", $1.Error())/g'` across all `backend-go/**/*.go` (excluding `_test.go` and 2 panic-`recover()` sites where value is `interface{}` not error). 195 files, 197→2 sites.
+2. Audit script: `scripts/audit-slog-any-error.ts` — scans backend-go for `slog.Any("error", <var>)` with allowlist for bare `r` (panic recover). Registered as `npm run audit:slog-any-error`. **Baseline zero, absolute** — any regression blocks.
+3. Wired to Stop hook (`.claude/settings.json`) — 11th audit in the chain.
+
+**Related pattern:** If we ever add a new BE logging library (Sentry breadcrumb, structured trace attributes), the same lesson applies: prefer `.Error()` over reflection-based value passing when the value is an error interface.
+
+**Files updated:** codemod across 195 backend-go files, `scripts/audit-slog-any-error.ts` (new), `package.json` (audit script), `.claude/settings.json` (Stop hook wired).
+
+---
+
 ## Entry #10 — 2026-08-02 — Codemod added CSS `var()` in jsPDF context; broke every PDF at build time
 
 **Context:** In an 8-hour autonomous design-system session I shipped 2 codemods that migrated hex colors to CSS vars: PR #83 (`#012749` → `var(--color-caleo-primary)`, 640+ refs across 155 files) and PR #85 (soft-blue mist palette, 3 hex → 3 tokens, 326 refs). Both looked safe — semantic no-op, identical values, `npx vitest run --changed` green, hex-drift audit green.

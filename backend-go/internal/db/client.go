@@ -133,13 +133,13 @@ func NewClient(queryConn, listenConn string) (*Client, error) {
 	client := &Client{DB: query, ListenDB: listen}
 
 	if err := listen.Ping(); err != nil {
-		slog.Warn("[DB] listener pool ping failed at startup — retrying in background", slog.Any("error", err))
+		slog.Warn("[DB] listener pool ping failed at startup — retrying in background", slog.String("error", err.Error()))
 		go client.retryListenerInit(listenConn)
 	} else {
 		client.listener = pq.NewListener(listenConn, 10*time.Second, time.Minute,
 			func(ev pq.ListenerEventType, err error) {
 				if err != nil {
-					slog.Error("[DB] Listener event error", slog.Any("error", err))
+					slog.Error("[DB] Listener event error", slog.String("error", err.Error()))
 				}
 			})
 		slog.Info("[DB] Connected — queries via txn pooler, listener via direct")
@@ -158,14 +158,14 @@ func (c *Client) retryListenerInit(listenConn string) {
 		time.Sleep(30 * time.Second)
 		if err := c.ListenDB.Ping(); err != nil {
 			if attempt%10 == 0 {
-				slog.Warn("[DB] listener pool still unreachable", slog.Int("attempt", attempt), slog.Any("error", err))
+				slog.Warn("[DB] listener pool still unreachable", slog.Int("attempt", attempt), slog.String("error", err.Error()))
 			}
 			continue
 		}
 		c.listener = pq.NewListener(listenConn, 10*time.Second, time.Minute,
 			func(ev pq.ListenerEventType, err error) {
 				if err != nil {
-					slog.Error("[DB] Listener event error", slog.Any("error", err))
+					slog.Error("[DB] Listener event error", slog.String("error", err.Error()))
 				}
 			})
 		slog.Info("[DB] Listener pool recovered", slog.Int("attempt", attempt))
@@ -237,7 +237,7 @@ func (c *Client) waitAndSubscribe(h NotifyHandlers) {
 		time.Sleep(15 * time.Second)
 		if c.listener != nil {
 			if err := c.subscribeAndDispatch(h); err != nil {
-				slog.Error("[DB] delayed subscribe failed", slog.Any("error", err))
+				slog.Error("[DB] delayed subscribe failed", slog.String("error", err.Error()))
 				return
 			}
 			slog.Info("[DB] LISTEN/NOTIFY subscribed after delayed listener init")
@@ -269,7 +269,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 					MessageID      string `json:"message_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					slog.Error("[DB] admin_messages parse error", slog.Any("error", err))
+					slog.Error("[DB] admin_messages parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnAdminMessage != nil {
@@ -283,7 +283,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 					ShippingFee    float64 `json:"shipping_fee"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					slog.Error("[DB] order_approved parse error", slog.Any("error", err))
+					slog.Error("[DB] order_approved parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnOrderApproved != nil {
@@ -296,7 +296,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 					ConversationID string `json:"conversation_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					slog.Error("[DB] payment_verified parse error", slog.Any("error", err))
+					slog.Error("[DB] payment_verified parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnPaymentVerified != nil {
@@ -309,7 +309,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 					ConversationID string `json:"conversation_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					slog.Error("[DB] payment_rejected parse error", slog.Any("error", err))
+					slog.Error("[DB] payment_rejected parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnPaymentRejected != nil {
@@ -322,7 +322,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 					ConversationID string `json:"conversation_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					slog.Error("[DB] dp_verified parse error", slog.Any("error", err))
+					slog.Error("[DB] dp_verified parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnDPVerified != nil {
@@ -336,7 +336,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 					Reason         string `json:"reason"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					slog.Error("[DB] dp_proof_rejected parse error", slog.Any("error", err))
+					slog.Error("[DB] dp_proof_rejected parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnDPProofRejected != nil {
@@ -347,7 +347,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 				// B1 fix (Task 1.8): broadcast approval WA card to owner-role recipients.
 				var evt ApprovalCreatedEvent
 				if err := json.Unmarshal([]byte(notification.Extra), &evt); err != nil {
-					slog.Error("[DB] approval_created parse error", slog.Any("error", err))
+					slog.Error("[DB] approval_created parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnApprovalCreated != nil {
@@ -358,7 +358,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 				// Sprint 3 Task 3.2: send WA confirmation to customer on every order INSERT.
 				var evt OrderCreatedEvent
 				if err := json.Unmarshal([]byte(notification.Extra), &evt); err != nil {
-					slog.Error("[DB] order_created parse error", slog.Any("error", err))
+					slog.Error("[DB] order_created parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnOrderCreated != nil {
@@ -369,7 +369,7 @@ func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 				// Sprint 3 Task 3.2: send WA notification when order transitions to COMPLETED.
 				var evt OrderShippedEvent
 				if err := json.Unmarshal([]byte(notification.Extra), &evt); err != nil {
-					slog.Error("[DB] order_shipped parse error", slog.Any("error", err))
+					slog.Error("[DB] order_shipped parse error", slog.String("error", err.Error()))
 					continue
 				}
 				if h.OnOrderShipped != nil {

@@ -74,7 +74,7 @@ func (p *OverdueSummaryPoller) runOnce(ctx context.Context) {
 		GROUP BY pi.tenant_id
 	`)
 	if err != nil {
-		log.ErrorContext(ctx, "aggregate query failed", slog.Any("error", err))
+		log.ErrorContext(ctx, "aggregate query failed", slog.String("error", err.Error()))
 		return
 	}
 	defer rows.Close()
@@ -87,7 +87,7 @@ func (p *OverdueSummaryPoller) runOnce(ctx context.Context) {
 		var totalCount int
 		var totalAmount int64
 		if err := rows.Scan(&tenantID, &totalCount, &totalAmount); err != nil {
-			log.ErrorContext(ctx, "row scan failed", slog.Any("error", err))
+			log.ErrorContext(ctx, "row scan failed", slog.String("error", err.Error()))
 			continue
 		}
 		if totalCount == 0 {
@@ -107,7 +107,7 @@ func (p *OverdueSummaryPoller) runOnce(ctx context.Context) {
 		if buildErr != nil {
 			log.ErrorContext(ctx, "template build failed",
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", buildErr))
+				slog.String("error", buildErr.Error()))
 			continue
 		}
 
@@ -118,7 +118,7 @@ func (p *OverdueSummaryPoller) runOnce(ctx context.Context) {
 		if sendErr != nil {
 			log.ErrorContext(ctx, "broadcast failed",
 				slog.String("tenant_id", tenantID),
-				slog.Any("error", sendErr))
+				slog.String("error", sendErr.Error()))
 		} else {
 			broadcastCount++
 			log.InfoContext(ctx, "hutang summary sent",
@@ -129,7 +129,7 @@ func (p *OverdueSummaryPoller) runOnce(ctx context.Context) {
 	}
 
 	if err := rows.Err(); err != nil {
-		log.ErrorContext(ctx, "rows iteration error", slog.Any("error", err))
+		log.ErrorContext(ctx, "rows iteration error", slog.String("error", err.Error()))
 	}
 
 	log.InfoContext(ctx, "cron pass done",
@@ -157,7 +157,7 @@ func (p *OverdueSummaryPoller) fetchTopDue(ctx context.Context, tenantID string)
 	if err != nil {
 		slog.Default().ErrorContext(ctx, "fetchTopDue query failed",
 			slog.String("tenant_id", tenantID),
-			slog.Any("error", err))
+			slog.String("error", err.Error()))
 		return nil
 	}
 	defer rows.Close()

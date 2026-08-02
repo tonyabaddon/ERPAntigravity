@@ -67,7 +67,7 @@ func StartCaleoAdminSession(ctx context.Context, db *sql.DB, client *whatsmeow.C
 			if err := sender.SendText(ctx, sessionID, hit.Response); err != nil {
 				slog.ErrorContext(ctx, "[caleobot] send faq reply failed",
 					slog.String("session_id", sessionID),
-					slog.Any("error", err),
+					slog.String("error", err.Error()),
 				)
 			}
 
@@ -90,7 +90,7 @@ func StartCaleoAdminSession(ctx context.Context, db *sql.DB, client *whatsmeow.C
 		if err := sender.SendText(ctx, sessionID, apology); err != nil {
 			slog.ErrorContext(ctx, "[caleobot] send apology failed",
 				slog.String("session_id", sessionID),
-				slog.Any("error", err),
+				slog.String("error", err.Error()),
 			)
 		}
 
@@ -121,7 +121,7 @@ func loadFaqs(ctx context.Context, db *sql.DB) ([]FaqEntry, error) {
 		var f FaqEntry
 		var nextStep sql.NullString
 		if err := rows.Scan(&f.ID, pq.Array(&f.Keywords), &f.Response, &nextStep); err != nil {
-			slog.Warn("[caleobot] loadFaqs: scan error — skipping row", slog.Any("error", err))
+			slog.Warn("[caleobot] loadFaqs: scan error — skipping row", slog.String("error", err.Error()))
 			continue
 		}
 		if nextStep.Valid {
@@ -147,7 +147,7 @@ func trackFirstMessage(ctx context.Context, db *sql.DB, sessionID string) {
 	if err != nil {
 		slog.WarnContext(ctx, "[caleobot] trackFirstMessage failed",
 			slog.String("session_id", sessionID),
-			slog.Any("error", err),
+			slog.String("error", err.Error()),
 		)
 	}
 }
@@ -165,7 +165,7 @@ func trackFaqHit(ctx context.Context, db *sql.DB, sessionID, faqID string) {
 		slog.WarnContext(ctx, "[caleobot] trackFaqHit failed",
 			slog.String("session_id", sessionID),
 			slog.String("faq_id", faqID),
-			slog.Any("error", err),
+			slog.String("error", err.Error()),
 		)
 	}
 }
@@ -182,7 +182,7 @@ func trackEscalation(ctx context.Context, db *sql.DB, sessionID string) {
 	if err != nil {
 		slog.WarnContext(ctx, "[caleobot] trackEscalation failed",
 			slog.String("session_id", sessionID),
-			slog.Any("error", err),
+			slog.String("error", err.Error()),
 		)
 	}
 }

@@ -114,7 +114,7 @@ func (h *Handler) SimulateInbound(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "[TESTAPI] SimulateInbound: conversation lookup/create failed",
-			slog.String("phone", req.CustomerPhone), slog.Any("error", err))
+			slog.String("phone", req.CustomerPhone), slog.String("error", err.Error()))
 		errJSON(w, http.StatusInternalServerError, "conversation error: "+err.Error())
 		return
 	}
@@ -128,7 +128,7 @@ func (h *Handler) SimulateInbound(w http.ResponseWriter, r *http.Request) {
 	`, convID, req.Body).Scan(&msgID)
 	if err != nil {
 		slog.ErrorContext(ctx, "[TESTAPI] SimulateInbound: insert message failed",
-			slog.String("conv_id", convID), slog.Any("error", err))
+			slog.String("conv_id", convID), slog.String("error", err.Error()))
 		errJSON(w, http.StatusInternalServerError, "insert message error: "+err.Error())
 		return
 	}
@@ -263,7 +263,7 @@ func (h *Handler) CreateApprovalRequest(w http.ResponseWriter, r *http.Request) 
 		RETURNING id
 	`, req.RequestType, payload, requestedBy).Scan(&approvalID)
 	if err != nil {
-		slog.ErrorContext(ctx, "[TESTAPI] CreateApprovalRequest: insert failed", slog.Any("error", err))
+		slog.ErrorContext(ctx, "[TESTAPI] CreateApprovalRequest: insert failed", slog.String("error", err.Error()))
 		errJSON(w, http.StatusInternalServerError, "insert error: "+err.Error())
 		return
 	}
@@ -488,7 +488,7 @@ func (h *Handler) SimulateBookingWith24hExpiry(w http.ResponseWriter, r *http.Re
 	`, req.TenantID, convID, req.CustomerPhone, expiresAt).Scan(&orderID)
 	if err != nil {
 		slog.ErrorContext(ctx, "[TESTAPI] SimulateBookingWith24hExpiry: insert order failed",
-			slog.Any("error", err))
+			slog.String("error", err.Error()))
 		errJSON(w, http.StatusInternalServerError, "insert order error: "+err.Error())
 		return
 	}
@@ -610,7 +610,7 @@ func (h *Handler) FireLifecycleEvent(w http.ResponseWriter, r *http.Request) {
 	if _, err := h.db.ExecContext(ctx,
 		`SELECT pg_notify($1, $2)`, req.EventType, payload); err != nil {
 		slog.ErrorContext(ctx, "[TESTAPI] FireLifecycleEvent: pg_notify failed",
-			slog.String("event", req.EventType), slog.Any("error", err))
+			slog.String("event", req.EventType), slog.String("error", err.Error()))
 		errJSON(w, http.StatusInternalServerError, "pg_notify error: "+err.Error())
 		return
 	}
@@ -692,7 +692,7 @@ func (h *Handler) SimulateAdminForward(w http.ResponseWriter, r *http.Request) {
 	if _, err := h.db.ExecContext(ctx,
 		`SELECT pg_notify('admin_message', $1)`, payload); err != nil {
 		slog.ErrorContext(ctx, "[TESTAPI] SimulateAdminForward: pg_notify failed",
-			slog.Any("error", err))
+			slog.String("error", err.Error()))
 		errJSON(w, http.StatusInternalServerError, "pg_notify error: "+err.Error())
 		return
 	}

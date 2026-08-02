@@ -63,7 +63,7 @@ func (s *SessionHealthPoller) Start(ctx context.Context) {
 func (s *SessionHealthPoller) prune(ctx context.Context) {
 	res, err := s.db.ExecContext(ctx, `DELETE FROM public.wa_session_health WHERE polled_at < NOW() - INTERVAL '30 days'`)
 	if err != nil {
-		slog.ErrorContext(ctx, "[session_health] prune failed", slog.Any("error", err))
+		slog.ErrorContext(ctx, "[session_health] prune failed", slog.String("error", err.Error()))
 		return
 	}
 	n, _ := res.RowsAffected()
@@ -81,7 +81,7 @@ func (s *SessionHealthPoller) runOnce(ctx context.Context) {
 		  AND ts.grace_expires_at >= CURRENT_DATE
 	`)
 	if err != nil {
-		slog.ErrorContext(ctx, "[session_health] query premium tenants failed", slog.Any("error", err))
+		slog.ErrorContext(ctx, "[session_health] query premium tenants failed", slog.String("error", err.Error()))
 		return
 	}
 	defer rows.Close()
@@ -89,13 +89,13 @@ func (s *SessionHealthPoller) runOnce(ctx context.Context) {
 	for rows.Next() {
 		var tenantID, tenantName string
 		if err := rows.Scan(&tenantID, &tenantName); err != nil {
-			slog.ErrorContext(ctx, "[session_health] scan row failed", slog.Any("error", err))
+			slog.ErrorContext(ctx, "[session_health] scan row failed", slog.String("error", err.Error()))
 			continue
 		}
 		s.checkTenant(ctx, tenantID, tenantName)
 	}
 	if err := rows.Err(); err != nil {
-		slog.ErrorContext(ctx, "[session_health] rows iteration error", slog.Any("error", err))
+		slog.ErrorContext(ctx, "[session_health] rows iteration error", slog.String("error", err.Error()))
 	}
 }
 
@@ -108,7 +108,7 @@ func (s *SessionHealthPoller) checkTenant(ctx context.Context, tenantID, tenantN
 		tenantID, connected,
 	); err != nil {
 		slog.ErrorContext(ctx, "[session_health] insert health row failed",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 	}
 
 	if connected {
@@ -125,7 +125,7 @@ func (s *SessionHealthPoller) checkTenant(ctx context.Context, tenantID, tenantN
 	).Scan(&lastConnected)
 	if err != nil {
 		slog.ErrorContext(ctx, "[session_health] query last connected failed",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 		return
 	}
 
@@ -144,7 +144,7 @@ func (s *SessionHealthPoller) checkTenant(ctx context.Context, tenantID, tenantN
 		tenantID,
 	).Scan(&alreadyAlerted); err != nil {
 		slog.ErrorContext(ctx, "[session_health] query alerted_at failed",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 		return
 	}
 	if alreadyAlerted {
@@ -163,7 +163,7 @@ func (s *SessionHealthPoller) checkTenant(ctx context.Context, tenantID, tenantN
 
 	if err := SendOpsEmail(ctx, subject, body); err != nil {
 		slog.ErrorContext(ctx, "[session_health] ops email failed",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 		return
 	}
 
@@ -178,7 +178,7 @@ func (s *SessionHealthPoller) checkTenant(ctx context.Context, tenantID, tenantN
 		tenantID,
 	); err != nil {
 		slog.ErrorContext(ctx, "[session_health] update alerted_at failed",
-			slog.String("tenant_id", tenantID), slog.Any("error", err))
+			slog.String("tenant_id", tenantID), slog.String("error", err.Error()))
 	}
 
 	slog.InfoContext(ctx, "[session_health] ops alert sent",

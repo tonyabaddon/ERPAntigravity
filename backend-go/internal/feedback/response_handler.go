@@ -78,7 +78,7 @@ func HandleFeedbackResponse(ctx context.Context, db *sql.DB, order PendingOrder,
 		slog.ErrorContext(ctx, "[FEEDBACK] insert failed",
 			slog.String("order_id", order.OrderID),
 			slog.String("tenant_id", order.TenantID),
-			slog.Any("error", dbErr))
+			slog.String("error", dbErr.Error()))
 		return false, dbErr
 	}
 

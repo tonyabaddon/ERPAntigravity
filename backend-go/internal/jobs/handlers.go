@@ -163,7 +163,7 @@ func NewPiutangManualSendHandler(notifier *notification.Notifier, db *sql.DB) Jo
 			msg, buildErr = tmpl.Build(ctx, params)
 		}
 		if buildErr != nil {
-			log.ErrorContext(ctx, "piutang_manual_send: template build failed", slog.Any("error", buildErr))
+			log.ErrorContext(ctx, "piutang_manual_send: template build failed", slog.String("error", buildErr.Error()))
 			recordManualSent(ctx, db, tenantID, p.InvoiceID, customerID, "", "FAILED", buildErr.Error())
 			return nil, fmt.Errorf("piutang_manual_send: template build failed: %w", buildErr)
 		}
@@ -208,7 +208,7 @@ func recordManualSent(ctx context.Context, db *sql.DB, tenantID, invoiceID, cust
 		slog.ErrorContext(ctx, "piutang_manual_send: audit insert failed",
 			slog.String("invoice_id", invoiceID),
 			slog.String("status", status),
-			slog.Any("error", err))
+			slog.String("error", err.Error()))
 	}
 }
 
