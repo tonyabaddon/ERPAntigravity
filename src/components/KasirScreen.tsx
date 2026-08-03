@@ -271,7 +271,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
             sub={`${allEntries.filter(e => e._src === 'wa' || (e._src === 'kasir' && e.tx.type === 'income')).length} transaksi`}
           />
           <KpiCard
-            label="Total Pengeluaran" color="red" icon={<TrendingDown className="w-5 h-5 text-red-600" />}
+            label="Total Pengeluaran" color="red" icon={<TrendingDown className="w-5 h-5 text-caleo-danger" />}
             value={formatRp(summary.totalExpense)}
             sub={`${transactions.filter(t => t.type === 'expense').length} pos`}
           />
@@ -377,7 +377,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                   {tx.channel ? (
                     <ChannelPill channel={tx.channel} />
                   ) : (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-wide bg-red-50 text-red-600 flex-shrink-0">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-wide bg-red-50 text-caleo-danger flex-shrink-0">
                       📤 Keluar
                     </span>
                   )}
@@ -413,7 +413,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                       HPP {formatRp(tx.hpp_total)}
                     </span>
                   )}
-                  <span className={`text-sm font-black flex-shrink-0 ${isIncome ? 'text-emerald-600' : 'text-red-600'}`}>
+                  <span className={`text-sm font-black flex-shrink-0 ${isIncome ? 'text-emerald-600' : 'text-caleo-danger'}`}>
                     {isIncome ? '+' : '−'}{formatRp(tx.subtotal)}
                   </span>
                   {isIncome && tx.invoice_number && (
@@ -450,7 +450,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
             <div className="grid grid-cols-1 gap-2.5">
               <button
                 onClick={() => setShowExpenseModal(true)}
-                className="flex flex-col items-center justify-center p-4 rounded border-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 transition-all hover:scale-[1.02] text-center"
+                className="flex flex-col items-center justify-center p-4 rounded border-2 bg-red-50 border-red-200 text-caleo-danger hover:bg-red-100 transition-all hover:scale-[1.02] text-center"
               >
                 <span className="text-xl mb-1">📤</span>
                 <span className="text-caleo-11 font-black uppercase tracking-wide">Pengeluaran</span>
@@ -647,7 +647,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
             <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Kategori</label>
             {isError ? (
               <div className="flex items-center gap-2">
-                <div className="flex-1 text-xs text-red-600">Gagal memuat kategori.</div>
+                <div className="flex-1 text-xs text-caleo-danger">Gagal memuat kategori.</div>
                 <button
                   type="button"
                   onClick={() => refetch()}

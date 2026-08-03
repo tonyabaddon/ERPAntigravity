@@ -66,7 +66,7 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
       <div className="flex items-center gap-2">
         <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">{value.sku}</span>
         <span className="text-sm flex-1">{value.name}</span>
-        <button type="button" onClick={() => onChange(null)} className="text-xs text-gray-400 hover:text-red-500">×</button>
+        <button type="button" onClick={() => onChange(null)} className="text-xs text-gray-400 hover:text-caleo-danger">×</button>
       </div>
     );
   }

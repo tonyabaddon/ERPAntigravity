@@ -230,7 +230,7 @@ export default function Step3Payment(props: Props) {
           {/* Payment type cards */}
           <div>
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-              Tipe Pembayaran <span className="text-red-500">*</span>
+              Tipe Pembayaran <span className="text-caleo-danger">*</span>
             </label>
             <div className={`grid ${allowsTempo ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
               <button

@@ -77,7 +77,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
             </>
           )}
           {pi.status === 'LUNAS' && !pi.voided_at && (
-            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50">
+            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-caleo-danger px-3 py-2 rounded border border-red-200 hover:bg-red-50">
               <XOctagon className="w-4 h-4" /> Void
             </button>
           )}

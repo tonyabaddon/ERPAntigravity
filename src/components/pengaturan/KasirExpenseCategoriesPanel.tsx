@@ -141,7 +141,7 @@ export default function KasirExpenseCategoriesPanel({ isEditable, showToast }: P
   if (isLoading) return <div className="p-6 text-xs text-slate-500">Memuat kategori...</div>;
   if (isError) return (
     <div className="p-6 space-y-2">
-      <div className="text-xs text-red-600">Gagal memuat kategori.</div>
+      <div className="text-xs text-caleo-danger">Gagal memuat kategori.</div>
       <button
         type="button"
         onClick={() => refetch?.()}

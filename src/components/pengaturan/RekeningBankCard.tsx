@@ -314,7 +314,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                     type="button"
                     onClick={() => handleDelete(account)}
                     disabled={busyId === account.id}
-                    className="text-red-600 hover:bg-red-50 p-2 rounded disabled:opacity-30"
+                    className="text-caleo-danger hover:bg-red-50 p-2 rounded disabled:opacity-30"
                     title="Hapus"
                   >
                     <Trash2 size={16} />

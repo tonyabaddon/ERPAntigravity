@@ -89,7 +89,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
 
       <div className="space-y-3 max-w-md">
         <label className="block">
-          <span className="text-xs font-bold text-slate-700">Tier 1 (Base) <span className="text-red-500">*</span></span>
+          <span className="text-xs font-bold text-slate-700">Tier 1 (Base) <span className="text-caleo-danger">*</span></span>
           <input
             value={t1}
             onChange={e => setT1(e.target.value)}
@@ -98,7 +98,7 @@ export default function TierConfigPanel({ tenantSettings, onSaved, showToast }: 
           />
         </label>
         <label className="block">
-          <span className="text-xs font-bold text-slate-700">Tier 2 <span className="text-red-500">*</span></span>
+          <span className="text-xs font-bold text-slate-700">Tier 2 <span className="text-caleo-danger">*</span></span>
           <input
             value={t2}
             onChange={e => setT2(e.target.value)}

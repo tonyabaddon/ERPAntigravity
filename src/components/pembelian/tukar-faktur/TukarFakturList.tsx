@@ -180,7 +180,7 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
                         <div
                           className={`text-caleo-10 ${
                             days < 0
-                              ? 'text-red-600 font-bold'
+                              ? 'text-caleo-danger font-bold'
                               : dueSoon
                               ? 'text-amber-600 font-semibold'
                               : 'text-gray-500'

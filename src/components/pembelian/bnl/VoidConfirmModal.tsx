@@ -32,7 +32,7 @@ export default function VoidConfirmModal({ pi, onClose, onVoided, showToast }: P
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
-          <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-caleo-danger flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {pi.pi_number}
           </h2>
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>

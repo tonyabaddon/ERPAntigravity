@@ -139,7 +139,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
                   <>
                     <button onClick={() => onFindPayment(o.id, o.slots.find(s => s.status === 'OPEN')!.id)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-amber-200 text-amber-700">Cari pasangan →</button>
                     <button onClick={() => onExtend(o.slots.find(s => s.status === 'OPEN')!.id)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-blue-200 text-blue-700">📅 Geser</button>
-                    <button onClick={() => onWriteOff(o.slots.find(s => s.status === 'OPEN')!.id)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-red-700">✗ Write-off</button>
+                    <button onClick={() => onWriteOff(o.slots.find(s => s.status === 'OPEN')!.id)} className="text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-caleo-danger">✗ Write-off</button>
                   </>
                 )}
               </div>

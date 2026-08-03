@@ -111,7 +111,7 @@ export default function CategoryRow({ row, isEditable, onLabelSubmit, onActiveTo
             type="button"
             aria-label={`Hapus kategori ${row.label}`}
             onClick={onDelete}
-            className="text-slate-400 hover:text-red-600 p-1"
+            className="text-slate-400 hover:text-caleo-danger p-1"
           >
             <X className="w-4 h-4" />
           </button>

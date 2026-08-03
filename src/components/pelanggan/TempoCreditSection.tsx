@@ -210,7 +210,7 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
           ✏️ Ubah Limit
         </button>
         <button onClick={handleRequestDeactivate} disabled={submitting}
-          className="bg-white border border-red-300 text-red-600 py-2 rounded text-sm font-medium hover:bg-red-50 disabled:opacity-50">
+          className="bg-white border border-red-300 text-caleo-danger py-2 rounded text-sm font-medium hover:bg-red-50 disabled:opacity-50">
           🚫 Nonaktifkan
         </button>
       </div>

@@ -37,12 +37,12 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   WAITING_DP:                 { label: '⏳ Menunggu DP',      className: 'bg-yellow-100 text-yellow-800' },
   DP_UPLOADED:                { label: '📎 Bukti DP Dikirim', className: 'bg-indigo-100 text-indigo-800' },
   DP_VERIFIED:                { label: '✓ DP Lunas',          className: 'bg-teal-100 text-teal-800' },
-  DP_PROOF_REJECTED:          { label: '✕ DP Ditolak',        className: 'bg-red-100 text-red-800' },
+  DP_PROOF_REJECTED:          { label: '✕ DP Ditolak',        className: 'bg-red-100 text-caleo-danger' },
   PAYMENT_UPLOADED:           { label: '📎 Bukti Dikirim',    className: 'bg-blue-100 text-blue-800' },
   PAYMENT_VERIFIED:           { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
   COMPLETED:                  { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
   PAYMENT_REJECTED:           { label: '✕ Bayar Ditolak',     className: 'bg-rose-100 text-rose-800' },
-  CANCELLED:                  { label: '✕ Dibatalkan',        className: 'bg-red-100 text-red-800' },
+  CANCELLED:                  { label: '✕ Dibatalkan',        className: 'bg-red-100 text-caleo-danger' },
 };
 
 const TOTAL_COLOR: Record<string, string> = {
@@ -51,7 +51,7 @@ const TOTAL_COLOR: Record<string, string> = {
   WAITING_DP:                 'text-yellow-700',
   DP_UPLOADED:                'text-indigo-700',
   DP_VERIFIED:                'text-teal-700',
-  DP_PROOF_REJECTED:          'text-red-700',
+  DP_PROOF_REJECTED:          'text-caleo-danger',
   PAYMENT_UPLOADED:           'text-blue-700',
   PAYMENT_VERIFIED:           'text-green-700',
   COMPLETED:                  'text-green-700',
@@ -692,7 +692,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <button
                           onClick={() => handleRejectOrder(order.id)}
                           disabled={rejectingId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-caleo-danger text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
                         >
                           ✕ Tolak
                         </button>
@@ -773,7 +773,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <button
                           onClick={() => handleRejectPayment(order.id)}
                           disabled={rejectingPaymentId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-caleo-danger text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
                         >
                           ✕ Tolak
                         </button>
@@ -843,7 +843,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <button
                           onClick={() => setRejectDPModalOrderId(order.id)}
                           disabled={rejectingDPId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-caleo-danger text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
                         >
                           ✕ Tolak
                         </button>

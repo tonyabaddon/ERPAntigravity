@@ -30,7 +30,7 @@ export default function Step1ChannelCustomer(props: Props) {
     <div className="p-6 space-y-6">
       <div>
         <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-          Channel Penjualan <span className="text-red-500">*</span>
+          Channel Penjualan <span className="text-caleo-danger">*</span>
         </label>
         <ChannelSelector value={props.channel} onChange={props.setChannel} />
         <p className="text-caleo-11 text-slate-400 mt-2 italic">Atur kanal aktif di Pengaturan → Kanal Penjualan.</p>
@@ -55,7 +55,7 @@ export default function Step1ChannelCustomer(props: Props) {
 
       <div>
         <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-          Customer <span className="text-red-500">*</span>
+          Customer <span className="text-caleo-danger">*</span>
         </label>
         <CustomerPanel
           customers={props.customers}

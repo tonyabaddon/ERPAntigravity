@@ -622,7 +622,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                         </button>
                         <button
                           onClick={() => handleDeleteNumber(num.id, num.phoneNumber)}
-                          className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded transition-all cursor-pointer"
+                          className="text-gray-400 hover:text-caleo-danger p-1.5 hover:bg-red-50 rounded transition-all cursor-pointer"
                           title="Batalkan Sambungan Nomor"
                         >
                           <Trash2 className="w-4 h-4" />

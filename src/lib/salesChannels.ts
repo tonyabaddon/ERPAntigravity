@@ -90,7 +90,7 @@ export const CHANNEL_VISUAL: Record<SalesChannel, ChannelDef> = {
     code: 'bhinneka', label: 'Bhinneka', iconType: 'svg', iconAsset: '/icons/channels/bhinneka.svg',
     group: 'marketplace', invoicePrefix: 'BHN', flow: 'kasir', requiresOrderNo: true,
     brandColor: '#E63946',
-    bgClass: 'bg-red-50', textClass: 'text-red-700', borderClass: 'border-red-600',
+    bgClass: 'bg-red-50', textClass: 'text-caleo-danger', borderClass: 'border-red-600',
   },
   whatsapp: {
     code: 'whatsapp', label: 'WhatsApp', iconType: 'svg', iconAsset: '/icons/channels/whatsapp.svg',

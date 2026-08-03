@@ -146,7 +146,7 @@ export default function QtyTiersEditor({
             <button
               type="button"
               onClick={() => removeRow(i)}
-              className="ml-auto text-slate-400 hover:text-red-500 text-sm"
+              className="ml-auto text-slate-400 hover:text-caleo-danger text-sm"
               aria-label={`hapus tier ${i}`}
             >
               x

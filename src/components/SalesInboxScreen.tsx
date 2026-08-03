@@ -21,7 +21,7 @@ const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> 
   APPROVED:         { label: 'Disetujui',          badgeClass: 'bg-teal-100 text-teal-700' },
   COMPLETED:        { label: 'Selesai',            badgeClass: 'bg-emerald-100 text-emerald-700' },
   CANCELLED:        { label: 'Dibatalkan',         badgeClass: 'bg-gray-100 text-gray-500' },
-  ESCALATED_ADMIN:  { label: 'Butuh Admin',        badgeClass: 'bg-red-100 text-red-700' },
+  ESCALATED_ADMIN:  { label: 'Butuh Admin',        badgeClass: 'bg-red-100 text-caleo-danger' },
   ESCALATED_WIRING: { label: 'Eskalasi Wiring',    badgeClass: 'bg-orange-100 text-orange-700' },
   ADD_MORE:         { label: 'Tambah Item',         badgeClass: 'bg-indigo-100 text-indigo-700' },
   DELIVERY:         { label: 'Pengiriman',          badgeClass: 'bg-lime-100 text-lime-700' },
@@ -220,7 +220,7 @@ export default function SalesInboxScreen({
           </div>
           {(
             [
-              { id: 'butuhAksi', label: '🔴 Butuh Aksi', accent: 'red',     active: 'bg-red-50 border-l-red-500 text-red-700',         badge: 'bg-red-500 text-white' },
+              { id: 'butuhAksi', label: '🔴 Butuh Aksi', accent: 'red',     active: 'bg-red-50 border-l-red-500 text-caleo-danger',         badge: 'bg-red-500 text-white' },
               { id: 'aiAktif',   label: '🔵 AI Aktif',   accent: 'blue',    active: 'bg-blue-50 border-l-blue-500 text-blue-700',      badge: 'bg-blue-500 text-white' },
               { id: 'menunggu',  label: '🟡 Menunggu',   accent: 'amber',   active: 'bg-amber-50 border-l-amber-500 text-amber-700',    badge: 'bg-amber-500 text-white' },
               { id: 'riwayat',   label: '✅ Riwayat',    accent: 'gray',    active: 'bg-gray-100 border-l-gray-400 text-gray-600',       badge: 'bg-gray-400 text-white' },
@@ -421,7 +421,7 @@ export default function SalesInboxScreen({
             </div>
             {sendError && (
               <div
-                className="mx-3 mb-2 text-caleo-11 text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1"
+                className="mx-3 mb-2 text-caleo-11 text-caleo-danger bg-red-50 border border-red-200 rounded px-2 py-1"
                 role="alert"
               >
                 Gagal kirim: {sendError}

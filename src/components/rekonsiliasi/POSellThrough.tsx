@@ -94,7 +94,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
           const borderColor = po.status === 'PAID' ? '#e2e8f0' : pct >= 60 ? '#a7f3d0' : '#fecaca';
           const bgColor = po.status === 'PAID' ? 'rgba(248,250,252,0.4)' : pct >= 60 ? 'rgba(236,253,245,0.4)' : 'rgba(254,242,242,0.4)';
           const barColor = pct >= 60 ? '#10b981' : '#ef4444';
-          const labelColor = pct >= 60 ? 'text-emerald-700' : 'text-red-700';
+          const labelColor = pct >= 60 ? 'text-emerald-700' : 'text-caleo-danger';
           return (
             <div key={po.id} className="rounded border overflow-hidden" style={{ background: bgColor, borderColor }}>
               <div onClick={toggle} className="p-4 flex justify-between items-start cursor-pointer">

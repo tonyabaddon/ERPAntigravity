@@ -325,7 +325,7 @@ export default function TukarFakturFormPage({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">
-              Supplier <span className="text-red-500">*</span>
+              Supplier <span className="text-caleo-danger">*</span>
             </label>
             {supplier ? (
               <div className="border-2 border-gray-300 rounded p-3 flex items-center justify-between">
@@ -378,7 +378,7 @@ export default function TukarFakturFormPage({
 
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">
-              Tanggal Tukar Faktur <span className="text-red-500">*</span>
+              Tanggal Tukar Faktur <span className="text-caleo-danger">*</span>
             </label>
             <input
               type="date"
@@ -393,7 +393,7 @@ export default function TukarFakturFormPage({
 
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">
-              JT Pembayaran Bundle <span className="text-red-500">*</span>
+              JT Pembayaran Bundle <span className="text-caleo-danger">*</span>
             </label>
             <input
               type="date"
@@ -545,7 +545,7 @@ export default function TukarFakturFormPage({
                           <button
                             type="button"
                             onClick={() => handleRemove(s.id)}
-                            className="text-gray-400 hover:text-red-500"
+                            className="text-gray-400 hover:text-caleo-danger"
                             title="Lepas dari bundle"
                           >
                             <X className="w-4 h-4" />

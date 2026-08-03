@@ -79,11 +79,11 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Nama <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Nama <span className="text-caleo-danger">*</span></label>
           <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
-          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">No HP / WhatsApp <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">No HP / WhatsApp <span className="text-caleo-danger">*</span></label>
           <input value={wa} onChange={(e) => setWa(e.target.value)} placeholder="08xxx" className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
