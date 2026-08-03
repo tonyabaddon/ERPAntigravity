@@ -13,9 +13,9 @@ export default function StokGudangInline({ total, warehouses, stockByWarehouseId
   const { shown, remaining } = pickTopGudang(warehouses, stockByWarehouseId);
 
   const totalColor =
-    total <= 3 ? 'text-rose-700'
+    total <= 3 ? 'text-caleo-danger'
       : total <= minStock ? 'text-amber-700'
-      : 'text-emerald-700';
+      : 'text-caleo-success';
 
   return (
     <div className="flex flex-col items-center leading-tight">

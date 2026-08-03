@@ -236,7 +236,7 @@ export default function OwnerDrawingModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-caleo-danger">
               ⚠ {fetchError}
             </div>
           )}

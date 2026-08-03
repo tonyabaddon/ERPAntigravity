@@ -244,7 +244,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
         {/* Alert Card 1: Low stock notification limits */}
         <div className="bg-white border border-[var(--color-caleo-mist)] rounded-[2.5rem] p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded flex items-center justify-center shrink-0 border border-rose-100">
+            <div className="w-14 h-14 bg-rose-50 text-caleo-danger rounded flex items-center justify-center shrink-0 border border-rose-100">
               <span className="material-symbols-outlined text-3xl font-black">inventory_2</span>
             </div>
             <div>
@@ -313,7 +313,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
       <section className="bg-white border border-[var(--color-caleo-mist)] rounded-[2.5rem] p-8 shadow-xl">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded flex items-center justify-center shrink-0 border border-emerald-100">
+            <div className="w-14 h-14 bg-emerald-50 text-caleo-success rounded flex items-center justify-center shrink-0 border border-emerald-100">
               <Smartphone className="w-7 h-7" />
             </div>
             <div>
@@ -323,7 +323,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               </p>
             </div>
           </div>
-          <span className="bg-emerald-50 text-emerald-700 text-caleo-10 font-black uppercase tracking-wider px-3 py-1 rounded-full border border-emerald-100 whitespace-nowrap">
+          <span className="bg-emerald-50 text-caleo-success text-caleo-10 font-black uppercase tracking-wider px-3 py-1 rounded-full border border-emerald-100 whitespace-nowrap">
             {recipients.filter(r => r.is_active).length} aktif · {recipients.length} total
           </span>
         </div>

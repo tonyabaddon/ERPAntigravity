@@ -42,18 +42,18 @@ const TYPE_ICON: Record<
   ApprovalRequestType,
   { icon: string; bg: string; fg: string }
 > = {
-  adjustment:                   { icon: '📊', bg: 'bg-rose-50',    fg: 'text-rose-600'    },
+  adjustment:                   { icon: '📊', bg: 'bg-rose-50',    fg: 'text-caleo-danger'    },
   opname:                       { icon: '🧮', bg: 'bg-blue-50',    fg: 'text-blue-700'    },
   price_change:                 { icon: '💰', bg: 'bg-blue-50',    fg: 'text-blue-700'    },
   kasir_price_override:         { icon: '🧾', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
   kasir_void:                   { icon: '💸', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
   kasir_refund:                 { icon: '💸', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
   rakit_lock:                   { icon: '🔧', bg: 'bg-amber-50',   fg: 'text-amber-700'   },
-  customer_credit_activate:     { icon: '✅', bg: 'bg-emerald-50', fg: 'text-emerald-700' },
+  customer_credit_activate:     { icon: '✅', bg: 'bg-emerald-50', fg: 'text-caleo-success' },
   customer_credit_limit_change: { icon: '💳', bg: 'bg-sky-50',     fg: 'text-sky-700'     },
   customer_credit_deactivate:   { icon: '🚫', bg: 'bg-slate-50',   fg: 'text-slate-700'   },
   initial_stock:                { icon: '📦', bg: 'bg-slate-50',   fg: 'text-slate-700'   },
-  piutang_write_off:            { icon: '🗑️', bg: 'bg-rose-50',    fg: 'text-rose-700'    },
+  piutang_write_off:            { icon: '🗑️', bg: 'bg-rose-50',    fg: 'text-caleo-danger'    },
   purchase_order_create:        { icon: '📋', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
   purchase_order_amend:         { icon: '✏️', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
   tagihan_create:               { icon: '🧾', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
@@ -67,8 +67,8 @@ const TYPE_ICON: Record<
 
 const STATUS_PILL: Record<ApprovalStatus, string> = {
   pending:  'bg-amber-100 text-amber-800',
-  approved: 'bg-emerald-100 text-emerald-700',
-  rejected: 'bg-rose-100 text-rose-700',
+  approved: 'bg-emerald-100 text-caleo-success',
+  rejected: 'bg-rose-100 text-caleo-danger',
   expired:  'bg-slate-100 text-slate-600',
 };
 
@@ -301,7 +301,7 @@ export default function ApprovalRequestRow({
                 type="button"
                 onClick={handleReject}
                 disabled={lock}
-                className="px-4 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 text-xs font-extrabold hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-caleo-danger text-xs font-extrabold hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {busy === 'reject' ? 'Menolak…' : 'Tolak'}
               </button>

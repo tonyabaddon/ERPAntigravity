@@ -421,7 +421,7 @@ export default function BukuBesarTab({
                 </div>
                 <div
                   className={`text-lg font-extrabold ${
-                    movement >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                    movement >= 0 ? 'text-caleo-success' : 'text-caleo-danger'
                   }`}
                 >
                   {movement >= 0 ? '+ ' : '− '}
@@ -434,10 +434,10 @@ export default function BukuBesarTab({
                 className="p-3 rounded"
                 style={{ background: '#d1fae5', border: '1px solid #6ee7b7' }}
               >
-                <div className="text-caleo-10 uppercase tracking-widest text-emerald-700 font-bold mb-1">
+                <div className="text-caleo-10 uppercase tracking-widest text-caleo-success font-bold mb-1">
                   Saldo Akhir
                 </div>
-                <div className="text-lg font-extrabold text-emerald-700">
+                <div className="text-lg font-extrabold text-caleo-success">
                   {formatRp(saldoAkhir)}
                 </div>
               </div>
@@ -483,10 +483,10 @@ export default function BukuBesarTab({
                           <td className="py-2 px-3 text-gray-700">
                             {row.line_description ?? row.entry_description}
                           </td>
-                          <td className="py-2 px-3 text-right font-bold text-emerald-700">
+                          <td className="py-2 px-3 text-right font-bold text-caleo-success">
                             {formatAmount(row.debit)}
                           </td>
-                          <td className="py-2 px-3 text-right font-bold text-rose-700">
+                          <td className="py-2 px-3 text-right font-bold text-caleo-danger">
                             {formatAmount(row.credit)}
                           </td>
                           <td className="py-2 px-3 text-right font-bold text-blue-700">
@@ -506,10 +506,10 @@ export default function BukuBesarTab({
                         <td colSpan={3} className="py-3 px-3 text-right text-caleo-11 uppercase tracking-wide">
                           TOTAL {periodeLabel.toUpperCase()}
                         </td>
-                        <td className="py-3 px-3 text-right text-emerald-700">
+                        <td className="py-3 px-3 text-right text-caleo-success">
                           {formatNum(totalDebit)}
                         </td>
-                        <td className="py-3 px-3 text-right text-rose-700">
+                        <td className="py-3 px-3 text-right text-caleo-danger">
                           {formatNum(totalCredit)}
                         </td>
                         <td className="py-3 px-3 text-right text-blue-700">

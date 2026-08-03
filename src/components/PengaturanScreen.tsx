@@ -316,7 +316,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                   <button
                     type="button"
                     onClick={handleLogoClear}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded hover:bg-rose-50"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-200 text-caleo-danger text-xs font-bold rounded hover:bg-rose-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Hapus Logo
@@ -376,7 +376,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                             onClick={() => handleTestSend(r.id)}
                             disabled={testSendingId === r.id}
                             title="Kirim pesan WA tes ke nomor ini"
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded hover:bg-emerald-100 disabled:opacity-50"
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-caleo-success bg-emerald-50 border border-emerald-200 rounded hover:bg-emerald-100 disabled:opacity-50"
                           >
                             <Smartphone className="w-3.5 h-3.5" />
                             {testSendingId === r.id ? '...' : 'Kirim tes'}
@@ -387,7 +387,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                             className="text-gray-400 hover:text-gray-700"
                           >
                             {r.is_active
-                              ? <ToggleRight className="w-6 h-6 text-emerald-500" />
+                              ? <ToggleRight className="w-6 h-6 text-caleo-success" />
                               : <ToggleLeft className="w-6 h-6 text-gray-300" />
                             }
                           </button>
@@ -736,7 +736,7 @@ function OwnerPinCard({ showToast }: { showToast: (msg: string, type?: 'success'
         <h2 className="text-lg font-bold text-gray-800">PIN Persetujuan Owner</h2>
         <span className={`text-xs px-2 py-0.5 rounded-full border ${
           hasPin
-            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            ? 'bg-emerald-50 text-caleo-success border-emerald-200'
             : 'bg-amber-50 text-amber-700 border-amber-200'
         }`}>
           {hasPin ? 'Sudah di-set' : 'Belum di-set'}

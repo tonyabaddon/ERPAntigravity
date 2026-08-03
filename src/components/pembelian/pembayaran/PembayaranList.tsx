@@ -18,7 +18,7 @@ const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 const STATUS_BADGE: Record<PembayaranStatus, string> = {
-  LUNAS: 'bg-green-100 text-green-800',
+  LUNAS: 'bg-green-100 text-caleo-success',
   VOIDED: 'bg-gray-200 text-gray-600',
 };
 

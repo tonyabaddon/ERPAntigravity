@@ -67,7 +67,7 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
       },
       {
         label: 'Setor dari Kas',
-        icon: <ArrowUp className="w-3.5 h-3.5 text-emerald-600" />,
+        icon: <ArrowUp className="w-3.5 h-3.5 text-caleo-success" />,
         action: 'setor_dari_kas',
         hoverBg: 'hover:bg-blue-50',
       },
@@ -79,7 +79,7 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
       },
       {
         label: 'Catat Pengeluaran',
-        icon: <CreditCard className="w-3.5 h-3.5 text-rose-600" />,
+        icon: <CreditCard className="w-3.5 h-3.5 text-caleo-danger" />,
         action: 'manual_expense',
         hoverBg: 'hover:bg-rose-50',
       },
@@ -89,7 +89,7 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
         icon: <Scale className="w-3.5 h-3.5" />,
         action: 'penyesuaian',
         hoverBg: 'hover:bg-rose-50',
-        textColor: 'text-rose-700',
+        textColor: 'text-caleo-danger',
       },
       {
         label: 'Edit Akun',
@@ -101,7 +101,7 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
     KAS: [
       {
         label: 'Setor ke Bank',
-        icon: <ArrowUp className="w-3.5 h-3.5 text-emerald-600" />,
+        icon: <ArrowUp className="w-3.5 h-3.5 text-caleo-success" />,
         action: 'setor_bank',
         hoverBg: 'hover:bg-blue-50',
       },
@@ -113,7 +113,7 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
       },
       {
         label: 'Catat Pengeluaran',
-        icon: <CreditCard className="w-3.5 h-3.5 text-rose-600" />,
+        icon: <CreditCard className="w-3.5 h-3.5 text-caleo-danger" />,
         action: 'manual_expense',
         hoverBg: 'hover:bg-rose-50',
       },
@@ -123,7 +123,7 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
         icon: <Scale className="w-3.5 h-3.5" />,
         action: 'penyesuaian',
         hoverBg: 'hover:bg-rose-50',
-        textColor: 'text-rose-700',
+        textColor: 'text-caleo-danger',
       },
       {
         label: 'Edit Akun',
@@ -135,13 +135,13 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
     E_WALLET: [
       {
         label: 'Top-Up dari Bank',
-        icon: <ArrowUpCircle className="w-3.5 h-3.5 text-emerald-600" />,
+        icon: <ArrowUpCircle className="w-3.5 h-3.5 text-caleo-success" />,
         action: 'wallet_topup',
         hoverBg: 'hover:bg-blue-50',
       },
       {
         label: 'Catat Spending',
-        icon: <ArrowDownCircle className="w-3.5 h-3.5 text-rose-600" />,
+        icon: <ArrowDownCircle className="w-3.5 h-3.5 text-caleo-danger" />,
         action: 'wallet_spend',
         hoverBg: 'hover:bg-rose-50',
       },
@@ -151,7 +151,7 @@ function getMenuItems(accountType: CashAccountBalance['account_type']): MenuItem
         icon: <Scale className="w-3.5 h-3.5" />,
         action: 'penyesuaian',
         hoverBg: 'hover:bg-rose-50',
-        textColor: 'text-rose-700',
+        textColor: 'text-caleo-danger',
       },
       {
         label: 'Edit Akun',
@@ -299,7 +299,7 @@ export default function AksiDropdown({
                   item.textColor || ''
                 }`}
                 style={{
-                  color: item.textColor === 'text-rose-700' ? '#b91c1c' : 'inherit',
+                  color: item.textColor === 'text-caleo-danger' ? '#b91c1c' : 'inherit',
                 }}
               >
                 {item.icon}

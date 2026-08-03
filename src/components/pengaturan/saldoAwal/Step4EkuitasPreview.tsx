@@ -171,7 +171,7 @@ export default function Step4EkuitasPreview({
             {previewLoading ? (
               <div className="text-caleo-13 text-slate-400">Menghitung…</div>
             ) : labaDitahan !== null ? (
-              <div className={`text-caleo-15 font-bold ${labaDitahan >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              <div className={`text-caleo-15 font-bold ${labaDitahan >= 0 ? 'text-caleo-success' : 'text-caleo-danger'}`}>
                 {formatIDR(labaDitahan)}
               </div>
             ) : (
@@ -188,11 +188,11 @@ export default function Step4EkuitasPreview({
           {previewLoading ? (
             <span className="text-xs text-slate-400">Memuat…</span>
           ) : isBalanced ? (
-            <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+            <span className="text-xs font-bold text-caleo-success flex items-center gap-1">
               ✓ Balanced
             </span>
           ) : (
-            <span className="text-xs font-bold text-rose-600 flex items-center gap-1">
+            <span className="text-xs font-bold text-caleo-danger flex items-center gap-1">
               ✗ Tidak seimbang
             </span>
           )}
@@ -201,7 +201,7 @@ export default function Step4EkuitasPreview({
         <div className="border border-slate-200 rounded overflow-hidden text-xs">
           {/* Aktiva */}
           <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-            <div className="font-extrabold text-caleo-10 text-emerald-700 uppercase tracking-wider">Aktiva</div>
+            <div className="font-extrabold text-caleo-10 text-caleo-success uppercase tracking-wider">Aktiva</div>
           </div>
           <div className="divide-y divide-slate-100">
             <NeracaRow label="Kas & Bank" amount={kasTotal} />
@@ -213,15 +213,15 @@ export default function Step4EkuitasPreview({
             ))}
           </div>
           <div className="bg-emerald-50 px-4 py-2 border-y border-emerald-100 flex items-center justify-between font-bold">
-            <span className="text-caleo-11 text-emerald-800 uppercase tracking-wider">Total Aktiva</span>
-            <span className="text-caleo-13 text-emerald-800">
+            <span className="text-caleo-11 text-caleo-success uppercase tracking-wider">Total Aktiva</span>
+            <span className="text-caleo-13 text-caleo-success">
               {previewLoading ? '…' : formatIDR(preview?.total_assets ?? kasTotal + piutangAmount + persediaanAmount + aktivaTetapAmount + aktivaLainTotal)}
             </span>
           </div>
 
           {/* Kewajiban */}
           <div className="bg-rose-50 px-4 py-2 border-b border-rose-100">
-            <div className="font-extrabold text-caleo-10 text-rose-700 uppercase tracking-wider">Kewajiban</div>
+            <div className="font-extrabold text-caleo-10 text-caleo-danger uppercase tracking-wider">Kewajiban</div>
           </div>
           <div className="divide-y divide-slate-100">
             <NeracaRow label="Hutang Usaha" amount={hutangAmount} />
@@ -230,8 +230,8 @@ export default function Step4EkuitasPreview({
             ))}
           </div>
           <div className="bg-rose-50 px-4 py-2 border-y border-rose-100 flex items-center justify-between font-bold">
-            <span className="text-caleo-11 text-rose-800 uppercase tracking-wider">Total Kewajiban</span>
-            <span className="text-caleo-13 text-rose-800">
+            <span className="text-caleo-11 text-caleo-danger uppercase tracking-wider">Total Kewajiban</span>
+            <span className="text-caleo-13 text-caleo-danger">
               {previewLoading ? '…' : formatIDR(preview?.total_liab ?? hutangAmount + kewajibanLainTotal)}
             </span>
           </div>
@@ -306,7 +306,7 @@ export default function Step4EkuitasPreview({
           {printing ? 'Mencetak…' : '📄 Cetak Ringkasan (PDF)'}
         </button>
         {!isBalanced && !previewLoading && (
-          <p className="text-xs text-rose-600">Neraca belum seimbang. Periksa angka Aktiva dan Kewajiban + Ekuitas.</p>
+          <p className="text-xs text-caleo-danger">Neraca belum seimbang. Periksa angka Aktiva dan Kewajiban + Ekuitas.</p>
         )}
         {(!check1 || !check2) && isBalanced && (
           <p className="text-xs text-slate-500">Centang kedua konfirmasi untuk mengaktifkan tombol Submit.</p>
@@ -331,7 +331,7 @@ function NeracaRow({
       {loading ? (
         <span className="text-slate-400">…</span>
       ) : (
-        <span className={`font-medium shrink-0 ${amount < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+        <span className={`font-medium shrink-0 ${amount < 0 ? 'text-caleo-danger' : 'text-slate-800'}`}>
           {formatIDR(Math.abs(amount))}
           {amount < 0 && ' (kredit)'}
         </span>

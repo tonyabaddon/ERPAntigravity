@@ -7,7 +7,7 @@ interface Props { onLogout: () => void; }
 export const AccessDenied: React.FC<Props> = ({ onLogout }) => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
     <div className="max-w-md w-full bg-white rounded shadow p-6 text-center">
-      <Lock className="mx-auto text-rose-500" size={48} />
+      <Lock className="mx-auto text-caleo-danger" size={48} />
       <h1 className="text-lg font-semibold mt-4">Akses ditolak</h1>
       <p className="text-sm text-slate-600 mt-2">
         Akun Anda tidak terdaftar sebagai anggota tenant ini.

@@ -158,7 +158,7 @@ function StatusChip({ variant }: StatusChipProps) {
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide bg-emerald-100 text-caleo-success">
       Cleared
     </span>
   );
@@ -483,7 +483,7 @@ export default function AccountDetailScreen({
           <List className="inline w-3.5 h-3.5 mr-1" />
           Riwayat
           {rows.length > 0 && (
-            <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold bg-emerald-100 text-emerald-700">
+            <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold bg-emerald-100 text-caleo-success">
               {rows.length}
             </span>
           )}
@@ -736,10 +736,10 @@ export default function AccountDetailScreen({
                             )}
                             {row.line_description ?? row.entry_description}
                           </td>
-                          <td className="py-2 px-3 text-right font-bold text-emerald-700">
+                          <td className="py-2 px-3 text-right font-bold text-caleo-success">
                             {formatAmount(row.debit)}
                           </td>
-                          <td className="py-2 px-3 text-right font-bold text-rose-700">
+                          <td className="py-2 px-3 text-right font-bold text-caleo-danger">
                             {formatAmount(row.credit)}
                           </td>
                           <td className="py-2 px-3 text-right font-bold text-blue-700">
@@ -760,10 +760,10 @@ export default function AccountDetailScreen({
                       <td colSpan={3} className="py-3 px-3 text-right text-caleo-11 uppercase tracking-wide">
                         {footerLabel}
                       </td>
-                      <td className="py-3 px-3 text-right text-emerald-700">
+                      <td className="py-3 px-3 text-right text-caleo-success">
                         {new Intl.NumberFormat('id-ID').format(totalDebit)}
                       </td>
-                      <td className="py-3 px-3 text-right text-rose-700">
+                      <td className="py-3 px-3 text-right text-caleo-danger">
                         {new Intl.NumberFormat('id-ID').format(totalCredit)}
                       </td>
                       <td className="py-3 px-3 text-right text-blue-700">
@@ -830,7 +830,7 @@ export default function AccountDetailScreen({
             ) : unmatchedLines.length === 0 ? (
               <div className="p-12 text-center text-caleo-13 text-gray-500">
                 <CheckCircle2 className="w-8 h-8 mx-auto mb-3 text-emerald-400" />
-                <p className="font-bold text-emerald-700">Semua sudah cocok ✓</p>
+                <p className="font-bold text-caleo-success">Semua sudah cocok ✓</p>
               </div>
             ) : (
               <>
@@ -878,8 +878,8 @@ export default function AccountDetailScreen({
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-extrabold uppercase tracking-wide ${
                               line.side === 'DEBIT'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-rose-100 text-rose-800'
+                                ? 'bg-emerald-100 text-caleo-success'
+                                : 'bg-rose-100 text-caleo-danger'
                             }`}
                           >
                             {line.side === 'DEBIT' ? 'Debit' : 'Kredit'}

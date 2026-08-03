@@ -76,7 +76,7 @@ export default function JenisJasaCrudPanel({ showToast }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-caleo-11 font-bold px-2 py-0.5 rounded-full ${s.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+            <span className={`text-caleo-11 font-bold px-2 py-0.5 rounded-full ${s.is_active ? 'bg-emerald-100 text-caleo-success' : 'bg-slate-200 text-slate-500'}`}>
               {s.is_active ? 'AKTIF' : 'NON-AKTIF'}
             </span>
             <button onClick={() => setEditing(s)} className="text-xs font-semibold text-slate-500 hover:text-[var(--color-caleo-primary)] px-2 py-1">Edit</button>
@@ -88,7 +88,7 @@ export default function JenisJasaCrudPanel({ showToast }: Props) {
                   showToast('Jenis jasa dinonaktifkan', 'success');
                 }
               }}
-              className="text-xs font-semibold text-rose-500 hover:text-rose-700 px-2 py-1">
+              className="text-xs font-semibold text-caleo-danger hover:text-caleo-danger px-2 py-1">
               Hapus
             </button>
           </div>

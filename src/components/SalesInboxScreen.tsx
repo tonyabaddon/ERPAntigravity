@@ -19,7 +19,7 @@ const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> 
   BOOKED:           { label: 'Perlu Konfirmasi Admin', badgeClass: 'bg-purple-100 text-purple-800' },
   TIMEOUT_REMINDER: { label: 'Follow-up',          badgeClass: 'bg-violet-100 text-violet-700' },
   APPROVED:         { label: 'Disetujui',          badgeClass: 'bg-teal-100 text-teal-700' },
-  COMPLETED:        { label: 'Selesai',            badgeClass: 'bg-emerald-100 text-emerald-700' },
+  COMPLETED:        { label: 'Selesai',            badgeClass: 'bg-emerald-100 text-caleo-success' },
   CANCELLED:        { label: 'Dibatalkan',         badgeClass: 'bg-gray-100 text-gray-500' },
   ESCALATED_ADMIN:  { label: 'Butuh Admin',        badgeClass: 'bg-red-100 text-caleo-danger' },
   ESCALATED_WIRING: { label: 'Eskalasi Wiring',    badgeClass: 'bg-orange-100 text-orange-700' },

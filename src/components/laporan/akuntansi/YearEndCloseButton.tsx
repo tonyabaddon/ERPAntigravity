@@ -201,7 +201,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
               )}
 
               {previewError && (
-                <div className="rounded px-4 py-3 text-caleo-13 text-rose-700 bg-rose-50 border border-rose-200">
+                <div className="rounded px-4 py-3 text-caleo-13 text-caleo-danger bg-rose-50 border border-rose-200">
                   Gagal memuat preview: {previewError}
                 </div>
               )}
@@ -218,20 +218,20 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
                     <div className="px-4 py-3 space-y-2 text-caleo-13">
                       <div className="flex justify-between">
                         <span className="text-gray-700">Total Pendapatan {fiscalYear}</span>
-                        <span className="font-mono font-bold text-emerald-800">
+                        <span className="font-mono font-bold text-caleo-success">
                           {formatIDR(preview.total_revenue)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-700">Total Beban {fiscalYear}</span>
-                        <span className="font-mono font-bold text-rose-800">
+                        <span className="font-mono font-bold text-caleo-danger">
                           ({formatIDR(preview.total_expense)})
                         </span>
                       </div>
                       <div className="flex justify-between border-t border-amber-200 pt-2 mt-1">
                         <span className="font-bold text-gray-900">Net Income</span>
                         <span className={`font-mono font-bold text-sm ${
-                          preview.net_income >= 0 ? 'text-emerald-800' : 'text-rose-800'
+                          preview.net_income >= 0 ? 'text-caleo-success' : 'text-caleo-danger'
                         }`}>
                           {preview.net_income < 0
                             ? `(${formatIDR(Math.abs(preview.net_income))})`

@@ -49,8 +49,8 @@ const STATUS_LABEL: Record<OpnameSession['status'], string> = {
 const STATUS_PILL: Record<OpnameSession['status'], string> = {
   in_progress: 'bg-amber-100 text-amber-800 border border-amber-200',
   pending_owner: 'bg-blue-100 text-blue-800 border border-blue-200',
-  committed: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-  rejected: 'bg-rose-100 text-rose-800 border border-rose-200',
+  committed: 'bg-emerald-100 text-caleo-success border border-emerald-200',
+  rejected: 'bg-rose-100 text-caleo-danger border border-rose-200',
   abandoned: 'bg-slate-100 text-slate-600 border border-slate-200',
 };
 
@@ -310,7 +310,7 @@ export default function StockOpnameSessionView({
         <button onClick={onClose} className="text-sm text-slate-500 mb-3">
           ← Kembali
         </button>
-        <p className="text-sm text-rose-600">Sesi #{sessionId} tidak ditemukan.</p>
+        <p className="text-sm text-caleo-danger">Sesi #{sessionId} tidak ditemukan.</p>
       </div>
     );
   }
@@ -338,7 +338,7 @@ export default function StockOpnameSessionView({
             {' · '}Mulai {formatDateTime(session.startedAt)}
           </p>
           {witnessAcked && session.witnessAcknowledgedAt && (
-            <p className="text-xs text-emerald-700 mt-1">
+            <p className="text-xs text-caleo-success mt-1">
               Saksi acknowledged {formatDateTime(session.witnessAcknowledgedAt)}
             </p>
           )}
@@ -354,7 +354,7 @@ export default function StockOpnameSessionView({
           ) : (
             <>
               <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
-              <p className={`font-bold text-xl ${totalVariance < 0 ? 'text-rose-600' : totalVariance > 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
+              <p className={`font-bold text-xl ${totalVariance < 0 ? 'text-caleo-danger' : totalVariance > 0 ? 'text-caleo-success' : 'text-slate-900'}`}>
                 {formatRpDelta(totalVariance)}
               </p>
               <p className="text-xs text-slate-500 mt-1">Diisi: {filledCount}/{totalCount}</p>
@@ -496,8 +496,8 @@ export default function StockOpnameSessionView({
                       </div>
                       <div
                         className={`col-span-3 text-right font-semibold ${
-                          (c.varianceValue ?? 0) < 0 ? 'text-rose-600'
-                          : (c.varianceValue ?? 0) > 0 ? 'text-emerald-700'
+                          (c.varianceValue ?? 0) < 0 ? 'text-caleo-danger'
+                          : (c.varianceValue ?? 0) > 0 ? 'text-caleo-success'
                           : 'text-slate-400'
                         }`}
                       >
@@ -570,12 +570,12 @@ export default function StockOpnameSessionView({
         </div>
       )}
       {session.status === 'committed' && (
-        <div className="rounded bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-800">
+        <div className="rounded bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-caleo-success">
           Sesi sudah disetujui Owner.
         </div>
       )}
       {session.status === 'rejected' && (
-        <div className="rounded bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-rose-800">
+        <div className="rounded bg-rose-50 border border-rose-200 px-3 py-2 text-sm text-caleo-danger">
           Sesi ditolak oleh Owner.
         </div>
       )}

@@ -37,7 +37,7 @@ interface SkuOption {
 function StatusBadge({ status }: { status: PromoRow['status'] }) {
   if (status === 'active')
     return (
-      <span className="text-xs px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+      <span className="text-xs px-2 py-0.5 rounded-full border bg-emerald-50 text-caleo-success border-emerald-200">
         Aktif
       </span>
     );
@@ -135,7 +135,7 @@ function SkuPicker({ selected, onAdd, onRemove }: SkuPickerProps) {
               <div className="text-xs text-slate-500 shrink-0 ml-2">
                 {formatIDR(opt.price)}
                 {selectedSkus.has(opt.sku) && (
-                  <span className="ml-2 text-emerald-600 font-semibold">✓</span>
+                  <span className="ml-2 text-caleo-success font-semibold">✓</span>
                 )}
               </div>
             </div>
@@ -400,7 +400,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
                         <span className="ml-1 text-slate-700">{s.name}</span>
                         <span className="ml-1 text-slate-400">({formatIDR(s.price)})</span>
                       </div>
-                      <div className="text-xs font-semibold text-emerald-700 shrink-0 ml-2">
+                      <div className="text-xs font-semibold text-caleo-success shrink-0 ml-2">
                         hemat {formatIDR(discount)}/unit
                       </div>
                     </div>
@@ -411,7 +411,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
           )}
 
           {validationError && (
-            <p className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded px-3 py-2">
+            <p className="text-xs text-caleo-danger bg-rose-50 border border-rose-200 rounded px-3 py-2">
               {validationError}
             </p>
           )}
@@ -691,7 +691,7 @@ function RowMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => voi
           <button
             type="button"
             onClick={() => { onDelete(); setOpen(false); }}
-            className="w-full text-left px-3 py-2 text-sm hover:bg-rose-50 text-rose-600"
+            className="w-full text-left px-3 py-2 text-sm hover:bg-rose-50 text-caleo-danger"
           >
             Hapus
           </button>

@@ -242,13 +242,13 @@ export default function PeriodCloseModal({
                 className="w-10 h-10 rounded flex items-center justify-center shrink-0"
                 style={{ background: '#fee2e2' }}
               >
-                <Lock className="w-5 h-5 text-rose-700" />
+                <Lock className="w-5 h-5 text-caleo-danger" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-[#1a1a1a]">
                   Tutup Buku {monthLabel} — Konfirmasi
                 </h3>
-                <p className="text-xs font-medium text-rose-700 mt-0.5">
+                <p className="text-xs font-medium text-caleo-danger mt-0.5">
                   Setelah close, entry baru ke {monthLabel} akan REJECTED
                 </p>
               </div>
@@ -277,7 +277,7 @@ export default function PeriodCloseModal({
             {loadingSnap ? (
               <div className="py-8 text-center text-caleo-13 text-gray-500">Memuat data...</div>
             ) : snapError ? (
-              <div className="py-8 text-center text-xs text-rose-600 px-4">
+              <div className="py-8 text-center text-xs text-caleo-danger px-4">
                 Gagal memuat snapshot: {snapError}
               </div>
             ) : snapshot ? (
@@ -295,7 +295,7 @@ export default function PeriodCloseModal({
                   <span className="text-xs text-gray-600">Trial Balance</span>
                   <span
                     className={`inline-flex items-center gap-1.5 text-xs font-bold ${
-                      snapshot.isBalanced ? 'text-emerald-700' : 'text-rose-700'
+                      snapshot.isBalanced ? 'text-caleo-success' : 'text-caleo-danger'
                     }`}
                   >
                     {snapshot.isBalanced ? (
@@ -365,8 +365,8 @@ export default function PeriodCloseModal({
           {/* Warning if imbalanced */}
           {!loadingSnap && snapshot && !snapshot.isBalanced && (
             <div className="rounded border border-rose-300 bg-rose-50 px-4 py-3 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-rose-700">
+              <AlertTriangle className="w-4 h-4 text-caleo-danger shrink-0 mt-0.5" />
+              <p className="text-xs text-caleo-danger">
                 Trial Balance tidak seimbang. Perbaiki semua entry sebelum menutup periode.
               </p>
             </div>

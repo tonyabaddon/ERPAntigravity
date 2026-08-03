@@ -114,7 +114,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                       <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">Pengiriman</div>
                       <div className="text-xs text-gray-600 font-sans mb-3">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div>
                       <div className="text-caleo-9 font-bold uppercase tracking-widest text-gray-400 mb-1 font-sans">Status Pembayaran</div>
-                      <span className="bg-green-100 text-green-800 text-caleo-10 font-bold px-2 py-0.5 rounded font-sans">✓ LUNAS</span>
+                      <span className="bg-green-100 text-caleo-success text-caleo-10 font-bold px-2 py-0.5 rounded font-sans">✓ LUNAS</span>
                     </div>
                   </div>
 
@@ -174,7 +174,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                       )}
                     </div>
                     {order.payment_verified_at && (
-                      <div className="text-xs text-green-700 font-semibold mt-1">
+                      <div className="text-xs text-caleo-success font-semibold mt-1">
                         ✓ Pembayaran diverifikasi oleh {order.verified_by ?? '—'} pada {formatDateTime(order.payment_verified_at)}
                       </div>
                     )}

@@ -123,7 +123,7 @@ export default function MappingDrawer({
 
         {/* Multi-allocation balance bar */}
         {multiAllocation && (
-          <div className={`px-4 py-2 border-b border-[var(--color-caleo-mist)] flex items-center justify-between text-caleo-11 font-bold ${overTarget ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
+          <div className={`px-4 py-2 border-b border-[var(--color-caleo-mist)] flex items-center justify-between text-caleo-11 font-bold ${overTarget ? 'bg-rose-50 text-caleo-danger' : 'bg-emerald-50 text-caleo-success'}`}>
             <span>Dipilih: {fmt(selectedTotal)}</span>
             <span className="text-slate-500 font-semibold">Target: {fmt(target)}</span>
           </div>
@@ -169,7 +169,7 @@ export default function MappingDrawer({
                       <div>
                         <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
                         <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{c.meta}</div>
-                        <div className={`text-caleo-10 font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>
+                        <div className={`text-caleo-10 font-bold mt-1 ${c.best ? 'text-caleo-success' : 'text-slate-500'}`}>
                           Skor {c.score.toFixed(2)} · {c.scoreBreakdown}
                         </div>
                         <div className="h-1 mt-1 bg-slate-200 rounded-full overflow-hidden">
@@ -192,7 +192,7 @@ export default function MappingDrawer({
                   <div>
                     <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
                     <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{c.meta}</div>
-                    <div className={`text-caleo-10 font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>Skor {c.score.toFixed(2)} · {c.scoreBreakdown}</div>
+                    <div className={`text-caleo-10 font-bold mt-1 ${c.best ? 'text-caleo-success' : 'text-slate-500'}`}>Skor {c.score.toFixed(2)} · {c.scoreBreakdown}</div>
                     <div className="h-1 mt-1 bg-slate-200 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: Math.round(c.score * 100) + '%' }} />
                     </div>

@@ -233,7 +233,7 @@ export default function AccountFormModal({
     form.account_type === 'BANK'
       ? 'bg-blue-100 text-blue-700'
       : form.account_type === 'KAS'
-      ? 'bg-emerald-100 text-emerald-700'
+      ? 'bg-emerald-100 text-caleo-success'
       : 'bg-amber-100 text-amber-700';
 
   return (

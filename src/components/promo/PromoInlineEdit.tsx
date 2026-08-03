@@ -180,7 +180,7 @@ export default function PromoInlineEdit({
       </div>
 
       {validationError && (
-        <p className="text-xs text-rose-600">{validationError}</p>
+        <p className="text-xs text-caleo-danger">{validationError}</p>
       )}
 
       <div className="flex gap-2 pt-1">
@@ -197,7 +197,7 @@ export default function PromoInlineEdit({
             type="button"
             disabled={saving}
             onClick={handleClear}
-            className="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold rounded hover:bg-rose-100 disabled:opacity-50"
+            className="px-3 py-1.5 bg-rose-50 text-caleo-danger border border-rose-200 text-xs font-bold rounded hover:bg-rose-100 disabled:opacity-50"
           >
             Hapus
           </button>

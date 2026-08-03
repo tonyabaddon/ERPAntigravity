@@ -52,7 +52,7 @@ const ACCOUNT_TYPE_STYLES: Record<AccountType, TypeStyle> = {
     headerBg: 'bg-rose-50/30',
     headerColor: '#9f1239',
     rowHover: 'hover:bg-rose-50/30',
-    balanceColor: 'text-rose-700',
+    balanceColor: 'text-caleo-danger',
   },
   MODAL: {
     headerBg: 'bg-violet-50/30',
@@ -64,7 +64,7 @@ const ACCOUNT_TYPE_STYLES: Record<AccountType, TypeStyle> = {
     headerBg: 'bg-emerald-50/30',
     headerColor: '#065f46',
     rowHover: 'hover:bg-emerald-50/30',
-    balanceColor: 'text-emerald-700',
+    balanceColor: 'text-caleo-success',
   },
   BEBAN: {
     headerBg: 'bg-orange-50/30',
@@ -281,18 +281,18 @@ export default function TrialBalanceTab({
           }
         >
           {isBalanced ? (
-            <CheckCircle className="w-5 h-5 text-emerald-700 shrink-0" />
+            <CheckCircle className="w-5 h-5 text-caleo-success shrink-0" />
           ) : (
-            <AlertTriangle className="w-5 h-5 text-rose-700 shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-caleo-danger shrink-0" />
           )}
           <p className="text-xs">
             {isBalanced ? (
-              <span className="text-emerald-900">
+              <span className="text-caleo-success">
                 <strong>✓ Neraca Saldo SEIMBANG</strong> · Total Debit = Total Kredit ={' '}
                 <strong>{formatRp(totalDebit)}</strong>
               </span>
             ) : (
-              <span className="text-rose-900">
+              <span className="text-caleo-danger">
                 <strong>⚠ TIDAK SEIMBANG</strong> · selisih{' '}
                 <strong>{formatRp(imbalance)}</strong>
               </span>
@@ -371,7 +371,7 @@ export default function TrialBalanceTab({
                   <td colSpan={2} className="py-3 px-3">TOTAL</td>
                   <td className="py-3 px-3 text-right">{formatNum(totalDebit)}</td>
                   <td className="py-3 px-3 text-right">{formatNum(totalCredit)}</td>
-                  <td className="py-3 px-3 text-right text-emerald-700">
+                  <td className="py-3 px-3 text-right text-caleo-success">
                     {isBalanced ? '✓ Balanced' : '⚠ Tidak'}
                   </td>
                 </tr>

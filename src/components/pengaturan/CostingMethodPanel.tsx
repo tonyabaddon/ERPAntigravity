@@ -49,7 +49,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-extrabold text-[var(--color-caleo-primary)]">FIFO</span>
-              <span className="text-caleo-9 font-extrabold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
+              <span className="text-caleo-9 font-extrabold bg-emerald-100 text-caleo-success px-2 py-0.5 rounded-full uppercase">
                 Default
               </span>
             </div>

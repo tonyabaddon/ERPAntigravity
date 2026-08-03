@@ -430,7 +430,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
                 <div className="flex items-center justify-between text-xs px-2 select-none">
                   <span className="text-[#43474e] font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 text-emerald-600" /> OTP via Email
+                    <AlertCircle className="w-3.5 h-3.5 text-caleo-success" /> OTP via Email
                   </span>
                 </div>
 

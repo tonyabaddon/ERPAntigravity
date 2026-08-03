@@ -94,7 +94,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
           const borderColor = po.status === 'PAID' ? '#e2e8f0' : pct >= 60 ? '#a7f3d0' : '#fecaca';
           const bgColor = po.status === 'PAID' ? 'rgba(248,250,252,0.4)' : pct >= 60 ? 'rgba(236,253,245,0.4)' : 'rgba(254,242,242,0.4)';
           const barColor = pct >= 60 ? '#10b981' : '#ef4444';
-          const labelColor = pct >= 60 ? 'text-emerald-700' : 'text-caleo-danger';
+          const labelColor = pct >= 60 ? 'text-caleo-success' : 'text-caleo-danger';
           return (
             <div key={po.id} className="rounded border overflow-hidden" style={{ background: bgColor, borderColor }}>
               <div onClick={toggle} className="p-4 flex justify-between items-start cursor-pointer">
@@ -116,7 +116,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
                     <div key={it.sku}>
                       <div className="flex justify-between items-center mb-2">
                         <div><span className="text-xs font-bold text-[var(--color-caleo-primary)]">{it.name}</span><span className="text-caleo-10 text-slate-500 font-semibold ml-2">({it.sku})</span></div>
-                        <div className="text-caleo-11 font-bold"><span className="text-emerald-700">{it.qty_sold} laku</span> / <span className="text-[var(--color-caleo-primary)]">{it.qty_received}</span></div>
+                        <div className="text-caleo-11 font-bold"><span className="text-caleo-success">{it.qty_sold} laku</span> / <span className="text-[var(--color-caleo-primary)]">{it.qty_received}</span></div>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {it.consumed_by.map((c, idx) => (

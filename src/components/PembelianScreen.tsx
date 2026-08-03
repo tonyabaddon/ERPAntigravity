@@ -108,7 +108,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   DRAFT:    { label: 'Draft',    className: 'bg-gray-100 text-gray-600' },
   ORDERED:  { label: 'Dipesan',  className: 'bg-blue-100 text-blue-800' },
   RECEIVED: { label: 'Diterima', className: 'bg-amber-100 text-amber-800' },
-  PAID:     { label: 'Lunas',    className: 'bg-green-100 text-green-800' },
+  PAID:     { label: 'Lunas',    className: 'bg-green-100 text-caleo-success' },
 };
 
 const LEFT_BORDER: Record<string, string> = {
@@ -414,9 +414,9 @@ export default function PembelianScreen({
                 <KpiCard
                   icon={<AlertTriangle className="w-6 h-6" />}
                   iconBg={overdueAmount > 0 ? 'bg-rose-100' : 'bg-gray-50'}
-                  iconColor={overdueAmount > 0 ? 'text-rose-700' : 'text-gray-400'}
+                  iconColor={overdueAmount > 0 ? 'text-caleo-danger' : 'text-gray-400'}
                   badge={overdueAmount > 0 ? 'Tindakan!' : 'Aman'}
-                  badgeClass={overdueAmount > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-[#2d8a4e]'}
+                  badgeClass={overdueAmount > 0 ? 'bg-rose-100 text-caleo-danger' : 'bg-emerald-50 text-[#2d8a4e]'}
                   label="Terlambat Bayar" value={formatIDR(overdueAmount)}
                   sub={overdueAmount > 0
                     ? `${overdueCount} PO melewati jatuh tempo — selalu hari ini, tidak ikut filter`
@@ -867,7 +867,7 @@ function OrdersTab({
                 <div className="col-span-1 flex flex-col items-center gap-0.5">
                   {po.expected_receive_date ? (
                     <>
-                      <span className={`text-xs font-semibold ${isReceiveOverdue(po) ? 'text-rose-600' : 'text-gray-700'}`}>
+                      <span className={`text-xs font-semibold ${isReceiveOverdue(po) ? 'text-caleo-danger' : 'text-gray-700'}`}>
                         {formatDate(po.expected_receive_date)}
                       </span>
                       {isReceiveOverdue(po) && (
@@ -881,14 +881,14 @@ function OrdersTab({
                   )}
                 </div>
                 <div className="col-span-1 flex flex-col items-center gap-0.5">
-                  <span className={`text-xs font-semibold ${isOverdue(po) ? 'text-rose-600' : po.payment_due_at ? 'text-amber-600' : 'text-gray-400'}`}>
+                  <span className={`text-xs font-semibold ${isOverdue(po) ? 'text-caleo-danger' : po.payment_due_at ? 'text-amber-600' : 'text-gray-400'}`}>
                     {po.payment_due_at ? formatDate(po.payment_due_at) : '—'}
                   </span>
                   {isOverdue(po) && (
                     <span className="text-caleo-9 font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">Terlambat</span>
                   )}
                 </div>
-                <span className={`col-span-1 text-sm font-bold text-right ${po.status === 'PAID' ? 'text-green-700' : 'text-gray-800'}`}>
+                <span className={`col-span-1 text-sm font-bold text-right ${po.status === 'PAID' ? 'text-caleo-success' : 'text-gray-800'}`}>
                   {formatIDR(po.total)}
                 </span>
                 <div className="col-span-1 flex justify-center">
@@ -913,14 +913,14 @@ function OrdersTab({
                     <>
                       <button onClick={() => onEdit(po)} className="text-xs text-gray-600 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
                       <button onClick={() => handleMarkOrdered(po)} className="text-xs text-indigo-700 px-2 py-1 rounded border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 font-semibold">Pesan</button>
-                      <button onClick={() => handleDelete(po)} className="text-xs text-rose-600 px-2 py-1 rounded border border-rose-200 hover:bg-rose-50">Hapus</button>
+                      <button onClick={() => handleDelete(po)} className="text-xs text-caleo-danger px-2 py-1 rounded border border-rose-200 hover:bg-rose-50">Hapus</button>
                     </>
                   )}
                   {po.status === 'ORDERED' && (
                     <button onClick={() => setReceivePo(po)} className="text-xs text-indigo-700 px-2 py-1 rounded border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 font-semibold">Terima</button>
                   )}
                   {po.status === 'RECEIVED' && (
-                    <button onClick={() => setPayPo(po)} className="text-xs text-green-700 px-2 py-1 rounded border border-green-200 bg-green-50 hover:bg-green-100 font-semibold">Bayar</button>
+                    <button onClick={() => setPayPo(po)} className="text-xs text-caleo-success px-2 py-1 rounded border border-green-200 bg-green-50 hover:bg-green-100 font-semibold">Bayar</button>
                   )}
                 </div>
               </div>
@@ -1021,7 +1021,7 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
                 </div>
                 <div className="flex justify-center gap-1">
                   <button onClick={() => setModalSupplier(s)} className="text-xs text-gray-500 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
-                  <button onClick={() => handleDelete(s)} className="text-xs text-rose-500 px-2 py-1 rounded border border-rose-100 hover:bg-rose-50">Hapus</button>
+                  <button onClick={() => handleDelete(s)} className="text-xs text-caleo-danger px-2 py-1 rounded border border-rose-100 hover:bg-rose-50">Hapus</button>
                 </div>
               </div>
             ))}
@@ -1070,7 +1070,7 @@ function CustomPopover({ initial, onCancel, onApply }: CustomPopoverProps) {
         </div>
       </div>
       {invalid && (
-        <p className="text-xs text-rose-600 mt-2">Tanggal 'Sampai' harus setelah 'Dari'.</p>
+        <p className="text-xs text-caleo-danger mt-2">Tanggal 'Sampai' harus setelah 'Dari'.</p>
       )}
       <div className="flex justify-end gap-2 mt-4">
         <button onClick={onCancel} className="text-sm font-semibold text-gray-500 px-3 py-1.5 rounded hover:bg-gray-50">Batal</button>

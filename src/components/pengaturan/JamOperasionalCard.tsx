@@ -147,13 +147,13 @@ export default function JamOperasionalCard({ showToast }: Props) {
                   title={row.is_open ? 'Klik untuk Tutup' : 'Klik untuk Buka'}
                 >
                   {row.is_open ? (
-                    <ToggleRight size={28} className="text-emerald-600" />
+                    <ToggleRight size={28} className="text-caleo-success" />
                   ) : (
                     <ToggleLeft size={28} className="text-slate-300" />
                   )}
                   <span
                     className={`text-caleo-11 font-bold uppercase tracking-wide ${
-                      row.is_open ? 'text-emerald-700' : 'text-slate-400'
+                      row.is_open ? 'text-caleo-success' : 'text-slate-400'
                     }`}
                   >
                     {row.is_open ? 'Buka' : 'Tutup'}

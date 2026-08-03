@@ -38,7 +38,7 @@ function effectiveStatus(t: Row, today = wibDateString()): TagihanStatus | 'TERL
 
 function statusBadge(label: string): string {
   switch (label) {
-    case 'LUNAS': return 'bg-green-100 text-green-800';
+    case 'LUNAS': return 'bg-green-100 text-caleo-success';
     case 'DIBAYAR_SEBAGIAN': return 'bg-sky-100 text-sky-800';
     case 'TERLAMBAT': return 'bg-red-100 text-caleo-danger';
     case 'BELUM_LUNAS': return 'bg-amber-100 text-amber-800';
@@ -162,7 +162,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                     <td className="px-4 py-4 text-right text-sm font-bold">{formatIDR(t.total)}</td>
                     <td className="px-4 py-4">
                       <div className="text-caleo-11 text-gray-600 mb-1">
-                        <span className="font-semibold text-green-700">{formatIDR(paid)}</span>
+                        <span className="font-semibold text-caleo-success">{formatIDR(paid)}</span>
                         <span className="text-gray-400"> / </span>
                         <span className="text-gray-600">{formatIDR(t.total)}</span>
                       </div>
@@ -179,7 +179,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                       <div className="inline-flex gap-1">
                         {eff !== 'LUNAS' && eff !== 'VOID' && onOpenPembayaran && (
                           <button onClick={() => onOpenPembayaran(t.supplier_id)}
-                            className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                            className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-caleo-success border border-green-200 hover:bg-green-100">
                             Bayar
                           </button>
                         )}

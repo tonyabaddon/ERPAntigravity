@@ -59,7 +59,7 @@ const VARIANT_CONFIG: Record<TransferVariant, VariantConfig> = {
     title: 'Setor Kas ke Bank',
     subtitle: 'Dari Kas Toko ke akun Bank',
     headerBg: '#d1fae5',
-    iconTileCls: 'bg-emerald-100 text-emerald-700',
+    iconTileCls: 'bg-emerald-100 text-caleo-success',
     Icon: ArrowUp,
     sourceLocked: true,
     destLocked: false,
@@ -353,7 +353,7 @@ export default function ManualTransferModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-caleo-danger">
               ⚠ {fetchError}
             </div>
           )}

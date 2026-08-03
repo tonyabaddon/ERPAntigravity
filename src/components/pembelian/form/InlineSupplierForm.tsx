@@ -70,7 +70,7 @@ export default function InlineSupplierForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-semibold text-gray-600 block mb-1">
-            Nama Supplier <span className="text-rose-500">*</span>
+            Nama Supplier <span className="text-caleo-danger">*</span>
           </label>
           <input
             value={name}
@@ -79,7 +79,7 @@ export default function InlineSupplierForm({
             className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white placeholder-gray-400"
           />
           {prefillName && (
-            <p className="text-caleo-10 text-emerald-600 mt-0.5">✓ Diisi dari pencarian</p>
+            <p className="text-caleo-10 text-caleo-success mt-0.5">✓ Diisi dari pencarian</p>
           )}
         </div>
         <div>

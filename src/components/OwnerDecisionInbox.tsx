@@ -291,7 +291,7 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
                       disabled={isDeciding}
                       className="flex items-center gap-1 rounded border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                     >
-                      <XCircle className="h-4 w-4 text-rose-500" />
+                      <XCircle className="h-4 w-4 text-caleo-danger" />
                       Terima Kerugian
                     </button>
                     <button

@@ -37,7 +37,7 @@ export default function ReceiveReplacementModal({ item, onClose, onReplaced, sho
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
         </div>
         <div className="px-4 py-4 space-y-3">
-          <div className="bg-emerald-50 border border-emerald-200 rounded px-3 py-2 text-xs text-emerald-700">
+          <div className="bg-emerald-50 border border-emerald-200 rounded px-3 py-2 text-xs text-caleo-success">
             Stok akan bertambah otomatis setelah pengganti dikonfirmasi.
           </div>
           <div className="bg-gray-50 rounded px-3 py-3 text-xs space-y-1">
@@ -51,7 +51,7 @@ export default function ReceiveReplacementModal({ item, onClose, onReplaced, sho
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Qty Pengganti</span>
-              <span className="font-bold text-emerald-600">{item.qty_damaged} unit</span>
+              <span className="font-bold text-caleo-success">{item.qty_damaged} unit</span>
             </div>
           </div>
         </div>

@@ -266,7 +266,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
       {!loading && summary && (
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <KpiCard
-            label="Total Pemasukan" color="green" icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
+            label="Total Pemasukan" color="green" icon={<TrendingUp className="w-5 h-5 text-caleo-success" />}
             value={formatRp(summary.totalIncome)}
             sub={`${allEntries.filter(e => e._src === 'wa' || (e._src === 'kasir' && e.tx.type === 'income')).length} transaksi`}
           />
@@ -351,7 +351,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 return (
                   <div key={`wa-${o.id}`} className="flex items-center gap-3 p-3 rounded border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/30 transition-all">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                    <span className="inline-block px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 flex-shrink-0">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-caleo-10 font-bold uppercase tracking-wide bg-emerald-50 text-caleo-success flex-shrink-0">
                       💬 WA Order
                     </span>
                     <div className="flex-1 min-w-0">
@@ -365,7 +365,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                         HPP {formatRp(waHpp)}
                       </span>
                     )}
-                    <span className="text-sm font-black text-emerald-600 flex-shrink-0">+{formatRp(o.total)}</span>
+                    <span className="text-sm font-black text-caleo-success flex-shrink-0">+{formatRp(o.total)}</span>
                   </div>
                 );
               }
@@ -413,7 +413,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                       HPP {formatRp(tx.hpp_total)}
                     </span>
                   )}
-                  <span className={`text-sm font-black flex-shrink-0 ${isIncome ? 'text-emerald-600' : 'text-caleo-danger'}`}>
+                  <span className={`text-sm font-black flex-shrink-0 ${isIncome ? 'text-caleo-success' : 'text-caleo-danger'}`}>
                     {isIncome ? '+' : '−'}{formatRp(tx.subtotal)}
                   </span>
                   {isIncome && tx.invoice_number && (
@@ -442,8 +442,8 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
             <div className="bg-emerald-50 border border-emerald-200 rounded px-4 py-3 flex items-start gap-2.5 mb-4">
               <span className="w-2 h-2 mt-1 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
               <div>
-                <div className="text-caleo-11 font-bold text-emerald-800">WA Orders — Auto-Sync</div>
-                <div className="text-caleo-10 text-emerald-600">Order terverifikasi otomatis masuk</div>
+                <div className="text-caleo-11 font-bold text-caleo-success">WA Orders — Auto-Sync</div>
+                <div className="text-caleo-10 text-caleo-success">Order terverifikasi otomatis masuk</div>
               </div>
             </div>
 
@@ -465,7 +465,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
               <p className="text-caleo-10 text-gray-400 mb-3">Cek laci kas & rekening</p>
               <div className="space-y-2">
                 {([
-                  { key: 'cash', label: '💵 Tunai (Laci Kas)', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                  { key: 'cash', label: '💵 Tunai (Laci Kas)', color: 'text-caleo-success bg-emerald-50 border-emerald-200' },
                   { key: 'transfer', label: '🏦 Transfer', color: 'text-blue-700 bg-blue-50 border-blue-200' },
                   { key: 'qris', label: '📲 QRIS', color: 'text-violet-700 bg-violet-50 border-violet-200' },
                 ] as const).map(({ key, label, color }) => {

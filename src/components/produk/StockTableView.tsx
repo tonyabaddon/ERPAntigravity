@@ -82,7 +82,7 @@ function generateName(category: string, specs: Record<string, string>): string {
 const PILL_COLORS: Record<string, string> = {
   Panel: 'bg-blue-100 text-blue-900',
   MCB: 'bg-amber-100 text-amber-900',
-  Kabel: 'bg-emerald-100 text-emerald-900',
+  Kabel: 'bg-emerald-100 text-caleo-success',
   Aksesori: 'bg-slate-100 text-slate-700',
 };
 
@@ -102,7 +102,7 @@ function renderSpecForm(
       {fields.map(field => (
         <div key={field.key} className="space-y-1">
           <label className="text-caleo-10 font-extrabold text-gray-500 uppercase tracking-widest pl-1">
-            {field.label}{field.required && <span className="text-rose-500 ml-0.5">*</span>}
+            {field.label}{field.required && <span className="text-caleo-danger ml-0.5">*</span>}
           </label>
           {field.type === 'select' ? (
             <select
@@ -268,7 +268,7 @@ export default function StockTableView({
             <button
               type="button"
               onClick={onOpname}
-              className="px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-emerald-100 cursor-pointer inline-flex items-center gap-2"
+              className="px-4 py-3 bg-emerald-50 border border-emerald-200 text-caleo-success rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-emerald-100 cursor-pointer inline-flex items-center gap-2"
             >
               <ClipboardCheck className="w-4 h-4" />
               Stok Opname
@@ -375,7 +375,7 @@ export default function StockTableView({
                       <span className="text-gray-400">Grosir:</span>
                       {item.price_grosir == null
                         ? <span className="text-amber-600 font-bold">Belum di-set</span>
-                        : <span className="text-emerald-700 font-bold">{formatIDR(item.price_grosir)}</span>
+                        : <span className="text-caleo-success font-bold">{formatIDR(item.price_grosir)}</span>
                       }
                     </div>
                   )}
@@ -384,7 +384,7 @@ export default function StockTableView({
                       <span className="text-gray-400">{t.label}:</span>
                       {(t.slot === 3 ? item.price_tier_3 : item.price_tier_4) == null
                         ? <span className="text-slate-400 font-bold">Sama dgn base</span>
-                        : <span className="text-emerald-700 font-bold">{formatIDR((t.slot === 3 ? item.price_tier_3 : item.price_tier_4) as number)}</span>
+                        : <span className="text-caleo-success font-bold">{formatIDR((t.slot === 3 ? item.price_tier_3 : item.price_tier_4) as number)}</span>
                       }
                     </div>
                   ))}
@@ -436,7 +436,7 @@ export default function StockTableView({
 
                 <div className="w-full md:w-28 shrink-0">
                   {isWarning ? (
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 text-caleo-10 font-black uppercase tracking-tighter gap-1 border border-rose-200">
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-rose-50 text-caleo-danger text-caleo-10 font-black uppercase tracking-tighter gap-1 border border-rose-200">
                       <AlertTriangle className="w-3 h-3" /> Stok Tipis
                     </span>
                   ) : (
@@ -474,7 +474,7 @@ export default function StockTableView({
                   )}
                   <button
                     onClick={() => onTransfer(item)}
-                    className="px-3 py-1.5 rounded-full text-caleo-10 font-black border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-all"
+                    className="px-3 py-1.5 rounded-full text-caleo-10 font-black border border-emerald-200 bg-emerald-50 text-caleo-success hover:bg-emerald-100 cursor-pointer transition-all"
                   >
                     ⇄ Transfer
                   </button>
@@ -486,7 +486,7 @@ export default function StockTableView({
                   >
                     ⚖ Penyesuaian
                   </button>
-                  <button onClick={() => onDelete(item.sku)} className="p-1.5 text-rose-400 hover:text-rose-600 rounded-full hover:bg-rose-50 cursor-pointer transition-all">
+                  <button onClick={() => onDelete(item.sku)} className="p-1.5 text-rose-400 hover:text-caleo-danger rounded-full hover:bg-rose-50 cursor-pointer transition-all">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>

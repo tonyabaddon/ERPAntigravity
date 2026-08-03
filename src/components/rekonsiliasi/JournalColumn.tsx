@@ -172,8 +172,8 @@ export default function JournalColumn({
                 <span
                   className={`text-caleo-9 font-extrabold px-2 py-0.5 rounded-full ${
                     line.side === 'DEBIT'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-rose-100 text-rose-700'
+                      ? 'bg-emerald-100 text-caleo-success'
+                      : 'bg-rose-100 text-caleo-danger'
                   }`}
                 >
                   {line.side === 'DEBIT' ? 'DEBIT' : 'CREDIT'}

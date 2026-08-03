@@ -60,7 +60,7 @@ function accountIconConfig(type: CashAccountType): IconTileConfig {
     case 'BANK':
       return { bgClass: 'bg-blue-100', textClass: 'text-blue-800', Icon: Landmark };
     case 'KAS':
-      return { bgClass: 'bg-emerald-100', textClass: 'text-emerald-800', Icon: Banknote };
+      return { bgClass: 'bg-emerald-100', textClass: 'text-caleo-success', Icon: Banknote };
     case 'E_WALLET':
       return { bgClass: 'bg-amber-100', textClass: 'text-amber-800', Icon: Bike };
     default:
@@ -74,7 +74,7 @@ function typeChip(type: CashAccountType): { label: string; bgClass: string; text
     case 'BANK':
       return { label: 'Bank', bgClass: 'bg-blue-100', textClass: 'text-blue-800' };
     case 'KAS':
-      return { label: 'Kas', bgClass: 'bg-emerald-100', textClass: 'text-emerald-800' };
+      return { label: 'Kas', bgClass: 'bg-emerald-100', textClass: 'text-caleo-success' };
     case 'E_WALLET':
       return { label: 'Wallet', bgClass: 'bg-amber-100', textClass: 'text-amber-800' };
     default:

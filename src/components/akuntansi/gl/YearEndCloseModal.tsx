@@ -159,7 +159,7 @@ export default function YearEndCloseModal({
         {/* Header rose-themed */}
         <div className="p-6 border-b border-gray-200 flex items-start justify-between" style={{ background: '#fef2f2' }}>
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded bg-rose-100 flex items-center justify-center text-rose-700 shrink-0">
+            <div className="w-10 h-10 rounded bg-rose-100 flex items-center justify-center text-caleo-danger shrink-0">
               <Lock className="w-5 h-5" />
             </div>
             <div>
@@ -232,8 +232,8 @@ export default function YearEndCloseModal({
                   className="rounded p-3 flex items-start gap-3 border"
                   style={{ background: '#d1fae5', borderColor: '#6ee7b7' }}
                 >
-                  <CheckCircle className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
-                  <div className="text-xs text-emerald-900">
+                  <CheckCircle className="w-5 h-5 text-caleo-success shrink-0 mt-0.5" />
+                  <div className="text-xs text-caleo-success">
                     <strong>Semua periode bulanan {year} sudah ditutup.</strong>
                     <p className="mt-0.5">
                       {snapshot.closedMonths}/{snapshot.totalMonths} bulan CLOSED. Tahun fiskal siap ditutup.
@@ -250,18 +250,18 @@ export default function YearEndCloseModal({
                 </div>
                 <div className="flex justify-between border-t border-[var(--color-caleo-mist-dark)] pt-2">
                   <span className="text-gray-600">Total Pendapatan</span>
-                  <span className="font-bold text-emerald-700">{formatRp(snapshot.totalPendapatan)}</span>
+                  <span className="font-bold text-caleo-success">{formatRp(snapshot.totalPendapatan)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Beban</span>
-                  <span className="font-bold text-rose-700">({formatRp(snapshot.totalBeban)})</span>
+                  <span className="font-bold text-caleo-danger">({formatRp(snapshot.totalBeban)})</span>
                 </div>
                 <div
                   className="flex justify-between border-t-2 pt-2 font-extrabold text-sm"
                   style={{ borderColor: '#1e40af', color: '#1e3d60' }}
                 >
                   <span>LABA NETO TAHUN BERJALAN</span>
-                  <span className={snapshot.netIncome >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                  <span className={snapshot.netIncome >= 0 ? 'text-caleo-success' : 'text-caleo-danger'}>
                     {formatRp(snapshot.netIncome)}
                   </span>
                 </div>

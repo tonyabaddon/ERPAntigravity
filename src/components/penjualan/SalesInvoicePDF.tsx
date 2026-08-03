@@ -323,7 +323,7 @@ function InvoiceBody({
             {isQuotation ? 'SALES ORDER' : 'SALES INVOICE'}
           </div>
           {!isQuotation && (
-            <div className={`text-caleo-11 font-bold uppercase tracking-wide mt-0.5 ${variant === 'lunas' ? 'text-emerald-700' : 'text-amber-700'}`}>
+            <div className={`text-caleo-11 font-bold uppercase tracking-wide mt-0.5 ${variant === 'lunas' ? 'text-caleo-success' : 'text-amber-700'}`}>
               {variant === 'lunas' ? 'Pelunasan / Lunas' : 'Tanda Terima Uang Muka (DP)'}
             </div>
           )}

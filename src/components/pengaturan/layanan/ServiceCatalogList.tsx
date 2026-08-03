@@ -119,7 +119,7 @@ export default function ServiceCatalogList({ showToast }: Props) {
                     </button>
                     <button
                       onClick={() => handleDeactivate(item)}
-                      className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded"
+                      className="px-3 py-1.5 text-xs font-semibold text-caleo-danger hover:bg-rose-50 rounded"
                     >
                       Nonaktif
                     </button>

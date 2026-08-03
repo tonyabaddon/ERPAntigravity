@@ -39,7 +39,7 @@ const fmtDate = (s?: string | null) =>
 const STATUS_BADGE: Record<TukarFakturStatus, string> = {
   BELUM_LUNAS: 'bg-amber-100 text-amber-800',
   DIBAYAR_SEBAGIAN: 'bg-sky-100 text-sky-800',
-  LUNAS: 'bg-green-100 text-green-800',
+  LUNAS: 'bg-green-100 text-caleo-success',
   VOIDED: 'bg-gray-200 text-gray-600',
 };
 
@@ -271,18 +271,18 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
         >
           <div className="flex items-center gap-2 mb-2">
             <FileText
-              className={`w-3.5 h-3.5 ${isLunas ? 'text-green-700' : 'text-indigo-600'}`}
+              className={`w-3.5 h-3.5 ${isLunas ? 'text-caleo-success' : 'text-indigo-600'}`}
             />
             <div
               className={`text-caleo-11 font-bold uppercase tracking-wide ${
-                isLunas ? 'text-green-700' : 'text-indigo-700'
+                isLunas ? 'text-caleo-success' : 'text-indigo-700'
               }`}
             >
               Total Bundle
             </div>
           </div>
           <div
-            className={`text-xl font-extrabold ${isLunas ? 'text-green-700' : 'text-indigo-700'}`}
+            className={`text-xl font-extrabold ${isLunas ? 'text-caleo-success' : 'text-indigo-700'}`}
           >
             {formatIDR(tf.total_amount)}
           </div>

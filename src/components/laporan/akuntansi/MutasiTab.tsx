@@ -71,7 +71,7 @@ function getAccountTypeColor(accountType: string): {
     case 'BANK':
       return { bg: 'bg-blue-100', text: 'text-blue-800' };
     case 'KAS':
-      return { bg: 'bg-emerald-100', text: 'text-emerald-800' };
+      return { bg: 'bg-emerald-100', text: 'text-caleo-success' };
     case 'E_WALLET':
       return { bg: 'bg-amber-100', text: 'text-amber-800' };
     default:
@@ -389,11 +389,11 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
       <div className="px-6 pb-4 flex items-center gap-6 text-caleo-13 flex-wrap">
         <span>
           <strong className="text-gray-600">Total IN:</strong>{' '}
-          <strong className="text-emerald-700">Rp {formatNum(totalIn)}</strong>
+          <strong className="text-caleo-success">Rp {formatNum(totalIn)}</strong>
         </span>
         <span>
           <strong className="text-gray-600">Total OUT:</strong>{' '}
-          <strong className="text-rose-700">Rp {formatNum(totalOut)}</strong>
+          <strong className="text-caleo-danger">Rp {formatNum(totalOut)}</strong>
         </span>
         <span>
           <strong className="text-gray-600">Net:</strong>{' '}
@@ -461,10 +461,10 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
                     </td>
                     <td className="py-2 px-3 text-gray-700">{row.category}</td>
                     <td className="py-2 px-3 text-gray-700">{row.description}</td>
-                    <td className="py-2 px-3 text-right font-bold text-emerald-700">
+                    <td className="py-2 px-3 text-right font-bold text-caleo-success">
                       {row.in_amount > 0 ? formatNum(row.in_amount) : ''}
                     </td>
-                    <td className="py-2 px-3 text-right font-bold text-rose-700">
+                    <td className="py-2 px-3 text-right font-bold text-caleo-danger">
                       {row.out_amount > 0 ? formatNum(row.out_amount) : ''}
                     </td>
                   </tr>
@@ -478,10 +478,10 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
                 <td colSpan={4} className="py-3 px-3 text-right">
                   TOTAL
                 </td>
-                <td className="py-3 px-3 text-right text-emerald-700">
+                <td className="py-3 px-3 text-right text-caleo-success">
                   {formatNum(totalIn)}
                 </td>
-                <td className="py-3 px-3 text-right text-rose-700">
+                <td className="py-3 px-3 text-right text-caleo-danger">
                   {formatNum(totalOut)}
                 </td>
               </tr>

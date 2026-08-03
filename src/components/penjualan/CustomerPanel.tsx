@@ -22,7 +22,7 @@ function CreditChip({ c }: { c: DbCustomerWithStats }) {
   }
   return (
     <div className="flex items-center gap-2 text-caleo-11">
-      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold">TEMPO OK</span>
+      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-caleo-success font-bold">TEMPO OK</span>
       <span className="text-slate-500">
         Limit {formatRp(c.credit_limit ?? 0)} · {c.term_days ?? 0} hari
       </span>

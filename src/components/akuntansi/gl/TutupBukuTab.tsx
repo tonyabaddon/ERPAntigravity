@@ -113,7 +113,7 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
 
           {/* Status chip */}
           {isCurrentMonth ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-emerald-100 text-caleo-success whitespace-nowrap">
               OPEN
             </span>
           ) : p.status === 'CLOSED' ? (
@@ -133,7 +133,7 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
               OPEN
             </span>
           ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-emerald-100 text-emerald-800 whitespace-nowrap">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caleo-10 font-bold bg-emerald-100 text-caleo-success whitespace-nowrap">
               OPEN
             </span>
           )}

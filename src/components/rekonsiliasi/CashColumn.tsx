@@ -43,12 +43,12 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
                     Expected {fmt(b.expected_amount)} {hasVariance && `· Selisih ${fmt(b.variance)}`}
                   </div>
                 </div>
-                <div className={`text-xs font-black ${hasVariance ? 'text-caleo-danger' : 'text-emerald-600'}`}>
+                <div className={`text-xs font-black ${hasVariance ? 'text-caleo-danger' : 'text-caleo-success'}`}>
                   {fmt(b.deposited_amount ?? b.expected_amount)}
                 </div>
               </div>
               <div className="flex gap-1.5 mt-2 items-center">
-                <span className={`text-caleo-10 font-extrabold uppercase px-2 py-0.5 rounded-full ${isDeposited ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{b.status}</span>
+                <span className={`text-caleo-10 font-extrabold uppercase px-2 py-0.5 rounded-full ${isDeposited ? 'bg-emerald-100 text-caleo-success' : 'bg-amber-100 text-amber-700'}`}>{b.status}</span>
                 {!isDeposited && <button onClick={() => onFindDeposit(b.id)} className="ml-auto text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]">Cari setoran →</button>}
                 {hasVariance && <button onClick={() => onExplain(b.id)} className="ml-auto text-caleo-10 font-extrabold px-2 py-1 rounded bg-white border border-red-200 text-caleo-danger">Jelaskan</button>}
               </div>

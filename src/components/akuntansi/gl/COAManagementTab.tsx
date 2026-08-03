@@ -291,7 +291,7 @@ export default function COAManagementTab({
                             <div
                               className={`px-2 py-1 rounded-full text-caleo-11 font-medium ${
                                 account.is_active
-                                  ? 'bg-emerald-100 text-emerald-700'
+                                  ? 'bg-emerald-100 text-caleo-success'
                                   : 'bg-gray-200 text-gray-700'
                               }`}
                             >

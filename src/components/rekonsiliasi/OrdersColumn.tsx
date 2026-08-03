@@ -130,7 +130,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
                 {o.slots.map(s => (
                   <span
                     key={s.id}
-                    className={`text-caleo-10 font-extrabold px-2 py-0.5 rounded ${s.status === 'MATCHED' ? 'bg-emerald-100 text-emerald-700' : s.status === 'EXTENDED' ? 'bg-blue-100 text-blue-700' : s.status === 'WRITTEN_OFF' ? 'bg-slate-200 text-slate-600' : 'bg-amber-100 text-amber-700'}`}
+                    className={`text-caleo-10 font-extrabold px-2 py-0.5 rounded ${s.status === 'MATCHED' ? 'bg-emerald-100 text-caleo-success' : s.status === 'EXTENDED' ? 'bg-blue-100 text-blue-700' : s.status === 'WRITTEN_OFF' ? 'bg-slate-200 text-slate-600' : 'bg-amber-100 text-amber-700'}`}
                   >
                     {s.status === 'MATCHED' ? '✓' : s.status === 'OPEN' ? '⏳' : s.status === 'EXTENDED' ? '📅' : '✗'} {s.slot_type} {fmt(s.expected_amount)}
                   </span>

@@ -72,7 +72,7 @@ export default function MutasiColumn({ lines, accounts, onFindPair, onClassify, 
                   </div>
                   <div className="text-caleo-10 text-slate-500 font-semibold mt-0.5">{fmtDate(l.txn_date)} · skor {l.match_confidence?.toFixed(2) ?? '—'}</div>
                 </div>
-                <div className={`text-xs font-black ${l.direction === 'IN' ? 'text-emerald-600' : 'text-caleo-danger'}`}>{l.direction === 'IN' ? '+' : '−'}{fmt(l.amount)}</div>
+                <div className={`text-xs font-black ${l.direction === 'IN' ? 'text-caleo-success' : 'text-caleo-danger'}`}>{l.direction === 'IN' ? '+' : '−'}{fmt(l.amount)}</div>
               </div>
               <div className="flex gap-1.5 mt-2 items-center justify-between">
                 <span className="text-caleo-10 font-extrabold px-2 py-0.5 rounded-full" style={{ background: pill.bg, color: pill.color }}>{pill.label}</span>

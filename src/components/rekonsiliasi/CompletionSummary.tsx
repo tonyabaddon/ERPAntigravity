@@ -23,8 +23,8 @@ export default function CompletionSummary({ orderPct, mutasiPct, cashPct }: Prop
           </div>
         ))}
         <div className="text-center">
-          <div className="text-caleo-10 font-bold uppercase text-emerald-700">Total</div>
-          <div className="text-2xl font-black text-emerald-600">{total}%</div>
+          <div className="text-caleo-10 font-bold uppercase text-caleo-success">Total</div>
+          <div className="text-2xl font-black text-caleo-success">{total}%</div>
         </div>
       </div>
     </div>

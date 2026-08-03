@@ -119,7 +119,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
                   isActive
                     ? 'bg-[var(--color-caleo-primary)] text-white'
                     : isDone
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    ? 'bg-emerald-50 text-caleo-success border border-emerald-200'
                     : 'bg-white border border-[var(--color-caleo-mist)] text-[#43474e]'
                 }`}
               >
@@ -210,7 +210,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
                       <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full ${
                         a.side === 'DEBIT'
                           ? 'bg-blue-50 text-blue-700'
-                          : 'bg-rose-50 text-rose-700'
+                          : 'bg-rose-50 text-caleo-danger'
                       }`}>
                         {a.side}
                       </span>
@@ -228,13 +228,13 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
               <tfoot>
                 <tr className="border-t-2 border-[var(--color-caleo-mist-dark)]">
                   <td colSpan={3} className="pt-3 text-caleo-11 font-bold text-[#43474e]">Total Debit</td>
-                  <td className="pt-3 text-right font-extrabold text-emerald-700 text-caleo-13">
+                  <td className="pt-3 text-right font-extrabold text-caleo-success text-caleo-13">
                     Rp {fmt(totalDebit)}
                   </td>
                 </tr>
                 <tr>
                   <td colSpan={3} className="pb-1 text-caleo-11 font-bold text-[#43474e]">Total Credit</td>
-                  <td className="pb-1 text-right font-extrabold text-rose-700 text-caleo-13">
+                  <td className="pb-1 text-right font-extrabold text-caleo-danger text-caleo-13">
                     Rp {fmt(totalCredit)}
                   </td>
                 </tr>
@@ -269,11 +269,11 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           <div className="space-y-3">
             <div className="flex items-center justify-between border border-[var(--color-caleo-mist-dark)] bg-white rounded px-4 py-3">
               <span className="text-caleo-13 font-semibold text-[#43474e]">Total Debit</span>
-              <strong className="text-emerald-700 text-sm">Rp {fmt(totalDebit)}</strong>
+              <strong className="text-caleo-success text-sm">Rp {fmt(totalDebit)}</strong>
             </div>
             <div className="flex items-center justify-between border border-[var(--color-caleo-mist-dark)] bg-white rounded px-4 py-3">
               <span className="text-caleo-13 font-semibold text-[#43474e]">Total Credit</span>
-              <strong className="text-rose-700 text-sm">Rp {fmt(totalCredit)}</strong>
+              <strong className="text-caleo-danger text-sm">Rp {fmt(totalCredit)}</strong>
             </div>
             <div className={`flex items-center justify-between border rounded px-4 py-3 ${
               isBalanced
@@ -281,7 +281,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
                 : 'border-amber-200 bg-amber-50'
             }`}>
               <span className="text-caleo-13 font-semibold text-[#43474e]">Selisih</span>
-              <strong className={isBalanced ? 'text-emerald-700' : 'text-amber-700'}>
+              <strong className={isBalanced ? 'text-caleo-success' : 'text-amber-700'}>
                 {isBalanced ? '✓ Balance' : `Rp ${fmt(Math.abs(labaDitahanPlug))}`}
               </strong>
             </div>
@@ -307,8 +307,8 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
 
           {isBalanced && (
             <div className="mt-4 border border-emerald-200 bg-emerald-50 rounded p-4 flex gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="text-xs text-emerald-900">
+              <CheckCircle2 className="w-5 h-5 text-caleo-success shrink-0 mt-0.5" />
+              <div className="text-xs text-caleo-success">
                 <p className="font-bold">Saldo Seimbang</p>
                 <p>Debit = Credit. Tidak ada plug yang diperlukan.</p>
               </div>

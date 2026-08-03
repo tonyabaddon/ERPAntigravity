@@ -330,7 +330,7 @@ export default function PembelianDetailPage({
             <button onClick={handleMarkOrdered} className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded">Tandai Dipesan</button>
           )}
           {po.status === 'DRAFT' && (
-            <button onClick={handleDelete} className="flex items-center gap-1 text-xs font-semibold text-rose-600 px-3 py-1.5 rounded border border-rose-200 hover:bg-rose-50">
+            <button onClick={handleDelete} className="flex items-center gap-1 text-xs font-semibold text-caleo-danger px-3 py-1.5 rounded border border-rose-200 hover:bg-rose-50">
               <Trash2 className="w-3.5 h-3.5" /> Hapus
             </button>
           )}
@@ -394,13 +394,13 @@ export default function PembelianDetailPage({
                 <div className="col-span-2">
                   <div className="font-semibold text-gray-800">{item.product_name}</div>
                   <div className="font-mono text-caleo-11 text-gray-400">
-                    {item.sku}{item.qty_damaged > 0 && <span className="text-rose-500"> · {item.qty_damaged} rusak</span>}
+                    {item.sku}{item.qty_damaged > 0 && <span className="text-caleo-danger"> · {item.qty_damaged} rusak</span>}
                   </div>
                 </div>
                 <span className="text-center text-gray-600">{item.qty_received}</span>
                 <span className="text-right text-gray-600">{formatIDR(item.unit_cost)}</span>
                 <span className="text-right text-gray-600">{sellingPrice > 0 ? formatIDR(sellingPrice) : '—'}</span>
-                <span className={`text-right font-bold ${margin > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                <span className={`text-right font-bold ${margin > 0 ? 'text-caleo-success' : 'text-gray-400'}`}>
                   {sellingPrice > 0 ? `+${margin.toFixed(1)}%` : '—'}
                 </span>
               </div>
@@ -424,8 +424,8 @@ export default function PembelianDetailPage({
         {damagedItems.length > 0 && (
           <div className="bg-white rounded border border-rose-200 overflow-hidden print:hidden">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-rose-100">
-              <p className="text-xs font-bold uppercase tracking-wide text-rose-500">Barang Rusak</p>
-              <span className="bg-rose-100 text-rose-700 text-caleo-11 font-semibold px-2 py-0.5 rounded-full">
+              <p className="text-xs font-bold uppercase tracking-wide text-caleo-danger">Barang Rusak</p>
+              <span className="bg-rose-100 text-caleo-danger text-caleo-11 font-semibold px-2 py-0.5 rounded-full">
                 {damagedItems.reduce((s, i) => s + i.qty_damaged, 0)} item
               </span>
             </div>
@@ -441,11 +441,11 @@ export default function PembelianDetailPage({
                   <div className="font-semibold text-gray-800">{item.product_name}</div>
                   <div className="font-mono text-caleo-11 text-gray-400">{item.sku}</div>
                 </div>
-                <span className="col-span-1 text-center font-bold text-rose-600">{item.qty_damaged}</span>
+                <span className="col-span-1 text-center font-bold text-caleo-danger">{item.qty_damaged}</span>
                 <span className="col-span-4 text-gray-500 text-xs">{item.damage_notes ?? '—'}</span>
                 <div className="col-span-4 flex justify-center items-center gap-2">
                   {item.damage_status === 'REPLACED' ? (
-                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">Replaced</span>
+                    <span className="text-xs font-semibold text-caleo-success bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">Replaced</span>
                   ) : (
                     <>
                       <select

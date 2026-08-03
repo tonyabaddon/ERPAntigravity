@@ -279,7 +279,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                           <button
                             type="button"
                             onClick={() => removeARLine(idx)}
-                            className="text-slate-300 hover:text-rose-500 text-base leading-none"
+                            className="text-slate-300 hover:text-caleo-danger text-base leading-none"
                             title="Hapus baris"
                           >
                             ×
@@ -293,7 +293,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                   <tfoot>
                     <tr className="bg-slate-50 border-t border-slate-200">
                       <td className="px-3 py-2 text-caleo-11 font-bold text-slate-600">Total</td>
-                      <td className="px-3 py-2 text-right font-bold text-xs text-emerald-700">
+                      <td className="px-3 py-2 text-right font-bold text-xs text-caleo-success">
                         {formatIDR(arDetailTotal)}
                       </td>
                       <td colSpan={3} />
@@ -327,7 +327,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs text-slate-600">Nilai auto (dari master stok):</div>
-                <div className="text-sm font-bold text-emerald-700 mt-0.5">
+                <div className="text-sm font-bold text-caleo-success mt-0.5">
                   {autoValue === 0
                     ? <span className="text-slate-400">Rp 0 — belum ada master stok atau harga modal</span>
                     : formatIDR(autoValue ?? 0)}
@@ -434,7 +434,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
           <span className="text-slate-400">{lainLainOpen ? '▾' : '▸'}</span>
           Akun Aktiva lain (opsional)
           {data.lain_lain.length > 0 && (
-            <span className="text-caleo-11 bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold">
+            <span className="text-caleo-11 bg-emerald-50 text-caleo-success border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold">
               {data.lain_lain.length}
             </span>
           )}
@@ -496,7 +496,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                           <button
                             type="button"
                             onClick={() => removeLainLain(idx)}
-                            className="text-slate-300 hover:text-rose-500 text-base leading-none"
+                            className="text-slate-300 hover:text-caleo-danger text-base leading-none"
                             title="Hapus baris"
                           >
                             ×

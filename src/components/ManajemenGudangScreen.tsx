@@ -204,14 +204,14 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                 {w.is_active && !w.is_default && (
                   <button onClick={() => handleDeactivate(w.id)}
                     title="Nonaktifkan gudang"
-                    className="text-rose-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50">
+                    className="text-rose-400 hover:text-caleo-danger p-1 rounded hover:bg-rose-50">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
                 {!w.is_active && (
                   <button onClick={() => handleReactivate(w.id)}
                     title="Aktifkan kembali"
-                    className="text-caleo-10 font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 px-2 py-1 rounded hover:bg-emerald-50">
+                    className="text-caleo-10 font-extrabold text-caleo-success hover:text-caleo-success flex items-center gap-1 px-2 py-1 rounded hover:bg-emerald-50">
                     <RotateCcw className="w-3 h-3" /> Aktifkan
                   </button>
                 )}
