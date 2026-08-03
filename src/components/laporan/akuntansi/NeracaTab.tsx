@@ -313,14 +313,14 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                 {/* LIABILITAS sub-card */}
                 <div className="rounded border border-[#fca5a5] overflow-hidden">
                   <div className="py-2.5 px-4" style={{ background: '#fee2e2' }}>
-                    <span className="font-extrabold text-caleo-13 text-red-900 uppercase">LIABILITAS</span>
+                    <span className="font-extrabold text-caleo-13 text-caleo-danger uppercase">LIABILITAS</span>
                   </div>
 
                   <table className="w-full text-xs">
                     <tbody>
                       {/* Liabilitas Lancar section */}
                       <tr style={{ background: 'rgba(254,226,226,0.3)' }}>
-                        <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-red-800">
+                        <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-caleo-danger">
                           Liabilitas Lancar
                         </td>
                       </tr>
@@ -334,7 +334,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
                       {/* Liabilitas Jangka Panjang section */}
                       <tr style={{ background: 'rgba(254,226,226,0.3)' }}>
-                        <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-red-800">
+                        <td colSpan={2} className="py-2 px-3 font-bold text-caleo-11 uppercase text-caleo-danger">
                           Liabilitas Jangka Panjang
                         </td>
                       </tr>
@@ -430,7 +430,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
                       <span>SEIMBANG dengan Total Aset</span>
                     </div>
                   ) : (
-                    <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-red-700 font-bold">
+                    <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-caleo-danger font-bold">
                       <AlertTriangle className="w-4 h-4" />
                       <span>TIDAK SEIMBANG · selisih {formatRupiahRaw(Math.abs(data.balanceCheck.diff))}</span>
                     </div>

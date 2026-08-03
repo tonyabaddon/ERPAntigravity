@@ -89,7 +89,7 @@ export default function WarehouseTransferSKUPicker({ fromWarehouseId, lines, onC
                     onBlur={() => flushSync(() => commitQty(l.sku))}
                     className="w-20 rounded border border-slate-300 px-2 py-1 text-right text-sm" />
                 </td>
-                <td className="py-2 pl-2"><button onClick={() => removeLine(i)}><X className="h-4 w-4 text-slate-400 hover:text-red-500" /></button></td>
+                <td className="py-2 pl-2"><button onClick={() => removeLine(i)}><X className="h-4 w-4 text-slate-400 hover:text-caleo-danger" /></button></td>
               </tr>
             ))}
             <tr className="border-t border-slate-200 font-semibold">

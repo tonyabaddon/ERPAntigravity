@@ -285,7 +285,7 @@ export default function WarehouseTransferCreateScreen({
 
       {/* Error */}
       {error && (
-        <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-caleo-danger">
           {error}
         </p>
       )}

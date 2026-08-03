@@ -45,7 +45,7 @@ function statusBadgeCls(label: string): string {
   switch (label) {
     case 'LUNAS': return 'bg-green-100 text-green-800';
     case 'DIBAYAR_SEBAGIAN': return 'bg-sky-100 text-sky-800';
-    case 'TERLAMBAT': return 'bg-red-100 text-red-800';
+    case 'TERLAMBAT': return 'bg-red-100 text-caleo-danger';
     case 'BELUM_LUNAS': return 'bg-amber-100 text-amber-800';
     case 'VOID': return 'bg-gray-200 text-gray-600';
     default: return 'bg-gray-100 text-gray-700';
@@ -185,7 +185,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
             </button>
           )}
           {!isVoided && eff !== 'LUNAS' && (
-            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50">
+            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-caleo-danger px-3 py-2 rounded border border-red-200 hover:bg-red-50">
               <XOctagon className="w-4 h-4" /> Void
             </button>
           )}
@@ -197,11 +197,11 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
 
       {isVoided && (
         <div className="bg-red-50 border border-red-200 rounded p-4 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-4 h-4 text-caleo-danger mt-0.5 flex-shrink-0" />
           <div>
-            <div className="text-sm font-bold text-red-800">Tagihan ini sudah di-void</div>
-            <div className="text-xs text-red-700 mt-1">{tgh.void_reason ?? '—'}</div>
-            <div className="text-caleo-11 text-red-600 mt-1">Void {fmtDate(tgh.voided_at)}</div>
+            <div className="text-sm font-bold text-caleo-danger">Tagihan ini sudah di-void</div>
+            <div className="text-xs text-caleo-danger mt-1">{tgh.void_reason ?? '—'}</div>
+            <div className="text-caleo-11 text-caleo-danger mt-1">Void {fmtDate(tgh.voided_at)}</div>
           </div>
         </div>
       )}
@@ -401,7 +401,7 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
-          <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-caleo-danger flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {tagihan.pi_number}
           </h2>
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>

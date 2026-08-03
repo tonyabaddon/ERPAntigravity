@@ -89,7 +89,7 @@ export default function WarehouseTransferDetailScreen({
         <button onClick={onBack} className="mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
           <ArrowLeft className="h-4 w-4" /> Kembali
         </button>
-        <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-caleo-danger">
           {error ?? 'Not found'}
         </p>
       </div>
@@ -234,7 +234,7 @@ export default function WarehouseTransferDetailScreen({
         {header.status === 'PARTIAL' && (
           <div>
             <span className="text-xs text-slate-400 uppercase tracking-wide">Nilai Kerugian</span>
-            <div className="mt-0.5 font-semibold tabular-nums text-red-700">
+            <div className="mt-0.5 font-semibold tabular-nums text-caleo-danger">
               {persistedLossValue !== null && persistedLossValue > 0
                 ? `${formatIDR(persistedLossValue)} (${header.total_loss_qty ?? 0} pcs)`
                 : `— (${header.total_loss_qty ?? 0} pcs)`}
@@ -313,7 +313,7 @@ export default function WarehouseTransferDetailScreen({
                       <span className="tabular-nums">{item.qty_received ?? '—'}</span>
                     )}
                   </td>
-                  <td className={`px-4 py-2 text-right tabular-nums font-semibold ${selisih < 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                  <td className={`px-4 py-2 text-right tabular-nums font-semibold ${selisih < 0 ? 'text-caleo-danger' : 'text-slate-700'}`}>
                     {selisih === 0 ? '—' : selisih > 0 ? `+${selisih}` : selisih}
                   </td>
                 </tr>
@@ -325,7 +325,7 @@ export default function WarehouseTransferDetailScreen({
 
       {/* Action error */}
       {actionError && (
-        <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-caleo-danger">
           {actionError}
         </p>
       )}
@@ -354,7 +354,7 @@ export default function WarehouseTransferDetailScreen({
           <button
             onClick={handleBatalKirim}
             disabled={submitting}
-            className="flex items-center gap-1.5 rounded border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">
+            className="flex items-center gap-1.5 rounded border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-caleo-danger hover:bg-red-50 disabled:opacity-50">
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             Batal Kirim
           </button>

@@ -71,7 +71,7 @@ export default function TfQuickAddTagihanModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">
-                Nomor Faktur Supplier <span className="text-red-500">*</span>
+                Nomor Faktur Supplier <span className="text-caleo-danger">*</span>
               </label>
               <input
                 value={supplierInv}
@@ -82,7 +82,7 @@ export default function TfQuickAddTagihanModal({
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">
-                Tanggal Faktur <span className="text-red-500">*</span>
+                Tanggal Faktur <span className="text-caleo-danger">*</span>
               </label>
               <input
                 type="date"
@@ -104,7 +104,7 @@ export default function TfQuickAddTagihanModal({
 
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">
-              Nominal Total <span className="text-red-500">*</span>
+              Nominal Total <span className="text-caleo-danger">*</span>
             </label>
             <input
               value={total}

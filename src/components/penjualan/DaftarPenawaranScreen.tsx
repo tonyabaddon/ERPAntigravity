@@ -416,7 +416,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               Customer dianggap batal / pilih supplier lain. Operasi ini <strong>tidak bisa di-undo</strong>;
               kalau customer berubah pikiran, bikin SO baru.
             </div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Alasan Lost <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Alasan Lost <span className="text-caleo-danger">*</span></label>
             <textarea rows={3}
               value={closeModal.reason}
               onChange={(e) => setCloseModal({ ...closeModal, reason: e.target.value })}

@@ -32,8 +32,8 @@ export default function ErrorState({
   if (inline) {
     return (
       <div className={`flex items-center gap-2 text-xs ${className}`}>
-        <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
-        <span className="text-red-600">{message}</span>
+        <AlertCircle className="w-3 h-3 text-caleo-danger shrink-0" />
+        <span className="text-caleo-danger">{message}</span>
         {onRetry && (
           <button
             type="button"
@@ -48,8 +48,8 @@ export default function ErrorState({
   }
   return (
     <div className={`flex flex-col items-center justify-center py-12 px-4 text-center ${className}`}>
-      <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
-      <div className="text-sm font-semibold text-red-700">{message}</div>
+      <AlertCircle className="w-10 h-10 text-caleo-danger mb-3" />
+      <div className="text-sm font-semibold text-caleo-danger">{message}</div>
       {hint && (
         <div className="text-xs text-slate-500 mt-1 max-w-sm">{hint}</div>
       )}

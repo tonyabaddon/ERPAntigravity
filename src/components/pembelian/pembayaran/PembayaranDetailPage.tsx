@@ -61,7 +61,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
         </div>
         <div className="flex gap-2">
           {!isVoided && (
-            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50">
+            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-caleo-danger px-3 py-2 rounded border border-red-200 hover:bg-red-50">
               <XOctagon className="w-4 h-4" /> Void
             </button>
           )}
@@ -73,11 +73,11 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
 
       {isVoided && (
         <div className="bg-red-50 border border-red-200 rounded p-4 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-4 h-4 text-caleo-danger mt-0.5 flex-shrink-0" />
           <div>
-            <div className="text-sm font-bold text-red-800">Pembayaran ini sudah di-void</div>
-            <div className="text-xs text-red-700 mt-1">{pmb.void_reason ?? '—'}</div>
-            <div className="text-caleo-11 text-red-600 mt-1">Void {fmtDate(pmb.voided_at)} — Tagihan yang ter-cover sudah di-rollback.</div>
+            <div className="text-sm font-bold text-caleo-danger">Pembayaran ini sudah di-void</div>
+            <div className="text-xs text-caleo-danger mt-1">{pmb.void_reason ?? '—'}</div>
+            <div className="text-caleo-11 text-caleo-danger mt-1">Void {fmtDate(pmb.voided_at)} — Tagihan yang ter-cover sudah di-rollback.</div>
           </div>
         </div>
       )}
@@ -216,7 +216,7 @@ function VoidPembayaranModal({ pembayaran, onClose, onVoided, showToast }: VoidP
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
-          <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-caleo-danger flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {pembayaran.pembayaran_number}
           </h2>
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>

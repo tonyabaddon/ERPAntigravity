@@ -70,14 +70,14 @@ export default function NewProductInlineForm(props: Props) {
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="col-span-2">
-          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Nama Produk <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Nama Produk <span className="text-caleo-danger">*</span></label>
           <input value={state.name}
             onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
             placeholder="Mis: MCB Schneider 25A 1P"
             className="w-full px-3 py-2 border border-slate-300 rounded" />
         </div>
         <div>
-          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Kategori <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Kategori <span className="text-caleo-danger">*</span></label>
           <input list="np-cat-options" value={state.category}
             onChange={(e) => setState((s) => ({ ...s, category: e.target.value }))}
             placeholder="Mis: MCB"
@@ -95,7 +95,7 @@ export default function NewProductInlineForm(props: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Harga Jual (Rp) <span className="text-red-500">*</span></label>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Harga Jual (Rp) <span className="text-caleo-danger">*</span></label>
           <input value={state.price}
             onChange={(e) => setState((s) => ({ ...s, price: e.target.value }))}
             placeholder="Mis: 45.000"

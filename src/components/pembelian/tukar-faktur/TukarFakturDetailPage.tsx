@@ -170,7 +170,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           {canDelete && (
             <button
               onClick={() => setShowDelete(true)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-caleo-danger px-3 py-2 rounded border border-red-200 hover:bg-red-50"
             >
               <XOctagon className="w-4 h-4" /> Hapus
             </button>
@@ -189,11 +189,11 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
 
       {isVoided && (
         <div className="bg-red-50 border border-red-200 rounded p-4 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-4 h-4 text-caleo-danger mt-0.5 flex-shrink-0" />
           <div>
-            <div className="text-sm font-bold text-red-800">Tukar Faktur ini sudah dihapus</div>
-            <div className="text-xs text-red-700 mt-1">{tf.notes ?? '—'}</div>
-            <div className="text-caleo-11 text-red-600 mt-1">Dihapus {fmtDate(tf.voided_at)}</div>
+            <div className="text-sm font-bold text-caleo-danger">Tukar Faktur ini sudah dihapus</div>
+            <div className="text-xs text-caleo-danger mt-1">{tf.notes ?? '—'}</div>
+            <div className="text-caleo-11 text-caleo-danger mt-1">Dihapus {fmtDate(tf.voided_at)}</div>
           </div>
         </div>
       )}
@@ -223,12 +223,12 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock
               className={`w-3.5 h-3.5 ${
-                overdue ? 'text-red-600' : dueSoon ? 'text-amber-600' : 'text-indigo-600'
+                overdue ? 'text-caleo-danger' : dueSoon ? 'text-amber-600' : 'text-indigo-600'
               }`}
             />
             <div
               className={`text-caleo-11 font-bold uppercase tracking-wide ${
-                overdue ? 'text-red-700' : dueSoon ? 'text-amber-700' : 'text-gray-500'
+                overdue ? 'text-caleo-danger' : dueSoon ? 'text-amber-700' : 'text-gray-500'
               }`}
             >
               Jatuh Tempo
@@ -236,7 +236,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           </div>
           <div
             className={`font-bold ${
-              overdue ? 'text-red-700' : dueSoon ? 'text-amber-700' : 'text-gray-800'
+              overdue ? 'text-caleo-danger' : dueSoon ? 'text-amber-700' : 'text-gray-800'
             }`}
           >
             {fmtDate(tf.payment_due_at)}
@@ -244,7 +244,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           {!isLunas && !isVoided && days !== null && (
             <div
               className={`text-xs font-semibold mt-1 ${
-                overdue ? 'text-red-600' : dueSoon ? 'text-amber-600' : 'text-gray-500'
+                overdue ? 'text-caleo-danger' : dueSoon ? 'text-amber-600' : 'text-gray-500'
               }`}
             >
               {days < 0
@@ -443,7 +443,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
               <div>Total dibayar {formatIDR(tf.paid_amount)}</div>
             )}
             {tf.voided_at && (
-              <div className="text-red-600">Dihapus {fmtDate(tf.voided_at)}</div>
+              <div className="text-caleo-danger">Dihapus {fmtDate(tf.voided_at)}</div>
             )}
           </div>
         </div>
@@ -648,7 +648,7 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
-          <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-caleo-danger flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Hapus {tf.tf_number}
           </h2>
           <button onClick={onClose}>

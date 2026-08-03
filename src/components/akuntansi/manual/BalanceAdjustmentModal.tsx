@@ -295,17 +295,17 @@ export default function BalanceAdjustmentModal({
               <Scale className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-red-900">
+              <h2 className="text-base font-bold text-caleo-danger">
                 Penyesuaian Saldo
               </h2>
-              <p className="text-xs text-red-700 mt-0.5">
+              <p className="text-xs text-caleo-danger mt-0.5">
                 Defensif · PIN-gate · reason ≥10 char wajib
               </p>
             </div>
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-red-400 hover:text-red-700 p-1 rounded hover:bg-white/60"
+            className="text-red-400 hover:text-caleo-danger p-1 rounded hover:bg-white/60"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -434,7 +434,7 @@ export default function BalanceAdjustmentModal({
               placeholder="Mis. cek m-banking saldo BCA Rp 12.550.000, koreksi +50rb (bunga deposito)"
               className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-60 resize-none"
             />
-            <p className={`text-caleo-10 mt-0.5 ${reasonOk ? 'text-gray-500' : 'text-red-500'}`}>
+            <p className={`text-caleo-10 mt-0.5 ${reasonOk ? 'text-gray-500' : 'text-caleo-danger'}`}>
               {reason.length} / 10 min
             </p>
           </div>

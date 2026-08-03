@@ -296,7 +296,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
   if (fetchError) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-sm font-semibold text-red-600">{fetchError}</p>
+        <p className="text-sm font-semibold text-caleo-danger">{fetchError}</p>
         <button
           onClick={loadAdmins}
           className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded hover:opacity-90"

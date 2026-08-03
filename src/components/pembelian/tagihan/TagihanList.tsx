@@ -40,7 +40,7 @@ function statusBadge(label: string): string {
   switch (label) {
     case 'LUNAS': return 'bg-green-100 text-green-800';
     case 'DIBAYAR_SEBAGIAN': return 'bg-sky-100 text-sky-800';
-    case 'TERLAMBAT': return 'bg-red-100 text-red-800';
+    case 'TERLAMBAT': return 'bg-red-100 text-caleo-danger';
     case 'BELUM_LUNAS': return 'bg-amber-100 text-amber-800';
     case 'VOID': return 'bg-gray-200 text-gray-600';
     default: return 'bg-gray-100 text-gray-700';

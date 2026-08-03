@@ -86,7 +86,7 @@ export default function TempoWriteOffApprovalRequestRow({
               type="button"
               disabled={disabled}
               onClick={() => setRejectOpen(true)}
-              className="px-3 py-1.5 text-xs font-semibold rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-semibold rounded bg-red-50 text-caleo-danger border border-red-200 hover:bg-red-100 disabled:opacity-50"
             >
               Tolak
             </button>

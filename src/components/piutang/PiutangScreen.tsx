@@ -278,7 +278,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                       <div className="font-mono text-caleo-11 text-gray-700">{r.order.id.slice(0, 8)}</div>
                       <div className="text-caleo-11 text-gray-500">Dibuat {fmtDate(r.order.created_at)}</div>
                       {r.order.status === 'INVOICE_WRITTEN_OFF' && (
-                        <div className="text-caleo-11 text-red-700 italic mt-0.5" title={r.order.write_off_reason ?? undefined}>
+                        <div className="text-caleo-11 text-caleo-danger italic mt-0.5" title={r.order.write_off_reason ?? undefined}>
                           Tulis-off {r.order.written_off_at ? fmtDate(r.order.written_off_at) : ''} · {r.order.write_off_reason ?? '—'}
                         </div>
                       )}
@@ -341,7 +341,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                         ) : r.order.status === 'INVOICE_WRITTEN_OFF' && isOwner ? (
                           <button
                             onClick={() => setRevertTarget(r)}
-                            className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+                            className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-red-50 text-caleo-danger border border-red-200 hover:bg-red-100">
                             Batal Tulis-off
                           </button>
                         ) : null}

@@ -97,7 +97,7 @@ export default function PesananDetailPage({
                 <Send className="w-4 h-4" /> {marking ? 'Memproses...' : 'Mark Ordered'}
               </button>
               <button onClick={() => onEdit(pesanan)} className="text-sm font-semibold text-gray-700 px-3 py-2 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
-              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50">
+              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-caleo-danger px-3 py-2 rounded border border-red-200 hover:bg-red-50">
                 <XOctagon className="w-4 h-4" /> Void
               </button>
             </>
@@ -109,7 +109,7 @@ export default function PesananDetailPage({
                 style={{ background: 'var(--color-caleo-primary)' }}>
                 <Package className="w-4 h-4" /> Buat Tagihan
               </button>
-              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded border border-red-200 hover:bg-red-50">
+              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-caleo-danger px-3 py-2 rounded border border-red-200 hover:bg-red-50">
                 <XOctagon className="w-4 h-4" /> Void
               </button>
             </>
@@ -122,11 +122,11 @@ export default function PesananDetailPage({
 
       {isVoided && (
         <div className="bg-red-50 border border-red-200 rounded p-4 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="w-4 h-4 text-caleo-danger mt-0.5 flex-shrink-0" />
           <div>
-            <div className="text-sm font-bold text-red-800">Pesanan ini sudah di-void</div>
-            <div className="text-xs text-red-700 mt-1">{pesanan.void_reason ?? '—'}</div>
-            <div className="text-caleo-11 text-red-600 mt-1">Void {fmtDate(pesanan.voided_at)}</div>
+            <div className="text-sm font-bold text-caleo-danger">Pesanan ini sudah di-void</div>
+            <div className="text-xs text-caleo-danger mt-1">{pesanan.void_reason ?? '—'}</div>
+            <div className="text-caleo-11 text-caleo-danger mt-1">Void {fmtDate(pesanan.voided_at)}</div>
           </div>
         </div>
       )}
@@ -230,7 +230,7 @@ export default function PesananDetailPage({
           <div>• Dibuat {fmtDate(pesanan.created_at)}</div>
           {pesanan.ordered_at && <div>• Dikirim ke supplier {fmtDate(pesanan.ordered_at)}</div>}
           {pesanan.closed_at && <div>• Pesanan selesai (CLOSED) {fmtDate(pesanan.closed_at)}</div>}
-          {pesanan.voided_at && <div className="text-red-600">• Void {fmtDate(pesanan.voided_at)} — {pesanan.void_reason}</div>}
+          {pesanan.voided_at && <div className="text-caleo-danger">• Void {fmtDate(pesanan.voided_at)} — {pesanan.void_reason}</div>}
         </div>
       </div>
 
@@ -268,7 +268,7 @@ function VoidPesananModal({ pesanan, onClose, onVoided, showToast }: VoidProps) 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
-          <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-caleo-danger flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {pesanan.pesanan_number}
           </h2>
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>

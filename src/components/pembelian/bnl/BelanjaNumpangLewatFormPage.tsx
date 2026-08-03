@@ -178,11 +178,11 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">1. Header</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Order Terkait <span className="text-red-500">*</span></label>
+            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Order Terkait <span className="text-caleo-danger">*</span></label>
             <OrderPicker value={order} onChange={setOrder} />
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Supplier (Toko Grosir) <span className="text-red-500">*</span></label>
+            <label className="text-xs font-semibold text-gray-600 block mb-1.5">Supplier (Toko Grosir) <span className="text-caleo-danger">*</span></label>
             {supplier ? (
               <div className="border-2 border-gray-300 rounded p-3 flex items-center justify-between">
                 <div>
@@ -277,7 +277,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                   className="w-full text-sm text-right py-1 px-2 rounded border border-gray-200" /></td>
                 <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">
-                  <button type="button" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500">
+                  <button type="button" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-caleo-danger">
                     <X className="w-4 h-4" />
                   </button>
                 </td>

@@ -394,7 +394,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                           <button
                             onClick={() => handleDeleteRecipient(r.id, r.wa_number)}
                             title="Hapus"
-                            className="text-gray-300 hover:text-red-500"
+                            className="text-gray-300 hover:text-caleo-danger"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

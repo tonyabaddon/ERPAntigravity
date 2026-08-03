@@ -48,8 +48,8 @@ export default function RevertWriteOffConfirmModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-4 border-b border-red-100 bg-red-50">
-          <h2 className="font-extrabold text-base text-red-800">Batalkan Tulis-off?</h2>
-          <p className="text-xs text-red-700 mt-0.5">Invoice akan kembali ke status piutang aktif.</p>
+          <h2 className="font-extrabold text-base text-caleo-danger">Batalkan Tulis-off?</h2>
+          <p className="text-xs text-caleo-danger mt-0.5">Invoice akan kembali ke status piutang aktif.</p>
         </div>
 
         <div className="px-4 py-4 space-y-2">

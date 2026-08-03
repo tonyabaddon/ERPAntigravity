@@ -30,7 +30,7 @@ export const PIUTANG_TIERS: Record<PiutangTier['key'], PiutangTier> = {
     key: 'overdue',
     label: 'Overdue',
     rowBg: 'bg-red-50/70',
-    badgeClass: 'bg-red-100 text-red-800',
+    badgeClass: 'bg-red-100 text-caleo-danger',
   },
   today: {
     key: 'today',
