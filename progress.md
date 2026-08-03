@@ -7,12 +7,20 @@
 
 **Result:** **15 PRs merged** to main, auto-deployed to staging.app.caleo.id (HTTP 200). All 12 audits clean. No prod promote (per mandate — awaits founder validation tomorrow).
 
-### Track A cross-cutting codemods (2/3 shipped, 1 deferred)
+### Track A cross-cutting codemods (3/3 shipped — text-only semantic partial)
 
 - **PR #92** `3f0dca6`: **Visual approval gate infrastructure** — `scripts/build-visual-diff-html.tsx` + `.claude/visual-diff.config.json` + `CLAUDE.md` Protocol section. Every downstream FE PR can now generate `public/visual-diff-<slug>.html` for founder review.
 - **PR #93** `700aced`: **Focus-ring standardization (Track A #1)** — 637 `focus:*` sites codemodded to `focus-visible:ring-caleo-gold focus-visible:ring-offset-2` (semantic-danger override where applicable). Global `:focus-visible` fallback in `src/index.css`. `scripts/audit-focus-ring-drift.ts` + Stop hook wire.
 - **PR #94** `39fc4f1`: **Typography scale (Track A #2)** — 2141 inline `text-[Npx]` sites codemodded to canonical tokens (5 new `--text-caleo-{9,10,11,13,15}` + Tailwind defaults). `scripts/audit-typography-arbitrary-px.ts` + Stop hook wire.
-- **Track A #3 (semantic color layer) DEFERRED** — 1836 red/green/amber/emerald/rose sites have shade variations (600 vs 800 vs 50) that a mechanical codemod would flatten. Founder judgment recommended per-site. Track B module sweeps handle semantic colors with better context.
+- **PR #107** `8160f2d`: **Semantic color partial — text-red** — 127 medium/deep `text-red-{500..900}` → `text-caleo-danger`. Pale reds (200/300/400) preserved for dark-bg contexts.
+- **PR #108** `6162ace`: **Semantic color partial — text-emerald/green/rose** — 482 sites: emerald+green medium/deep → `text-caleo-success` (285 total), rose medium/deep → `text-caleo-danger` (345 total).
+
+**Semantic color left for Track B module sweeps:** `bg-*` and `border-*` shade variations carry meaning (e.g., `bg-emerald-50` soft callout vs `bg-emerald-500` heavy affirm are visually distinct). Per-site judgment required — not mechanical.
+
+**Text-only semantic totals after both PRs:**
+- text-caleo-danger: 345 refs (was ~21)
+- text-caleo-success: 285 refs (was ~45)
+- Pale variants preserved: 30 sites total (dark-bg contexts)
 
 ### Track B EmptyState sweep (11 batches shipped, 78/103 allowlist reduction)
 
