@@ -146,7 +146,7 @@ export default function RakitLockApprovalRequestRow({
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <span className="text-xs">Final: <strong>{formatIDR(totalFinal)}</strong></span>
                 <span className="text-xs">HPP: <strong>{formatIDR(totalHpp)}</strong></span>
-                <span className={`text-xs font-bold ${marginWarn ? 'text-rose-600' : 'text-emerald-700'}`}>
+                <span className={`text-xs font-bold ${marginWarn ? 'text-caleo-danger' : 'text-caleo-success'}`}>
                   {marginWarn ? '⚠ ' : ''}Margin: {formatIDR(margin)} ({marginPct.toFixed(1)}%)
                 </span>
                 <button
@@ -192,7 +192,7 @@ export default function RakitLockApprovalRequestRow({
                 type="button"
                 onClick={doReject}
                 disabled={disabled || !!busy}
-                className="px-4 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700 text-xs font-extrabold hover:bg-rose-100 disabled:opacity-50"
+                className="px-4 py-1.5 rounded-full border border-rose-200 bg-rose-50 text-caleo-danger text-xs font-extrabold hover:bg-rose-100 disabled:opacity-50"
               >
                 {busy === 'reject' ? 'Menolak…' : 'Tolak'}
               </button>

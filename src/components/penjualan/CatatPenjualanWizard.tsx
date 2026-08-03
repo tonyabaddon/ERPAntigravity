@@ -1128,8 +1128,8 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         {fromSalesOrderId && (
           <div className="px-6 py-3 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-emerald-600 text-base">✓</span>
-              <span className="text-emerald-900">
+              <span className="text-caleo-success text-base">✓</span>
+              <span className="text-caleo-success">
                 <strong>Pre-filled dari Sales Order</strong> — Channel, customer, items, dan catatan sudah diisi. Bisa adjust kalau scope berubah.
               </span>
             </div>
@@ -1149,7 +1149,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
               <span className="text-slate-400">·</span>
               <span className="text-slate-600">👤 <strong>{customer.name}</strong></span>
               {customer.allows_tempo && (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-caleo-10">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-caleo-success font-bold text-caleo-10">
                   TEMPO OK · Limit {Math.round((customer.credit_limit ?? 0) / 1_000_000)}jt
                 </span>
               )}

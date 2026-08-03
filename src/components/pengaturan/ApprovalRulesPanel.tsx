@@ -84,7 +84,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
   };
 
   if (loading) return <p className="text-sm text-slate-500 p-6">Memuat…</p>;
-  if (!tenant) return <p className="text-sm text-rose-600 p-6">Tenant settings tidak ditemukan</p>;
+  if (!tenant) return <p className="text-sm text-caleo-danger p-6">Tenant settings tidak ditemukan</p>;
 
   return (
     <div className="space-y-4">

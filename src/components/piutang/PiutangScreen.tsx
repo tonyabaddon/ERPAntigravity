@@ -170,7 +170,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
           label="Total Piutang" value={fmtRpShort(kpi.totalPiutang)} sub={`${kpi.totalCount} invoice`}
         />
         <KpiCard
-          icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-rose-50" iconColor="text-rose-700"
+          icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-rose-50" iconColor="text-caleo-danger"
           label="Overdue" value={fmtRpShort(kpi.overdueAmount)} sub={`${kpi.overdueCount} invoice`}
           alarming={kpi.overdueCount > 0}
         />
@@ -260,7 +260,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                 const badgeLabel = isLunas ? 'Selesai'
                   : isWrittenOff ? 'Tulis-off'
                   : dueTier.label;
-                const badgeClass = isLunas ? 'bg-emerald-100 text-emerald-800'
+                const badgeClass = isLunas ? 'bg-emerald-100 text-caleo-success'
                   : isWrittenOff ? 'bg-gray-200 text-gray-600'
                   : dueTier.badgeClass;
                 const rowBg = isLunas || isWrittenOff ? 'bg-white' : dueTier.rowBg;
@@ -315,7 +315,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                                 onClick={() => void handleSendWa(r.order.id)}
                                 disabled={sendingWa === r.order.id}
                                 title="Kirim WA reminder manual"
-                                className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-emerald-50 text-caleo-success border border-emerald-200 hover:bg-emerald-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <MessageSquare className="w-3 h-3" />
                                 {sendingWa === r.order.id ? '...' : 'WA'}
                               </button>
@@ -329,7 +329,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                             )}
                             <button
                               onClick={() => setPayTarget(r)}
-                              className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                              className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-caleo-success border border-green-200 hover:bg-green-100">
                               ✓ Catat Bayar
                             </button>
                             <button
@@ -397,7 +397,7 @@ function ReminderBadge({ info }: { info: ReminderInfo }) {
   })();
   const isSent = info.status === 'SENT';
   return (
-    <span className={`text-caleo-10 font-semibold px-1.5 py-0.5 rounded-full ${isSent ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
+    <span className={`text-caleo-10 font-semibold px-1.5 py-0.5 rounded-full ${isSent ? 'bg-emerald-50 text-caleo-success' : 'bg-amber-50 text-amber-700'}`}
       title={`${info.rule_type} · ${new Date(info.sent_at).toLocaleString('id-ID')}`}>
       {isSent ? '✓' : '!'} {info.rule_type} · {sentAgo}
     </span>
@@ -546,7 +546,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
           {/* F-11: partial-payment amount input + sisa-setelah-bayar preview. */}
           <div>
             <label className="text-caleo-13 font-semibold text-slate-700 block mb-1">
-              Jumlah Bayar <span className="text-rose-600">*</span>
+              Jumlah Bayar <span className="text-caleo-danger">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-caleo-13 text-slate-500">Rp</span>
@@ -568,7 +568,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
               <button
                 type="button"
                 onClick={() => setAmountStr(String(outstandingSisa))}
-                className="text-caleo-11 font-semibold text-emerald-700 hover:underline"
+                className="text-caleo-11 font-semibold text-caleo-success hover:underline"
               >
                 Isi penuh (lunasi)
               </button>
@@ -578,7 +578,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
                   {isFullClose ? ' — invoice akan Lunas' : ' — invoice tetap tempo'}
                 </span>
               ) : (
-                <span className="text-rose-600">Isi antara Rp 1 dan {formatIDR(outstandingSisa)}</span>
+                <span className="text-caleo-danger">Isi antara Rp 1 dan {formatIDR(outstandingSisa)}</span>
               )}
             </div>
           </div>
@@ -600,7 +600,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
                 )}
                 <div className="flex items-center justify-between text-caleo-11 text-gray-500">
                   <span>{(proofFile.size / 1024).toFixed(0)} KB</span>
-                  <button onClick={() => setProofFile(null)} className="text-rose-600 hover:underline">Ganti</button>
+                  <button onClick={() => setProofFile(null)} className="text-caleo-danger hover:underline">Ganti</button>
                 </div>
               </div>
             ) : (

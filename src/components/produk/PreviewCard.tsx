@@ -86,7 +86,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
                 isTarget ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'
               }`}>
                 <div className="text-caleo-11 font-extrabold text-[var(--color-caleo-primary)]">{w.name}</div>
-                <div className={`text-base font-black ${isTarget ? 'text-emerald-700' : 'text-slate-400'}`}>
+                <div className={`text-base font-black ${isTarget ? 'text-caleo-success' : 'text-slate-400'}`}>
                   {qty} {state.unit}
                 </div>
               </div>

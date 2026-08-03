@@ -163,7 +163,7 @@ export default function InvoicePreviewScreen({
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-emerald-600">✓</span>
+              <span className="text-caleo-success">✓</span>
               <h1 className="text-lg font-extrabold text-[var(--color-caleo-primary)]">Penjualan Tersimpan</h1>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -176,7 +176,7 @@ export default function InvoicePreviewScreen({
         <div className="flex gap-2">
           <button
             onClick={() => setLayananModalOpen(true)}
-            className="px-3 py-1.5 text-xs font-semibold rounded text-emerald-700 border border-emerald-300 hover:bg-emerald-50"
+            className="px-3 py-1.5 text-xs font-semibold rounded text-caleo-success border border-emerald-300 hover:bg-emerald-50"
             title="Tambah layanan (Wiring / Jasa) dari katalog"
           >
             🛠 Tambah Layanan
@@ -275,7 +275,7 @@ export default function InvoicePreviewScreen({
                     <div
                       key={idx}
                       className={`flex items-center gap-2 ${
-                        s.state === 'done' ? 'text-emerald-700'
+                        s.state === 'done' ? 'text-caleo-success'
                         : s.state === 'wait' ? 'text-amber-700'
                         : 'text-slate-400'
                       }`}

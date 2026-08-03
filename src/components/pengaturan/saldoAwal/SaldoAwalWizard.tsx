@@ -205,7 +205,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                 </div>
                 <span
                   className={`text-caleo-10 font-semibold ${
-                    s === step ? 'text-[var(--color-caleo-primary)]' : s < step ? 'text-emerald-600' : 'text-slate-400'
+                    s === step ? 'text-[var(--color-caleo-primary)]' : s < step ? 'text-caleo-success' : 'text-slate-400'
                   }`}
                 >
                   {STEP_LABELS[s]}
@@ -263,12 +263,12 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
             ) : preview ? (
               <div className="flex items-center gap-4 flex-wrap">
                 <span>
-                  <span className="text-emerald-700 font-bold">Aktiva:</span>{' '}
+                  <span className="text-caleo-success font-bold">Aktiva:</span>{' '}
                   <span className="font-medium">{formatIDR(preview.total_assets)}</span>
                 </span>
                 <span className="text-slate-300">·</span>
                 <span>
-                  <span className="text-rose-700 font-bold">Kewajiban:</span>{' '}
+                  <span className="text-caleo-danger font-bold">Kewajiban:</span>{' '}
                   <span className="font-medium">{formatIDR(preview.total_liab)}</span>
                 </span>
                 <span className="text-slate-300">·</span>
@@ -277,7 +277,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                   <span className="font-medium">{formatIDR(preview.total_equity)}</span>
                 </span>
                 <span className="text-slate-300">·</span>
-                <span className={`font-bold ${isBalanced ? 'text-emerald-700' : 'text-amber-600'}`}>
+                <span className={`font-bold ${isBalanced ? 'text-caleo-success' : 'text-amber-600'}`}>
                   {isBalanced ? '✓ Balanced' : 'Belum seimbang'}
                 </span>
               </div>

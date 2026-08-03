@@ -84,7 +84,7 @@ export default function InlineExpandPanel({
               {sortedWarehouses.map(w => (
                 <span key={w.id} className="font-bold">
                   <span className="text-slate-500">{w.name}:</span>{' '}
-                  <span className="text-emerald-700">{stockByWarehouseId.get(w.id) ?? 0}</span>
+                  <span className="text-caleo-success">{stockByWarehouseId.get(w.id) ?? 0}</span>
                 </span>
               ))}
             </div>

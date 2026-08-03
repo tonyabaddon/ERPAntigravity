@@ -193,10 +193,10 @@ export default function LayananSection({ days }: Props) {
                   <td
                     className={`px-3 py-2 text-right tabular-nums font-bold ${
                       r.margin_pct >= 30
-                        ? 'text-emerald-700'
+                        ? 'text-caleo-success'
                         : r.margin_pct >= 15
                           ? 'text-amber-600'
-                          : 'text-rose-600'
+                          : 'text-caleo-danger'
                     }`}
                   >
                     {r.margin_pct}%

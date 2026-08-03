@@ -37,7 +37,7 @@ export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAdd
                 <span className="text-caleo-9 font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: c.bg, color: c.text }}>
                   {a.bank_code}
                 </span>
-                <span className={`text-caleo-9 font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${uploaded ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                <span className={`text-caleo-9 font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full ${uploaded ? 'bg-emerald-100 text-caleo-success' : 'bg-amber-100 text-amber-700'}`}>
                   {uploaded ? '✓' : '⚠️'}
                 </span>
               </div>

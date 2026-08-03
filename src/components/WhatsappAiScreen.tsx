@@ -266,8 +266,8 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="max-w-3xl">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded flex items-center justify-center shadow-lg shadow-emerald-100">
-                <Bot className="w-8 h-8 text-emerald-600 fill-emerald-50" />
+              <div className="w-14 h-14 bg-emerald-50 text-caleo-success rounded flex items-center justify-center shadow-lg shadow-emerald-100">
+                <Bot className="w-8 h-8 text-caleo-success fill-emerald-50" />
               </div>
               <div>
                 <h2 className="text-[var(--color-caleo-primary)] font-black text-2xl tracking-tight flex items-center gap-2">
@@ -279,7 +279,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
               </div>
             </div>
             <p className="text-sm text-[#43474e] leading-relaxed font-semibold">
-              Gunakan framework Go-bahasa <strong className="text-emerald-600 font-black">whatsmeow</strong> yang tangguh untuk menjembatani nomor WhatsApp bisnis dengan sistem ERP toko Anda. Pelanggan yang mengirimkan pesan ke nomor di bawah ini akan direspon otomatis menggunakan model Gemini AI yang terhubung secara real-time dengan inventaris harga SKU toko Anda.
+              Gunakan framework Go-bahasa <strong className="text-caleo-success font-black">whatsmeow</strong> yang tangguh untuk menjembatani nomor WhatsApp bisnis dengan sistem ERP toko Anda. Pelanggan yang mengirimkan pesan ke nomor di bawah ini akan direspon otomatis menggunakan model Gemini AI yang terhubung secara real-time dengan inventaris harga SKU toko Anda.
             </p>
           </div>
 
@@ -287,7 +287,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             <Cpu className="text-[var(--color-caleo-primary)] w-8 h-8 animate-spin" style={{ animationDuration: '6s' }} />
             <div>
               <span className="text-caleo-9 font-black text-slate-400 block tracking-widest uppercase">Koneksi Gateway</span>
-              <span className={`text-xs font-extrabold flex items-center gap-1 mt-0.5 ${daemonOnline ? 'text-[var(--color-caleo-primary)]' : 'text-rose-500'}`}>
+              <span className={`text-xs font-extrabold flex items-center gap-1 mt-0.5 ${daemonOnline ? 'text-[var(--color-caleo-primary)]' : 'text-caleo-danger'}`}>
                 <span className={`h-2 w-2 rounded-full ${daemonOnline ? 'bg-emerald-500 animate-ping' : 'bg-rose-400'}`} />
                 {daemonOnline ? 'Daemon online' : 'Daemon offline'}
               </span>
@@ -324,7 +324,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
           {/* pairing / Connection Setup Panel */}
           <div className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl space-y-6">
             <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-emerald-600" />
+              <QrCode className="w-5 h-5 text-caleo-success" />
               whatsmeow QR Code &amp; Device Pairing Hub
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed font-semibold">
@@ -337,10 +337,10 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
               <div className="flex flex-col items-center justify-center bg-white border border-[#abc9f3]/40 p-6 rounded relative min-h-[220px]">
                 {waConnected && (
                   <div className="text-center space-y-3">
-                    <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto animate-bounce shrink-0" />
+                    <CheckCircle className="w-12 h-12 text-caleo-success mx-auto animate-bounce shrink-0" />
                     <h4 className="font-extrabold text-[var(--color-caleo-primary)] text-xs">BERHASIL TERSAMBUNG</h4>
                     {waPhone && (
-                      <p className="text-xs font-black text-emerald-600 tracking-tight">+{waPhone}</p>
+                      <p className="text-xs font-black text-caleo-success tracking-tight">+{waPhone}</p>
                     )}
                     <p className="text-caleo-10 text-gray-400">whatsmeow session tersimpan di wa_store.db</p>
                     <button
@@ -367,7 +367,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                 {!waConnected && !qrCode && (
                   <div className="text-center space-y-3">
                     {qrLoading ? (
-                      <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
+                      <RefreshCw className="w-8 h-8 text-caleo-success animate-spin mx-auto" />
                     ) : (
                       <div className="w-16 h-16 mx-auto rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300">
                         <QrCode className="w-8 h-8" />
@@ -442,20 +442,20 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                       </button>
                     </div>
                     {pairCodeError && (
-                      <p className="text-caleo-10 text-rose-600 font-bold mt-2 bg-rose-50 px-3 py-1.5 rounded border border-rose-100">
+                      <p className="text-caleo-10 text-caleo-danger font-bold mt-2 bg-rose-50 px-3 py-1.5 rounded border border-rose-100">
                         ⚠ {pairCodeError}
                       </p>
                     )}
                     {pairCode && (
                       <div className="mt-3 bg-emerald-50 border-2 border-emerald-200 rounded p-4 text-center">
-                        <p className="text-caleo-9 font-black text-emerald-700 uppercase tracking-widest mb-2">
+                        <p className="text-caleo-9 font-black text-caleo-success uppercase tracking-widest mb-2">
                           KODE PAIRING (BERLAKU ~2 MENIT)
                         </p>
                         <p className="text-3xl font-black tracking-[0.3em] text-[var(--color-caleo-primary)] font-mono select-all">
                           {pairCode}
                         </p>
                         <div className="mt-3 text-caleo-10 text-gray-600 text-left space-y-1">
-                          <p className="font-bold text-emerald-800">Cara pakai di HP:</p>
+                          <p className="font-bold text-caleo-success">Cara pakai di HP:</p>
                           <ol className="list-decimal list-inside space-y-0.5">
                             <li>Buka WhatsApp → Setelan → Perangkat Tertaut</li>
                             <li>Tap <strong>Tautkan Perangkat</strong></li>
@@ -477,7 +477,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                   <li>Buka WhatsApp di HP Anda</li>
                   <li>Tap <strong>Perangkat Tertaut</strong> → <strong>Tautkan Perangkat</strong></li>
                   <li>Arahkan kamera ke QR Code di kiri</li>
-                  <li>Tunggu hingga status berubah ke <span className="text-emerald-600 font-black">TERHUBUNG</span></li>
+                  <li>Tunggu hingga status berubah ke <span className="text-caleo-success font-black">TERHUBUNG</span></li>
                 </ol>
                 <p className="text-caleo-9 text-amber-600 bg-amber-50 rounded px-3 py-2 border border-amber-100 font-semibold">
                   QR berlaku ~20 detik dan diperbarui otomatis. Pastikan daemon sedang berjalan.
@@ -488,7 +488,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             {/* Simulated terminal developer container */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-caleo-10 text-gray-400 font-black tracking-widest uppercase">
-                <span className="flex items-center gap-1.5"><Terminal className="w-4 h-4 text-emerald-600" /> Go-Daemon whatsmeow Logs Console</span>
+                <span className="flex items-center gap-1.5"><Terminal className="w-4 h-4 text-caleo-success" /> Go-Daemon whatsmeow Logs Console</span>
                 <button
                   onClick={() => setTerminalLogs(prev => prev.slice(-3))}
                   className="text-[#2d8a4e] font-bold text-caleo-9 hover:underline"
@@ -513,7 +513,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
           <div className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] flex items-center gap-2">
-                <Code className="w-5 h-5 text-emerald-600" />
+                <Code className="w-5 h-5 text-caleo-success" />
                 Go whatsmeow + Gemini API Code Boilerplate
               </h3>
               <div className="flex bg-[var(--color-caleo-cloud)] p-1 rounded-full text-caleo-10 font-black border border-blue-50">
@@ -533,7 +533,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-              Gunakan script backend template berikut untuk diletakkan di server internal produksi Anda. Script ini menginisialisasi client <code className="font-mono bg-[var(--color-caleo-cloud)] text-emerald-600 px-1.5 py-0.5 rounded text-caleo-10">whatsmeow</code> dan menyalurkan request pesan ke API AI toko Anda.
+              Gunakan script backend template berikut untuk diletakkan di server internal produksi Anda. Script ini menginisialisasi client <code className="font-mono bg-[var(--color-caleo-cloud)] text-caleo-success px-1.5 py-0.5 rounded text-caleo-10">whatsmeow</code> dan menyalurkan request pesan ke API AI toko Anda.
             </p>
 
             <div className="relative">
@@ -560,7 +560,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] flex items-center gap-2">
-                  <Smartphone className="w-5 h-5 text-emerald-650" />
+                  <Smartphone className="w-5 h-5 text-caleo-success" />
                   Konfigurasi Nomor WhatsApp AI
                 </h3>
                 <p className="text-caleo-10 text-gray-400 font-extrabold uppercase tracking-wide mt-1">Daftar Aktif &amp; Switch Atasi Bot</p>
@@ -608,14 +608,14 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                               <span className="w-2 h-2 rounded-full bg-emerald-500" title="Terhubung SQLite whatsmeow" />
                             )}
                           </h4>
-                          <p className="text-caleo-10 text-emerald-600 font-black tracking-tight mt-0.5">{num.phoneNumber}</p>
+                          <p className="text-caleo-10 text-caleo-success font-black tracking-tight mt-0.5">{num.phoneNumber}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleCheckConnection(num.id)}
-                          className="text-slate-400 hover:text-emerald-600 p-1.5 hover:bg-emerald-50 rounded transition-all cursor-pointer text-caleo-9 font-black"
+                          className="text-slate-400 hover:text-caleo-success p-1.5 hover:bg-emerald-50 rounded transition-all cursor-pointer text-caleo-9 font-black"
                           title="Cek Status Koneksi"
                         >
                           Cek
@@ -641,7 +641,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                         >
                           {num.isEnabled ? (
                             <>
-                              <span className="text-emerald-700 font-black uppercase text-caleo-10 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">ON</span>
+                              <span className="text-caleo-success font-black uppercase text-caleo-10 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">ON</span>
                               <ToggleRight className="w-7 h-7 text-[#2d8a4e] fill-emerald-50" />
                             </>
                           ) : (
@@ -663,12 +663,12 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                         >
                           {num.isAiEnabled ? (
                             <>
-                              <span className="text-emerald-700 font-black uppercase text-caleo-10 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">AKTIF</span>
+                              <span className="text-caleo-success font-black uppercase text-caleo-10 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">AKTIF</span>
                               <ToggleRight className="w-7 h-7 text-[#2d8a4e] fill-emerald-50" />
                             </>
                           ) : (
                             <>
-                              <span className="text-rose-600 font-extrabold uppercase text-caleo-10 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">MANUAL</span>
+                              <span className="text-caleo-danger font-extrabold uppercase text-caleo-10 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">MANUAL</span>
                               <ToggleLeft className="w-7 h-7 text-slate-300" />
                             </>
                           )}

@@ -221,8 +221,8 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
             </span>
             <div>
-              <span className="text-caleo-9 font-black text-emerald-600 block uppercase tracking-wider">STATUS KONEKSI</span>
-              <span className="text-xs font-black text-emerald-950">Terhubung ke Supabase Cloud DB</span>
+              <span className="text-caleo-9 font-black text-caleo-success block uppercase tracking-wider">STATUS KONEKSI</span>
+              <span className="text-xs font-black text-caleo-success">Terhubung ke Supabase Cloud DB</span>
             </div>
           </div>
         ) : (

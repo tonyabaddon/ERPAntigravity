@@ -157,7 +157,7 @@ export default function SupplierPicker({
                         </div>
                       </div>
                       {usage > 0 && (
-                        <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full ${usage >= 3 ? 'text-emerald-700 bg-emerald-50' : 'text-gray-500 bg-gray-100'}`}>
+                        <span className={`text-caleo-10 font-bold px-2 py-0.5 rounded-full ${usage >= 3 ? 'text-caleo-success bg-emerald-50' : 'text-gray-500 bg-gray-100'}`}>
                           {usage} PO
                         </span>
                       )}

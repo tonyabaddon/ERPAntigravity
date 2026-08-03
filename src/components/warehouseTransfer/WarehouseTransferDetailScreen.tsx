@@ -20,7 +20,7 @@ import { extractErrorMessage } from '../../lib/extractErrorMessage';
 function statusBadge(s: WarehouseTransferStatus) {
   switch (s) {
     case 'IN_TRANSIT': return { label: 'In-Transit', className: 'bg-amber-50 text-amber-800',    dotClassName: 'bg-amber-500' };
-    case 'RECEIVED':   return { label: 'Diterima',   className: 'bg-emerald-50 text-emerald-800', dotClassName: 'bg-emerald-500' };
+    case 'RECEIVED':   return { label: 'Diterima',   className: 'bg-emerald-50 text-caleo-success', dotClassName: 'bg-emerald-500' };
     case 'PARTIAL':    return { label: 'Selisih',    className: 'bg-orange-50 text-orange-800',   dotClassName: 'bg-orange-500' };
     case 'CANCELLED':  return { label: 'Dibatal',    className: 'bg-slate-100 text-slate-600',    dotClassName: 'bg-slate-400' };
   }

@@ -7,7 +7,7 @@ export default function PiStatusBadge({ pi }: { pi: DbPurchaseInvoice }) {
     return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">VOID</span>;
   }
   if (pi.status === 'LUNAS') {
-    return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800">● Lunas</span>;
+    return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-caleo-success">● Lunas</span>;
   }
   if (isTerlambat(pi)) {
     return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-caleo-danger">⚠ Terlambat</span>;

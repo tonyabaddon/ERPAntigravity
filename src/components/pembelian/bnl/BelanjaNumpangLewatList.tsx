@@ -95,7 +95,7 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
         <KpiCard icon={<ShoppingBag className="w-5 h-5" />} iconBg="bg-sky-50" iconColor="text-sky-700" badge="Belanja" badgeClass="bg-sky-50 text-sky-700" label="Total Belanja" value={fmtRpShort(kpi.totalBeli)} sub="dalam periode" />
         <KpiCard icon={<Clock className="w-5 h-5" />} iconBg="bg-amber-50" iconColor="text-amber-700" badge="Belum" badgeClass="bg-amber-50 text-amber-700" label="Belum Lunas" value={fmtRpShort(kpi.belumTotal)} sub={`${kpi.belumCount} invoice`} />
         <KpiCard icon={<AlarmClock className="w-5 h-5" />} iconBg="bg-yellow-50" iconColor="text-yellow-700" badge="≤3 Hari" badgeClass="bg-yellow-50 text-yellow-700" label="Jatuh Tempo ≤3 Hari" value={fmtRpShort(kpi.dueSoonTotal)} sub={`${kpi.dueSoonCount} invoice`} />
-        <KpiCard icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-rose-50" iconColor="text-rose-700" badge="Terlambat" badgeClass="bg-rose-50 text-rose-700" label="Terlambat" value={fmtRpShort(kpi.terlambatTotal)} sub={`${kpi.terlambatCount} invoice`} alarming={kpi.terlambatCount > 0} />
+        <KpiCard icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-rose-50" iconColor="text-caleo-danger" badge="Terlambat" badgeClass="bg-rose-50 text-caleo-danger" label="Terlambat" value={fmtRpShort(kpi.terlambatTotal)} sub={`${kpi.terlambatCount} invoice`} alarming={kpi.terlambatCount > 0} />
       </div>
 
       <div className="flex items-center justify-between">
@@ -159,7 +159,7 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
                     <div className="inline-flex gap-1">
                       {pi.status === 'BELUM_LUNAS' && !pi.voided_at && (
                         <button onClick={() => setPayTarget(pi)}
-                          className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                          className="px-2.5 py-1.5 text-caleo-11 font-semibold rounded bg-green-50 text-caleo-success border border-green-200 hover:bg-green-100">
                           Tandai Lunas
                         </button>
                       )}

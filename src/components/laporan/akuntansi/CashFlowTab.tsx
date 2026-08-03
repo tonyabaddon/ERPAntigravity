@@ -140,7 +140,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
       <div className="p-6 border-b border-gray-200 flex items-baseline justify-between">
         <div>
           <h3 className="text-base font-bold" style={{ color: '#1e3d60' }}>
-            <Droplet className="inline w-5 h-5 mr-2 text-emerald-700" />
+            <Droplet className="inline w-5 h-5 mr-2 text-caleo-success" />
             Cash Flow Matrix
           </h3>
           <p className="text-xs text-gray-600">6 bulan terakhir · pivot per kategori</p>
@@ -219,7 +219,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             <tr style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
               <td
                 colSpan={data.months.length + 2}
-                className="py-2 px-3 font-bold text-emerald-900"
+                className="py-2 px-3 font-bold text-caleo-success"
               >
                 ↓ UANG MASUK
               </td>
@@ -231,7 +231,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
                 {category.cells.map((cell, idx) => (
                   <td
                     key={`in-${category.category}-${cell.month}`}
-                    className="text-right py-2 px-2 text-emerald-700 font-semibold"
+                    className="text-right py-2 px-2 text-caleo-success font-semibold"
                     style={
                       idx === currentMonthIdx
                         ? { background: '#dbeafe', fontWeight: '700' }
@@ -246,7 +246,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
                   </td>
                 ))}
                 <td
-                  className="text-right py-2 px-2 text-emerald-700 font-extrabold"
+                  className="text-right py-2 px-2 text-caleo-success font-extrabold"
                   style={{ background: '#d1fae5' }}
                 >
                   {viewMode === 'net'
@@ -262,7 +262,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             <tr style={{ background: 'rgba(239, 68, 68, 0.15)' }}>
               <td
                 colSpan={data.months.length + 2}
-                className="py-2 px-3 font-bold text-rose-900"
+                className="py-2 px-3 font-bold text-caleo-danger"
               >
                 ↑ UANG KELUAR
               </td>
@@ -274,7 +274,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
                 {category.cells.map((cell, idx) => (
                   <td
                     key={`out-${category.category}-${cell.month}`}
-                    className="text-right py-2 px-2 text-rose-700 font-semibold"
+                    className="text-right py-2 px-2 text-caleo-danger font-semibold"
                     style={
                       idx === currentMonthIdx
                         ? { background: '#dbeafe', fontWeight: '700' }
@@ -289,7 +289,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
                   </td>
                 ))}
                 <td
-                  className="text-right py-2 px-2 text-rose-700 font-extrabold"
+                  className="text-right py-2 px-2 text-caleo-danger font-extrabold"
                   style={{ background: '#fee2e2' }}
                 >
                   {viewMode === 'net'
@@ -312,7 +312,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
                   <td
                     key={`net-${idx}`}
                     className={`text-right py-3 px-2 ${
-                      isPositive ? 'text-emerald-700' : 'text-rose-700'
+                      isPositive ? 'text-caleo-success' : 'text-caleo-danger'
                     }`}
                     style={
                       idx === currentMonthIdx

@@ -55,7 +55,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
         <p className="text-xs text-gray-500 max-w-2xl">
           Pilih kanal yang akan muncul di form pencatatan penjualan. Data historis pada kanal yang dinonaktifkan tetap muncul di laporan & rekonsiliasi.
         </p>
-        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-bold text-emerald-700">
+        <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-bold text-caleo-success">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           {visibleCount} kanal aktif dari 14 · Perubahan tersimpan otomatis
         </div>
@@ -100,7 +100,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
                   >
                     <span className={`text-caleo-11 font-bold uppercase tracking-wide ${
                       isLocked ? 'text-slate-500'
-                      : isVisible ? 'text-emerald-700'
+                      : isVisible ? 'text-caleo-success'
                       : 'text-slate-400'
                     }`}>
                       {isLocked ? 'Aktif (dikunci)' : isVisible ? 'Aktif' : 'Non-aktif'}
@@ -108,7 +108,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
                     {isLocked
                       ? <Lock size={20} className="text-slate-400" />
                       : isVisible
-                        ? <ToggleRight size={28} className="text-emerald-600" />
+                        ? <ToggleRight size={28} className="text-caleo-success" />
                         : <ToggleLeft size={28} className="text-slate-300" />
                     }
                   </button>

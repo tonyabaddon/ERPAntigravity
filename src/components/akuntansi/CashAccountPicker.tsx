@@ -128,7 +128,7 @@ export default function CashAccountPicker({
         {label && (
           <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
             {label}
-            {required && <span className="text-rose-600"> *</span>}
+            {required && <span className="text-caleo-danger"> *</span>}
           </label>
         )}
         <select
@@ -148,7 +148,7 @@ export default function CashAccountPicker({
         {label && (
           <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
             {label}
-            {required && <span className="text-rose-600"> *</span>}
+            {required && <span className="text-caleo-danger"> *</span>}
           </label>
         )}
         <select
@@ -173,7 +173,7 @@ export default function CashAccountPicker({
         {label && (
           <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
             {label}
-            {required && <span className="text-rose-600"> *</span>}
+            {required && <span className="text-caleo-danger"> *</span>}
           </label>
         )}
         <div className="w-full border border-amber-300 bg-amber-50 rounded px-3 py-2.5 text-xs text-amber-900 leading-snug">
@@ -191,7 +191,7 @@ export default function CashAccountPicker({
       {label && (
         <label className="block font-bold mb-1 text-caleo-13" style={{ color: '#1e3d60' }}>
           {label}
-          {required && <span className="text-rose-600"> *</span>}
+          {required && <span className="text-caleo-danger"> *</span>}
         </label>
       )}
       <select
@@ -208,7 +208,7 @@ export default function CashAccountPicker({
         ))}
       </select>
       {required && !value && (
-        <p className="text-caleo-10 text-rose-600 mt-1">Wajib dipilih</p>
+        <p className="text-caleo-10 text-caleo-danger mt-1">Wajib dipilih</p>
       )}
     </div>
   );

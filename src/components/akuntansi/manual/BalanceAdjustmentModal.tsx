@@ -318,7 +318,7 @@ export default function BalanceAdjustmentModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-caleo-danger">
               ⚠ {fetchError}
             </div>
           )}
@@ -358,7 +358,7 @@ export default function BalanceAdjustmentModal({
                   disabled={saving}
                   className={`flex-1 py-2 rounded border font-bold text-xs transition-colors disabled:opacity-60 ${
                     direction === 'UP'
-                      ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                      ? 'bg-emerald-100 border-emerald-300 text-caleo-success'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -370,7 +370,7 @@ export default function BalanceAdjustmentModal({
                   disabled={saving}
                   className={`flex-1 py-2 rounded border font-bold text-xs transition-colors disabled:opacity-60 ${
                     direction === 'DOWN'
-                      ? 'bg-rose-100 border-rose-300 text-rose-800'
+                      ? 'bg-rose-100 border-rose-300 text-caleo-danger'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >

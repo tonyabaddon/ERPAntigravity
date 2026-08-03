@@ -144,7 +144,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1">
-                Nama Toko <span className="text-rose-500">*</span>
+                Nama Toko <span className="text-caleo-danger">*</span>
               </label>
               <input
                 type="text"
@@ -182,7 +182,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
 
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-slate-600 mb-1">
-                Alamat Lengkap <span className="text-rose-500">*</span>
+                Alamat Lengkap <span className="text-caleo-danger">*</span>
               </label>
               <textarea
                 rows={2}
@@ -196,7 +196,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
 
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1">
-                Kota <span className="text-rose-500">*</span>
+                Kota <span className="text-caleo-danger">*</span>
               </label>
               <input
                 type="text"
@@ -210,7 +210,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
 
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1">
-                Telp / WhatsApp <span className="text-rose-500">*</span>
+                Telp / WhatsApp <span className="text-caleo-danger">*</span>
               </label>
               <input
                 type="text"

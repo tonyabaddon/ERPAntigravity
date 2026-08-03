@@ -218,7 +218,7 @@ function CartRow({
         </div>
         {/* Item #4b: Promo Produk badge — shown when a promo applies to this SKU */}
         {showPromoBadge && promoDiscount && promo && (
-          <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-caleo-10 text-emerald-700 font-semibold">
+          <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-caleo-10 text-caleo-success font-semibold">
             <span>🏷</span>
             <span>
               Promo:{' '}
@@ -252,7 +252,7 @@ function CartRow({
           return upsellTier ? (
             <p className="text-caleo-11 text-slate-500 italic mt-1">
               Tip: beli {upsellTier.min_qty}+ pcs jadi Rp {upsellTier.price.toLocaleString('id-ID')}/pcs
-              <span className="text-emerald-600 ml-1">
+              <span className="text-caleo-success ml-1">
                 (hemat Rp {(item.unit_price - upsellTier.price).toLocaleString('id-ID')}/pcs untuk customer)
               </span>
             </p>
@@ -331,7 +331,7 @@ function CartRow({
       <div className="font-extrabold text-[var(--color-caleo-primary)] min-w-[90px] text-right text-caleo-13 pt-1">
         {formatRp(modulDiskonOn ? lineAfterDiscount : item.subtotal)}
       </div>
-      <button type="button" onClick={() => onRemove(item._key)} className="text-slate-300 hover:text-rose-500 text-lg leading-none pt-1">✕</button>
+      <button type="button" onClick={() => onRemove(item._key)} className="text-slate-300 hover:text-caleo-danger text-lg leading-none pt-1">✕</button>
     </div>
   );
 }
@@ -386,11 +386,11 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
   return (
     <>
       <div className="bg-emerald-50 border border-emerald-300 rounded px-3 py-2 mb-2 flex justify-between items-center">
-        <div className="font-extrabold text-emerald-700 text-caleo-13 flex items-center gap-2">
+        <div className="font-extrabold text-caleo-success text-caleo-13 flex items-center gap-2">
           🧺 Keranjang
           <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-caleo-11 font-extrabold">{totalLineCount} item</span>
         </div>
-        <div className="font-extrabold text-emerald-700 text-caleo-13">{formatRp(subtotalNet + rakitSubtotal)}</div>
+        <div className="font-extrabold text-caleo-success text-caleo-13">{formatRp(subtotalNet + rakitSubtotal)}</div>
       </div>
 
       {items.map(item => {
@@ -457,7 +457,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
                 <button
                   type="button"
                   onClick={() => onRemoveRakit?.(r.id)}
-                  className="text-slate-300 hover:text-rose-500 text-lg"
+                  className="text-slate-300 hover:text-caleo-danger text-lg"
                 >
                   ✕
                 </button>

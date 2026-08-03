@@ -59,7 +59,7 @@ export default function TopCustomerTable({ days, onOpenCustomer }: Props) {
                 <div className="text-xs text-slate-500">{r.customer_company}</div>
               )}
             </td>
-            <td className="py-3 text-right font-bold text-emerald-700">{formatRupiah(r.total_revenue)}</td>
+            <td className="py-3 text-right font-bold text-caleo-success">{formatRupiah(r.total_revenue)}</td>
             <td className="py-3 text-right text-slate-600">{r.transaction_count}x</td>
             <td className="py-3 text-right">
               <span className={r.days_since_last > 14 ? 'text-amber-700' : 'text-slate-600'}>

@@ -47,7 +47,7 @@ export default function RakitInlineForm({ type, serviceTypeName, onAdd, onCancel
           </span>
           <span className="text-caleo-11 text-slate-500">isi detail di bawah</span>
         </div>
-        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-rose-500 text-base">✕</button>
+        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-caleo-danger text-base">✕</button>
       </div>
       <div>
         <div className="text-caleo-10 font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Deskripsi (singkat, tampil di invoice)</div>

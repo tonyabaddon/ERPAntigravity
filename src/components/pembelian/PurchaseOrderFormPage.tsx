@@ -197,7 +197,7 @@ export default function PurchaseOrderFormPage({
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-5">
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">
-              Supplier <span className="text-rose-500">*</span>
+              Supplier <span className="text-caleo-danger">*</span>
             </label>
             {showInlineSupplier ? (
               <InlineSupplierForm

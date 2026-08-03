@@ -212,7 +212,7 @@ export default function BulkUpdateTierPricesSection({ stockList, tenantSettings,
             <div className="text-xs font-bold text-slate-700">
               {summary.toApply} akan diupdate · {summary.skipped} skipped · {summary.warning} warning
             </div>
-            <button onClick={() => setRows(null)} className="text-slate-400 hover:text-rose-500"><X className="w-4 h-4" /></button>
+            <button onClick={() => setRows(null)} className="text-slate-400 hover:text-caleo-danger"><X className="w-4 h-4" /></button>
           </div>
           <div className="max-h-80 overflow-auto">
             <table className="w-full text-xs">
@@ -268,10 +268,10 @@ export default function BulkUpdateTierPricesSection({ stockList, tenantSettings,
 
 function statusBadge(s: RowStatus) {
   const map: Record<RowStatus, { label: string; cls: string }> = {
-    OK:                   { label: 'OK',             cls: 'text-emerald-700 bg-emerald-50' },
+    OK:                   { label: 'OK',             cls: 'text-caleo-success bg-emerald-50' },
     WARNING_ABOVE_ECERAN: { label: 'Di atas eceran', cls: 'text-amber-700 bg-amber-50' },
-    SKIP_SKU_NOT_FOUND:   { label: 'SKU tidak ada',  cls: 'text-rose-700 bg-rose-50' },
-    SKIP_INVALID_FORMAT:  { label: 'Bukan numeric',  cls: 'text-rose-700 bg-rose-50' },
+    SKIP_SKU_NOT_FOUND:   { label: 'SKU tidak ada',  cls: 'text-caleo-danger bg-rose-50' },
+    SKIP_INVALID_FORMAT:  { label: 'Bukan numeric',  cls: 'text-caleo-danger bg-rose-50' },
     NO_CHANGE:            { label: 'Tidak berubah',  cls: 'text-slate-600 bg-slate-50' },
   };
   const { label, cls } = map[s];

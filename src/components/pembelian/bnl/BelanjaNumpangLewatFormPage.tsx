@@ -354,8 +354,8 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
             <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(projectedRevenue)}</div>
           </div>
           <div className="bg-green-50 rounded p-4">
-            <div className="text-caleo-11 text-green-700 uppercase font-semibold">Estimasi Profit ({margin.toFixed(1)}%)</div>
-            <div className="text-xl font-extrabold mt-1 text-green-700">{formatIDR(profit)}</div>
+            <div className="text-caleo-11 text-caleo-success uppercase font-semibold">Estimasi Profit ({margin.toFixed(1)}%)</div>
+            <div className="text-xl font-extrabold mt-1 text-caleo-success">{formatIDR(profit)}</div>
           </div>
         </div>
       </div>

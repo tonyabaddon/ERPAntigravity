@@ -46,7 +46,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
       <div className="bg-white rounded max-w-2xl w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-caleo-10 font-extrabold text-emerald-700 uppercase tracking-widest">Cari Produk via Foto</p>
+            <p className="text-caleo-10 font-extrabold text-caleo-success uppercase tracking-widest">Cari Produk via Foto</p>
             <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mt-0.5">Pilih sumber foto produk</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center">
@@ -73,10 +73,10 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
             disabled={isSearching}
             className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded p-5 text-left disabled:opacity-50">
             <div className="w-12 h-12 bg-emerald-200 rounded flex items-center justify-center mb-3">
-              <span className="material-symbols-outlined text-2xl text-emerald-800">photo_camera</span>
+              <span className="material-symbols-outlined text-2xl text-caleo-success">photo_camera</span>
             </div>
-            <p className="text-caleo-10 font-extrabold uppercase text-emerald-700">Opsi 1</p>
-            <h4 className="text-sm font-extrabold text-emerald-900 mt-0.5">Pakai Kamera</h4>
+            <p className="text-caleo-10 font-extrabold uppercase text-caleo-success">Opsi 1</p>
+            <h4 className="text-sm font-extrabold text-caleo-success mt-0.5">Pakai Kamera</h4>
             <input ref={camRef} type="file" accept="image/*" capture="environment" className="hidden"
                    onChange={e => { const f = e.target.files?.[0]; if (f) void runSearch(f); }} />
           </button>

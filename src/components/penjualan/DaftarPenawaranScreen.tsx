@@ -149,9 +149,9 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
             <div className="text-caleo-11 text-amber-700">{formatRp(counts.openTotal)} total</div>
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded p-3">
-            <div className="text-caleo-10 font-bold text-emerald-700 uppercase tracking-wider">Converted (7 hari)</div>
-            <div className="text-lg font-extrabold text-emerald-900 mt-1">{counts.converted}</div>
-            <div className="text-caleo-11 text-emerald-700">{formatRp(counts.convertedTotal)} menjadi SI</div>
+            <div className="text-caleo-10 font-bold text-caleo-success uppercase tracking-wider">Converted (7 hari)</div>
+            <div className="text-lg font-extrabold text-caleo-success mt-1">{counts.converted}</div>
+            <div className="text-caleo-11 text-caleo-success">{formatRp(counts.convertedTotal)} menjadi SI</div>
           </div>
           <div className="bg-slate-50 border border-slate-200 rounded p-3">
             <div className="text-caleo-10 font-bold text-slate-600 uppercase tracking-wider">Closed (7 hari)</div>
@@ -216,7 +216,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-caleo-10 font-bold ${
                           r.status === 'OPEN' ? 'bg-amber-100 text-amber-800'
-                          : r.status === 'CONVERTED' ? 'bg-emerald-100 text-emerald-800'
+                          : r.status === 'CONVERTED' ? 'bg-emerald-100 text-caleo-success'
                           : 'bg-slate-200 text-slate-600'
                         }`}>{r.status}</span>
                       </td>
@@ -239,7 +239,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                               <span className="w-3" aria-hidden="true" />
                               <button onClick={() => setCloseModal({ so: r, reason: '' })}
                                 title="Tandai SO sebagai LOST — customer batal / pilih supplier lain. Tidak bisa di-reopen."
-                                className="px-2.5 py-1 text-caleo-10 font-bold rounded bg-white border border-rose-300 text-rose-700 hover:bg-rose-50">
+                                className="px-2.5 py-1 text-caleo-10 font-bold rounded bg-white border border-rose-300 text-caleo-danger hover:bg-rose-50">
                                 ✕ Batal (Lost)
                               </button>
                             </>
@@ -248,10 +248,10 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                             <span className="text-caleo-10 text-slate-500 italic">Lost: {r.closed_reason}</span>
                           )}
                           {r.status === 'CONVERTED' && r.converted_to_kasir_tx_id && (
-                            <span className="text-caleo-10 font-bold text-emerald-700">→ {r.converted_to_kasir_tx_id.slice(0, 8)}</span>
+                            <span className="text-caleo-10 font-bold text-caleo-success">→ {r.converted_to_kasir_tx_id.slice(0, 8)}</span>
                           )}
                           {r.status === 'CONVERTED' && r.converted_to_order_id && (
-                            <span className="text-caleo-10 font-bold text-emerald-700">→ TEMPO {r.converted_to_order_id.slice(0, 8)}</span>
+                            <span className="text-caleo-10 font-bold text-caleo-success">→ TEMPO {r.converted_to_order_id.slice(0, 8)}</span>
                           )}
                         </div>
                       </td>
@@ -277,7 +277,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                 <span className="text-base font-extrabold text-[var(--color-caleo-primary)]">{viewSo.so_number}</span>
                 <span className={`px-2 py-0.5 rounded-full text-caleo-10 font-bold ${
                   viewSo.status === 'OPEN' ? 'bg-amber-100 text-amber-800'
-                  : viewSo.status === 'CONVERTED' ? 'bg-emerald-100 text-emerald-800'
+                  : viewSo.status === 'CONVERTED' ? 'bg-emerald-100 text-caleo-success'
                   : 'bg-slate-200 text-slate-600'
                 }`}>{viewSo.status}</span>
               </div>
@@ -354,12 +354,12 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               {/* CONVERTED info */}
               {viewSo.status === 'CONVERTED' && (viewSo.converted_to_kasir_tx_id || viewSo.converted_to_order_id) && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded p-3">
-                  <div className="text-caleo-10 font-bold uppercase tracking-wider text-emerald-700 mb-1">Konversi ke</div>
+                  <div className="text-caleo-10 font-bold uppercase tracking-wider text-caleo-success mb-1">Konversi ke</div>
                   {viewSo.converted_to_kasir_tx_id && (
-                    <p className="text-xs font-bold text-emerald-800">{viewSo.converted_to_kasir_tx_id}</p>
+                    <p className="text-xs font-bold text-caleo-success">{viewSo.converted_to_kasir_tx_id}</p>
                   )}
                   {viewSo.converted_to_order_id && (
-                    <p className="text-xs font-bold text-emerald-800">TEMPO: {viewSo.converted_to_order_id}</p>
+                    <p className="text-xs font-bold text-caleo-success">TEMPO: {viewSo.converted_to_order_id}</p>
                   )}
                 </div>
               )}
@@ -407,7 +407,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
       {closeModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded shadow-2xl p-6 max-w-md w-full">
-            <div className="text-lg font-extrabold text-rose-700 mb-1">Batalkan Sales Order (Lost Deal)</div>
+            <div className="text-lg font-extrabold text-caleo-danger mb-1">Batalkan Sales Order (Lost Deal)</div>
             <div className="text-caleo-11 text-slate-500 mb-3">
               Bukan sama dengan &ldquo;Jadi Sales Invoice&rdquo; — pastikan Anda memilih yang benar.
             </div>

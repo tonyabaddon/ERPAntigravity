@@ -51,7 +51,7 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
           </div>
         ))}
         <button onClick={addRow} className="text-caleo-10 font-extrabold text-[var(--color-caleo-primary)] mb-3">+ Tambah target</button>
-        <div className={`text-caleo-11 font-extrabold mb-4 ${Math.abs(remaining) < 50 ? 'text-emerald-700' : 'text-caleo-danger'}`}>
+        <div className={`text-caleo-11 font-extrabold mb-4 ${Math.abs(remaining) < 50 ? 'text-caleo-success' : 'text-caleo-danger'}`}>
           Sisa: {fmt(remaining)} {Math.abs(remaining) < 50 ? '✓' : '— harus 0 sebelum Apply'}
         </div>
         <div className="flex gap-2 justify-end">

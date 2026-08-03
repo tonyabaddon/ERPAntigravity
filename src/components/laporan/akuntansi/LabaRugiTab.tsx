@@ -309,7 +309,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
               <tbody>
                 {/* ── PENDAPATAN section ── */}
                 <tr style={{ background: '#ecfdf5' }}>
-                  <td colSpan={2} className="py-2 px-3 font-bold text-xs uppercase text-emerald-900">
+                  <td colSpan={2} className="py-2 px-3 font-bold text-xs uppercase text-caleo-success">
                     PENDAPATAN
                   </td>
                 </tr>
@@ -326,10 +326,10 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                 ))}
                 {/* Pendapatan Bersih subtotal */}
                 <tr className="border-t border-gray-200" style={{ background: '#f0fdf4' }}>
-                  <td className="py-2 px-3 font-bold text-emerald-900">
+                  <td className="py-2 px-3 font-bold text-caleo-success">
                     Pendapatan Bersih
                   </td>
-                  <td className="py-2 px-3 text-right font-bold font-mono text-emerald-900">
+                  <td className="py-2 px-3 text-right font-bold font-mono text-caleo-success">
                     {formatRupiah(data.pendapatanBersih)}
                   </td>
                 </tr>
@@ -470,10 +470,10 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
                   className="border-t-4"
                   style={{ background: '#d1fae5', borderColor: '#059669' }}
                 >
-                  <td className="py-3 px-3 font-black text-caleo-15 text-emerald-900">
+                  <td className="py-3 px-3 font-black text-caleo-15 text-caleo-success">
                     LABA NETO BULAN INI
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-caleo-15 font-mono text-emerald-900">
+                  <td className="py-3 px-3 text-right font-black text-caleo-15 font-mono text-caleo-success">
                     {formatRupiah(data.labaNeto)}
                   </td>
                 </tr>

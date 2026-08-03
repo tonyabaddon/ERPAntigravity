@@ -214,7 +214,7 @@ export default function Step3Payment(props: Props) {
             {submitting ? 'Menyimpan…' : '✓ Simpan Sales Order'}
           </button>
           {!validation.ok && validation.errors?.[0] && (
-            <p className="text-caleo-11 text-rose-600 text-center">{validation.errors[0]}</p>
+            <p className="text-caleo-11 text-caleo-danger text-center">{validation.errors[0]}</p>
           )}
         </div>
       </div>
@@ -277,32 +277,32 @@ export default function Step3Payment(props: Props) {
           {/* TEMPO context box (only when TEMPO active) */}
           {isTempo && (
             <div className={`rounded p-4 border ${overLimit ? 'bg-rose-50 border-rose-300' : 'bg-amber-50 border-amber-200'}`}>
-              <div className={`text-xs font-bold mb-2 uppercase tracking-wider ${overLimit ? 'text-rose-900' : 'text-amber-900'}`}>
+              <div className={`text-xs font-bold mb-2 uppercase tracking-wider ${overLimit ? 'text-caleo-danger' : 'text-amber-900'}`}>
                 Status Kredit Customer
               </div>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div>
-                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Limit</div>
-                  <div className={`font-bold text-base ${overLimit ? 'text-rose-900' : 'text-amber-900'}`}>{formatRp(limit)}</div>
+                  <div className={`${overLimit ? 'text-caleo-danger' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Limit</div>
+                  <div className={`font-bold text-base ${overLimit ? 'text-caleo-danger' : 'text-amber-900'}`}>{formatRp(limit)}</div>
                 </div>
                 <div>
-                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Outstanding</div>
-                  <div className={`font-bold text-base ${overLimit ? 'text-rose-900' : 'text-amber-900'}`}>{formatRp(used)}</div>
+                  <div className={`${overLimit ? 'text-caleo-danger' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Outstanding</div>
+                  <div className={`font-bold text-base ${overLimit ? 'text-caleo-danger' : 'text-amber-900'}`}>{formatRp(used)}</div>
                 </div>
                 <div>
-                  <div className={`${overLimit ? 'text-rose-700' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Sisa Tersedia</div>
-                  <div className={`font-bold text-base ${overLimit ? 'text-rose-900' : 'text-emerald-700'}`}>{formatRp(available)}</div>
+                  <div className={`${overLimit ? 'text-caleo-danger' : 'text-amber-700'} text-caleo-10 uppercase tracking-wider`}>Sisa Tersedia</div>
+                  <div className={`font-bold text-base ${overLimit ? 'text-caleo-danger' : 'text-caleo-success'}`}>{formatRp(available)}</div>
                 </div>
               </div>
-              <div className={`text-caleo-11 mt-3 ${overLimit ? 'text-rose-800' : 'text-amber-800'}`}>
+              <div className={`text-caleo-11 mt-3 ${overLimit ? 'text-caleo-danger' : 'text-amber-800'}`}>
                 💳 Term: <strong>{termDays} hari</strong> · Jatuh tempo: <strong>{jatuhTempoStr}</strong>
               </div>
               {overLimit ? (
-                <div className="text-caleo-11 text-rose-700 mt-1 font-semibold">
+                <div className="text-caleo-11 text-caleo-danger mt-1 font-semibold">
                   ⚠️ Over limit. Pesanan {formatRp(props.totalInvoice)} melebihi sisa kredit {formatRp(available)}.
                 </div>
               ) : (
-                <div className="text-caleo-11 text-emerald-700 mt-1 font-semibold">
+                <div className="text-caleo-11 text-caleo-success mt-1 font-semibold">
                   ✓ Pesanan {formatRp(props.totalInvoice)} cukup di sisa kredit.
                 </div>
               )}
@@ -530,7 +530,7 @@ export default function Step3Payment(props: Props) {
                   {submitting ? 'Menyimpan…' : '✓ Simpan Sales Invoice'}
                 </button>
                 {saveHint && (
-                  <p className="text-caleo-11 text-rose-600 text-center">{saveHint}</p>
+                  <p className="text-caleo-11 text-caleo-danger text-center">{saveHint}</p>
                 )}
               </>
             );

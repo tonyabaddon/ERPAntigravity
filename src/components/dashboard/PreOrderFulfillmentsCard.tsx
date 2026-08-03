@@ -132,7 +132,7 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
                     <button
                       key={`${r.audit_id}-${i}`}
                       onClick={() => onNotifyWA(c, r.sku)}
-                      className="px-2 py-1 text-caleo-11 font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                      className="px-2 py-1 text-caleo-11 font-semibold rounded bg-emerald-50 text-caleo-success border border-emerald-200 hover:bg-emerald-100"
                     >
                       WA {c.name.split(' ')[0]}
                     </button>

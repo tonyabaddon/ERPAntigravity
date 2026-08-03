@@ -120,8 +120,8 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
         />
         <KpiCard
           icon={<AlertTriangle className="w-5 h-5" />}
-          iconBg="bg-rose-50" iconColor="text-rose-700"
-          badge="Terlambat" badgeClass="bg-rose-50 text-rose-700"
+          iconBg="bg-rose-50" iconColor="text-caleo-danger"
+          badge="Terlambat" badgeClass="bg-rose-50 text-caleo-danger"
           label="Terlambat"
           value={fmtRpShort(kpi.overdue.amount)}
           sub={`${kpi.overdue.count} tagihan lewat JT`}
@@ -165,7 +165,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                     <td className="px-4 py-4">
                       <div className="text-xs text-gray-600">{fmtDate(s.due_soonest)}</div>
                       {overdueRow && (
-                        <div className="text-caleo-11 font-bold text-rose-700 mt-0.5">⚠ Terlambat {Math.abs(days!)} hari</div>
+                        <div className="text-caleo-11 font-bold text-caleo-danger mt-0.5">⚠ Terlambat {Math.abs(days!)} hari</div>
                       )}
                       {dueSoonRow && (
                         <div className="text-caleo-11 font-bold text-amber-700 mt-0.5">⏰ {days === 0 ? 'Jatuh tempo hari ini' : `${days} hari lagi`}</div>

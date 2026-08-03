@@ -44,7 +44,7 @@ export default function SlowMoverTable({ days }: Props) {
             <td className="py-3 text-right text-slate-600">{r.stock}</td>
             <td className="py-3 text-right text-slate-600">{r.qty_sold} unit</td>
             <td className="py-3 text-right">
-              <span className={r.severity === 'dead' ? 'text-rose-700 font-bold' : 'text-amber-700 font-semibold'}>
+              <span className={r.severity === 'dead' ? 'text-caleo-danger font-bold' : 'text-amber-700 font-semibold'}>
                 {r.days_stagnant} hari{r.severity === 'dead' ? ' \u{1F480}' : ' ⚠'}
               </span>
             </td>

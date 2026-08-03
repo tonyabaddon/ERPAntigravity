@@ -26,7 +26,7 @@ const fmtDate = (s?: string | null) =>
 const STATUS_BADGE: Record<PesananStatus, string> = {
   DRAFT: 'bg-gray-100 text-gray-700',
   ORDERED: 'bg-blue-100 text-blue-800',
-  CLOSED: 'bg-green-100 text-green-800',
+  CLOSED: 'bg-green-100 text-caleo-success',
 };
 
 export default function PesananDetailPage({
@@ -201,7 +201,7 @@ export default function PesananDetailPage({
                   <td className="py-3 text-center font-semibold">{it.qty}</td>
                   <td className="py-3 px-2">
                     <div className="flex flex-col items-center gap-1">
-                      <div className={`text-xs font-bold ${done ? 'text-green-700' : 'text-gray-700'}`}>
+                      <div className={`text-xs font-bold ${done ? 'text-caleo-success' : 'text-gray-700'}`}>
                         {it.qty_received_total} / {it.qty}
                       </div>
                       <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">

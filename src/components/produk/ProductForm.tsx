@@ -343,7 +343,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">📷 Foto Produk <span className="text-caleo-10 font-medium text-slate-400 ml-1">(opsional)</span></h5>
               <p className="text-caleo-10 text-slate-500">Max 5 · drop dari folder atau drag slot untuk urutan</p>
             </div>
-            <span className="text-caleo-10 font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
+            <span className="text-caleo-10 font-extrabold text-caleo-success bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
               {photos.length} / {MAX_PHOTOS} terisi
             </span>
           </div>
@@ -385,7 +385,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           >
             {dragOverFiles && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/10 rounded z-10">
-                <div className="bg-white px-4 py-2 rounded-full border-2 border-dashed border-emerald-500 text-xs font-extrabold text-emerald-700 uppercase tracking-widest">
+                <div className="bg-white px-4 py-2 rounded-full border-2 border-dashed border-emerald-500 text-xs font-extrabold text-caleo-success uppercase tracking-widest">
                   Lepas untuk upload {photos.length < MAX_PHOTOS ? `(sisa ${MAX_PHOTOS - photos.length} slot)` : '(slot penuh)'}
                 </div>
               </div>
@@ -441,7 +441,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                   {hargaModalIsAktual ? `Harga Modal Aktual (${costingMethod})` : 'Harga Modal Awal'}
                 </label>
                 <span className={`text-caleo-9 font-black uppercase tracking-widest border rounded-full px-1.5 py-0.5 ${
-                  hargaModalIsAktual ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : 'text-amber-700 bg-amber-100 border-amber-200'
+                  hargaModalIsAktual ? 'text-caleo-success bg-emerald-100 border-emerald-200' : 'text-amber-700 bg-amber-100 border-amber-200'
                 }`}>
                   {hargaModalIsAktual ? '🔒 Dari Pembelian' : 'Estimasi'}
                 </span>
@@ -451,7 +451,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                      className={`w-full rounded px-3 py-2.5 border text-caleo-13 font-semibold ${
                        hargaModalIsAktual ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white border-slate-200'
                      }`} />
-              <p className="text-caleo-10 text-emerald-700 font-bold pl-1">
+              <p className="text-caleo-10 text-caleo-success font-bold pl-1">
                 {marginPct !== null ? `Margin: ${marginPct.toFixed(1)}%` : 'Margin: —'}
                 {!hargaModalIsAktual && ' · akan di-update otomatis dari PO'}
               </p>
@@ -672,7 +672,7 @@ function CategoryDropdown(p: { value: string; options: string[]; onChange: (v: s
                  className="flex-1 bg-white rounded px-3 py-2 border border-emerald-200 text-xs" />
           <button onClick={async () => { await p.onCreateNew(newName); setCreating(false); setNewName(''); }}
                   className="px-3 py-2 bg-emerald-600 text-white rounded-full text-xs font-bold">Tambah</button>
-          <button onClick={() => { setCreating(false); setNewName(''); }} className="px-3 py-2 text-emerald-700 text-xs">Batal</button>
+          <button onClick={() => { setCreating(false); setNewName(''); }} className="px-3 py-2 text-caleo-success text-xs">Batal</button>
         </div>
       )}
     </div>
@@ -816,7 +816,7 @@ interface PhotoSlotProps {
 const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
   if (!p.photo) {
     return (
-      <label className="aspect-square rounded border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-700 cursor-pointer hover:bg-emerald-50/40">
+      <label className="aspect-square rounded border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-caleo-success cursor-pointer hover:bg-emerald-50/40">
         <span className="material-symbols-outlined text-3xl mb-1">add_a_photo</span>
         <span className="text-caleo-10 font-extrabold uppercase tracking-widest">Tambah</span>
         <input type="file" accept="image/*" multiple className="hidden"
@@ -847,7 +847,7 @@ const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
       )}
       {p.photo.status === 'uploaded' && (
         <button onClick={p.onDelete}
-                className="absolute bottom-1.5 right-1.5 bg-white/95 hover:bg-rose-50 text-rose-600 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100">
+                className="absolute bottom-1.5 right-1.5 bg-white/95 hover:bg-rose-50 text-caleo-danger w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100">
           <span className="material-symbols-outlined text-base">delete</span>
         </button>
       )}

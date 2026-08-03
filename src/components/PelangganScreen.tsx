@@ -29,15 +29,15 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   DP_VERIFIED:      { label: '✓ DP Lunas',         className: 'bg-teal-100 text-teal-800' },
   DP_PROOF_REJECTED:{ label: '✕ DP Ditolak',       className: 'bg-red-100 text-caleo-danger' },
   PAYMENT_UPLOADED: { label: '📎 Bukti Dikirim',   className: 'bg-blue-100 text-blue-800' },
-  PAYMENT_VERIFIED: { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
-  COMPLETED:        { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
-  PAYMENT_REJECTED: { label: '✕ Bayar Ditolak',    className: 'bg-rose-100 text-rose-800' },
+  PAYMENT_VERIFIED: { label: '✓ Selesai',           className: 'bg-green-100 text-caleo-success' },
+  COMPLETED:        { label: '✓ Selesai',           className: 'bg-green-100 text-caleo-success' },
+  PAYMENT_REJECTED: { label: '✕ Bayar Ditolak',    className: 'bg-rose-100 text-caleo-danger' },
   CANCELLED:        { label: '✕ Dibatalkan',        className: 'bg-red-100 text-caleo-danger' },
 };
 
 const TOTAL_COLOR: Record<string, string> = {
-  PAYMENT_VERIFIED:  'text-green-700',
-  COMPLETED:         'text-green-700',
+  PAYMENT_VERIFIED:  'text-caleo-success',
+  COMPLETED:         'text-caleo-success',
   WAITING_PAYMENT:   'text-yellow-700',
   WAITING_DP:        'text-yellow-700',
   DP_UPLOADED:       'text-indigo-700',
@@ -52,7 +52,7 @@ const LEAD_BADGE: Record<string, { label: string; className: string }> = {
   NEW:         { label: 'Baru',     className: 'bg-gray-100 text-gray-600' },
   IN_PROGRESS: { label: 'Proses',   className: 'bg-blue-100 text-blue-700' },
   ESCALATED:   { label: 'Eskalasi', className: 'bg-amber-100 text-amber-700' },
-  ORDERED:     { label: 'Selesai',  className: 'bg-emerald-100 text-emerald-700' },
+  ORDERED:     { label: 'Selesai',  className: 'bg-emerald-100 text-caleo-success' },
   DROPPED:     { label: 'Gugur',    className: 'bg-red-100 text-caleo-danger' },
 };
 
@@ -477,9 +477,9 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   salesEntries.map(entry => {
                     const badge = STATUS_BADGE[entry.status] ??
                       (entry.status === 'PAID'
-                        ? { label: '✓ Lunas (Kasir)', className: 'bg-green-100 text-green-800' }
+                        ? { label: '✓ Lunas (Kasir)', className: 'bg-green-100 text-caleo-success' }
                         : { label: entry.status, className: 'bg-gray-100 text-gray-600' });
-                    const totalColor = TOTAL_COLOR[entry.status] ?? (entry.status === 'PAID' ? 'text-green-700' : 'text-gray-700');
+                    const totalColor = TOTAL_COLOR[entry.status] ?? (entry.status === 'PAID' ? 'text-caleo-success' : 'text-gray-700');
                     return (
                       <div key={entry.id} className="border border-gray-200 rounded p-3 mb-2 last:mb-0 text-xs">
                         <div className="flex justify-between items-center mb-1 gap-2">

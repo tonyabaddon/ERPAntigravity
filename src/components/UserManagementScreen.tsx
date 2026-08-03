@@ -504,7 +504,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                         <button
                           onClick={(e) => { e.stopPropagation(); handleRemoveAdmin(adm.id); }}
-                          className="w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer text-rose-400 hover:bg-rose-50 hover:text-rose-700"
+                          className="w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer text-rose-400 hover:bg-rose-50 hover:text-caleo-danger"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

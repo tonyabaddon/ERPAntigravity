@@ -54,7 +54,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, onChange, onRemove }) => {
         <button
           type="button"
           onClick={onRemove}
-          className="text-rose-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50"
+          className="text-rose-400 hover:text-caleo-danger p-1 rounded hover:bg-rose-50"
         >
           <Trash2 className="w-4 h-4" />
         </button>

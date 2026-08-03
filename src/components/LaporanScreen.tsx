@@ -55,7 +55,7 @@ function DeltaBadge({ current, previous }: { current: number; previous: number }
     return <span className="text-caleo-11 text-slate-400">— tidak ada data periode sebelumnya</span>;
   }
   const arrow = d.direction === 'up' ? '▲' : d.direction === 'down' ? '▼' : '—';
-  const cls = d.direction === 'up' ? 'text-emerald-600' : d.direction === 'down' ? 'text-rose-600' : 'text-slate-500';
+  const cls = d.direction === 'up' ? 'text-caleo-success' : d.direction === 'down' ? 'text-caleo-danger' : 'text-slate-500';
   return (
     <span className={`text-caleo-11 font-semibold ${cls}`}>
       {arrow} {d.pct > 0 ? '+' : ''}{d.pct}% vs periode sebelumnya
@@ -192,11 +192,11 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         <KpiCard
           icon={<DollarSign className="w-6 h-6" />}
           iconBg="bg-emerald-50"
-          iconColor="text-emerald-700"
+          iconColor="text-caleo-success"
           badge={perfSummary && perfSummary.revenue > 0
             ? `${Math.round((perfSummary.gross_profit / perfSummary.revenue) * 100)}% margin`
             : 'Margin'}
-          badgeClass="text-emerald-700 bg-emerald-50"
+          badgeClass="text-caleo-success bg-emerald-50"
           label="Gross Profit"
           value={perfSummary ? formatRupiah(perfSummary.gross_profit) : '...'}
           sub={perfSummary
@@ -271,7 +271,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
                   <div key={row.channel} className="border border-slate-100 rounded p-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-700">{row.channel}</span>
-                      <span className="font-bold text-emerald-700">{Math.round(row.margin_pct)}%</span>
+                      <span className="font-bold text-caleo-success">{Math.round(row.margin_pct)}%</span>
                     </div>
                     <div className="mt-0.5 text-caleo-11 text-slate-500">
                       {formatRupiah(row.revenue)} · Profit {formatRupiah(row.gross_profit)}

@@ -17,7 +17,7 @@ export const ReadonlyBanner: React.FC = () => {
   const daysExpired = Math.max(0, Math.floor((Date.now() - new Date(t.expires_at).getTime()) / 86400000));
 
   return (
-    <div className="bg-rose-100 border-b border-rose-300 text-rose-900 px-4 py-3 flex items-center gap-2 text-sm">
+    <div className="bg-rose-100 border-b border-rose-300 text-caleo-danger px-4 py-3 flex items-center gap-2 text-sm">
       <AlertCircle size={18} />
       <span>
         <strong>Subscription Caleo kamu expired {daysExpired} hari lalu.</strong> Mode read-only aktif.

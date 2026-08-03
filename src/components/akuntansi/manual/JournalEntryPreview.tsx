@@ -57,8 +57,8 @@ export default function JournalEntryPreview({
         {/* Balanced / Imbalanced chip on right */}
         <span className={`chip-soft ml-auto ${
           isBalanced
-            ? 'bg-emerald-100 text-emerald-800'
-            : 'bg-rose-100 text-rose-800'
+            ? 'bg-emerald-100 text-caleo-success'
+            : 'bg-rose-100 text-caleo-danger'
         }`}>
           {isBalanced ? '✓ Balanced' : '⚠ Imbalanced'}
         </span>
@@ -87,7 +87,7 @@ export default function JournalEntryPreview({
                 </td>
                 <td className="text-right py-2 px-3">
                   {line.debit > 0 ? (
-                    <span className="font-bold text-emerald-700">
+                    <span className="font-bold text-caleo-success">
                       {formatAmount(line.debit)}
                     </span>
                   ) : (
@@ -96,7 +96,7 @@ export default function JournalEntryPreview({
                 </td>
                 <td className="text-right py-2 px-3">
                   {line.credit > 0 ? (
-                    <span className="font-bold text-rose-700">
+                    <span className="font-bold text-caleo-danger">
                       {formatAmount(line.credit)}
                     </span>
                   ) : (
@@ -113,10 +113,10 @@ export default function JournalEntryPreview({
               <td colSpan={2} className="py-2 px-3 text-right">
                 Total
               </td>
-              <td className="text-right py-2 px-3 text-emerald-700">
+              <td className="text-right py-2 px-3 text-caleo-success">
                 {formatAmount(totalDebit)}
               </td>
-              <td className="text-right py-2 px-3 text-rose-700">
+              <td className="text-right py-2 px-3 text-caleo-danger">
                 {formatAmount(totalCredit)}
               </td>
             </tr>

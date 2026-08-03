@@ -125,9 +125,9 @@ export default function Step2Items(props: Props) {
                     <div className="text-sm font-semibold">{s.name}</div>
                     <div className="text-caleo-11 text-slate-500">SKU: {s.sku} · {formatRp(s.price)}</div>
                     <div className="text-caleo-11 mt-0.5">
-                      <span className={atas > 0 ? 'text-emerald-600' : 'text-rose-600'}>Atas: {atas}</span>
+                      <span className={atas > 0 ? 'text-caleo-success' : 'text-caleo-danger'}>Atas: {atas}</span>
                       <span className="text-slate-400"> · </span>
-                      <span className={bawah > 0 ? 'text-emerald-600' : 'text-rose-600'}>Bawah: {bawah}</span>
+                      <span className={bawah > 0 ? 'text-caleo-success' : 'text-caleo-danger'}>Bawah: {bawah}</span>
                     </div>
                   </div>
                   <button
@@ -241,7 +241,7 @@ export default function Step2Items(props: Props) {
             <button
               type="button"
               onClick={props.onClearCart}
-              className="text-caleo-11 text-rose-600 font-semibold hover:underline"
+              className="text-caleo-11 text-caleo-danger font-semibold hover:underline"
             >
               × Kosongkan
             </button>

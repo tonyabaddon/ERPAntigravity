@@ -49,8 +49,8 @@ const STATUS_LABEL: Record<OpnameSession['status'], string> = {
 const STATUS_PILL: Record<OpnameSession['status'], string> = {
   in_progress: 'bg-amber-100 text-amber-800 border border-amber-200',
   pending_owner: 'bg-blue-100 text-blue-800 border border-blue-200',
-  committed: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-  rejected: 'bg-rose-100 text-rose-800 border border-rose-200',
+  committed: 'bg-emerald-100 text-caleo-success border border-emerald-200',
+  rejected: 'bg-rose-100 text-caleo-danger border border-rose-200',
   abandoned: 'bg-slate-100 text-slate-600 border border-slate-200',
 };
 
@@ -263,7 +263,7 @@ export default function StockOpnameScreen({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setCancelTarget(activeSession); }}
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-rose-700 hover:text-rose-800 hover:underline"
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-caleo-danger hover:text-caleo-danger hover:underline"
                   >
                     Batalkan sesi
                   </button>
@@ -371,17 +371,17 @@ export default function StockOpnameScreen({
                       <td className="py-2 px-3">{e.counterName ?? '—'}</td>
                       <td className="py-2 px-3">{e.witnessName ?? <span className="text-xs italic text-slate-400">(solo)</span>}</td>
                       <td className={`py-2 px-3 text-right font-semibold ${
-                        e.totalVarianceValue < 0 ? 'text-rose-600'
-                        : e.totalVarianceValue > 0 ? 'text-emerald-700'
+                        e.totalVarianceValue < 0 ? 'text-caleo-danger'
+                        : e.totalVarianceValue > 0 ? 'text-caleo-success'
                         : 'text-slate-400'
                       }`}>
                         {formatRpDelta(e.totalVarianceValue)}
                       </td>
                       <td className="py-2 px-3">
                         <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${
-                          e.eventType === 'opname_auto_commit' ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          e.eventType === 'opname_auto_commit' ? 'bg-emerald-100 text-caleo-success border-emerald-200'
                           : e.eventType === 'opname_owner_commit' ? 'bg-blue-100 text-blue-800 border-blue-200'
-                          : 'bg-rose-100 text-rose-800 border-rose-200'
+                          : 'bg-rose-100 text-caleo-danger border-rose-200'
                         }`}>
                           {e.eventType === 'opname_auto_commit' ? 'Selesai Otomatis'
                             : e.eventType === 'opname_owner_commit' ? 'Disetujui Owner'

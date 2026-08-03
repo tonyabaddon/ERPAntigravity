@@ -159,7 +159,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
           <tfoot>
             <tr className="bg-slate-50 border-t border-slate-200">
               <td className="px-4 py-2.5 text-xs font-bold text-slate-600">Total Kas & Bank</td>
-              <td className="px-4 py-2.5 text-right font-bold text-caleo-13 text-emerald-700">
+              <td className="px-4 py-2.5 text-right font-bold text-caleo-13 text-caleo-success">
                 {formatIDR(wizardTotal)}
               </td>
               <td />

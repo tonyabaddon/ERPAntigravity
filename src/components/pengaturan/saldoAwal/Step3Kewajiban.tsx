@@ -243,7 +243,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                           <button
                             type="button"
                             onClick={() => removeAPLine(idx)}
-                            className="text-slate-300 hover:text-rose-500 text-base leading-none"
+                            className="text-slate-300 hover:text-caleo-danger text-base leading-none"
                             title="Hapus baris"
                           >
                             ×
@@ -257,7 +257,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                   <tfoot>
                     <tr className="bg-slate-50 border-t border-slate-200">
                       <td className="px-3 py-2 text-caleo-11 font-bold text-slate-600">Total</td>
-                      <td className="px-3 py-2 text-right font-bold text-xs text-rose-700">
+                      <td className="px-3 py-2 text-right font-bold text-xs text-caleo-danger">
                         {formatIDR(apDetailTotal)}
                       </td>
                       <td colSpan={3} />
@@ -287,7 +287,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
           <span className="text-slate-400">{lainLainOpen ? '▾' : '▸'}</span>
           Kewajiban lain (opsional)
           {data.lain_lain.length > 0 && (
-            <span className="text-caleo-11 bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded-full font-bold">
+            <span className="text-caleo-11 bg-rose-50 text-caleo-danger border border-rose-200 px-1.5 py-0.5 rounded-full font-bold">
               {data.lain_lain.length}
             </span>
           )}
@@ -349,7 +349,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                           <button
                             type="button"
                             onClick={() => removeLainLain(idx)}
-                            className="text-slate-300 hover:text-rose-500 text-base leading-none"
+                            className="text-slate-300 hover:text-caleo-danger text-base leading-none"
                             title="Hapus baris"
                           >
                             ×

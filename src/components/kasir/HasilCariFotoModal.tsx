@@ -13,9 +13,9 @@ interface Props {
 
 // Tier the similarity score so the eye can scan strong→weak matches.
 function simColorClass(sim: number): string {
-  if (sim >= 0.90) return 'text-emerald-700';
-  if (sim >= 0.80) return 'text-emerald-600';
-  return 'text-emerald-500';
+  if (sim >= 0.90) return 'text-caleo-success';
+  if (sim >= 0.80) return 'text-caleo-success';
+  return 'text-caleo-success';
 }
 
 export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlobUrl, queryFilename, onChangePhoto, onAddToCart }: Props) {
@@ -26,7 +26,7 @@ export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlob
       <div className="bg-white rounded max-w-3xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-caleo-10 font-extrabold text-emerald-700 uppercase tracking-widest">Hasil Cari by Foto</p>
+            <p className="text-caleo-10 font-extrabold text-caleo-success uppercase tracking-widest">Hasil Cari by Foto</p>
             <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mt-0.5">Top {results.length} produk paling mirip</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center">
@@ -41,12 +41,12 @@ export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlob
               <div className="w-16 h-16 rounded bg-slate-200" />
             )}
             <div>
-              <p className="text-caleo-10 font-extrabold uppercase tracking-widest text-emerald-700">Foto yang dicari</p>
-              <p className="text-caleo-13 font-bold text-emerald-900">{queryFilename ?? 'query.jpg'}</p>
-              <p className="text-caleo-10 text-emerald-700 italic">Top {results.length} produk paling mirip berdasarkan visual similarity (CLIP)</p>
+              <p className="text-caleo-10 font-extrabold uppercase tracking-widest text-caleo-success">Foto yang dicari</p>
+              <p className="text-caleo-13 font-bold text-caleo-success">{queryFilename ?? 'query.jpg'}</p>
+              <p className="text-caleo-10 text-caleo-success italic">Top {results.length} produk paling mirip berdasarkan visual similarity (CLIP)</p>
             </div>
           </div>
-          <button onClick={onChangePhoto} className="px-3 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-full text-caleo-11 font-extrabold inline-flex items-center gap-1">
+          <button onClick={onChangePhoto} className="px-3 py-2 bg-white border border-emerald-200 text-caleo-success rounded-full text-caleo-11 font-extrabold inline-flex items-center gap-1">
             <span className="material-symbols-outlined text-base">refresh</span> Ganti foto
           </button>
         </div>
@@ -76,7 +76,7 @@ export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlob
                     {warehouseEntries.map(([w, q]) => (
                       <React.Fragment key={w}>
                         <span className="mx-1.5 text-slate-400">·</span>
-                        <span className={`${lowStock ? 'text-amber-700' : 'text-emerald-700'} font-semibold`}>{w} {q}</span>
+                        <span className={`${lowStock ? 'text-amber-700' : 'text-caleo-success'} font-semibold`}>{w} {q}</span>
                       </React.Fragment>
                     ))}
                   </p>
@@ -86,7 +86,7 @@ export default function HasilCariFotoModal({ isOpen, onClose, results, queryBlob
                   <div className="text-caleo-9 text-slate-500 uppercase tracking-widest">similarity</div>
                   <button
                     onClick={() => onAddToCart(r)}
-                    className={`mt-1 px-3 py-1.5 rounded-full text-caleo-10 font-extrabold uppercase inline-flex items-center gap-1 ${isBest ? 'bg-[#2d8a4e] text-white' : 'bg-white border border-emerald-300 text-emerald-700'}`}>
+                    className={`mt-1 px-3 py-1.5 rounded-full text-caleo-10 font-extrabold uppercase inline-flex items-center gap-1 ${isBest ? 'bg-[#2d8a4e] text-white' : 'bg-white border border-emerald-300 text-caleo-success'}`}>
                     <span className="material-symbols-outlined text-sm">add</span> Tambah
                   </button>
                 </div>

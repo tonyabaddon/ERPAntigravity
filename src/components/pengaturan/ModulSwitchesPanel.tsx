@@ -51,7 +51,7 @@ export default function ModulSwitchesPanel({ showToast }: Props) {
   };
 
   if (loading) return <p className="text-sm text-slate-500 p-6">Memuat…</p>;
-  if (!settings) return <p className="text-sm text-rose-600 p-6">Tidak bisa memuat pengaturan</p>;
+  if (!settings) return <p className="text-sm text-caleo-danger p-6">Tidak bisa memuat pengaturan</p>;
 
   return (
     <div className="space-y-3">

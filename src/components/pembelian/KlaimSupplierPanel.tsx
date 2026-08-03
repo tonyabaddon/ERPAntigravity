@@ -40,10 +40,10 @@ const STATUS_META: Record<ClaimStatus, { label: string; className: string }> = {
   AWAITING_OWNER_DECISION: { label: 'Menunggu Owner', className: 'bg-orange-100 text-orange-800 border-orange-200' },
   DISPOSED: { label: 'Kerugian', className: 'bg-slate-100 text-slate-700 border-slate-200' },
   PENDING: { label: 'Menunggu Supplier', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-  RESOLVED_REPLACED: { label: 'Diganti', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  RESOLVED_REPLACED: { label: 'Diganti', className: 'bg-emerald-100 text-caleo-success border-emerald-200' },
   RESOLVED_CREDITED: { label: 'Credit Note', className: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
   RESOLVED_CASHED: { label: 'Cash Refund', className: 'bg-purple-100 text-purple-800 border-purple-200' },
-  REJECTED: { label: 'Ditolak', className: 'bg-rose-100 text-rose-800 border-rose-200' },
+  REJECTED: { label: 'Ditolak', className: 'bg-rose-100 text-caleo-danger border-rose-200' },
 };
 
 const OUTCOME_OPTIONS: { value: ClaimOutcome; label: string; description: string }[] = [
@@ -203,7 +203,7 @@ export default function KlaimSupplierPanel({ showToast }: KlaimSupplierPanelProp
         </div>
         <div className="rounded border border-slate-200 bg-white px-4 py-3">
           <div className="text-xs uppercase tracking-wide text-slate-400">Selesai Bulan Ini</div>
-          <div className="mt-1 text-xl font-semibold text-emerald-700">{summary.resolvedThisMonth}</div>
+          <div className="mt-1 text-xl font-semibold text-caleo-success">{summary.resolvedThisMonth}</div>
         </div>
       </div>
 
@@ -257,7 +257,7 @@ export default function KlaimSupplierPanel({ showToast }: KlaimSupplierPanelProp
                     <div className="text-xs text-slate-500">
                       Gudang {claim.warehouse.toUpperCase()} · Dibuat {formatDate(claim.createdAt)}
                       {claim.resolvedAt && (
-                        <> · <span className="text-emerald-700">Selesai {formatDate(claim.resolvedAt)}</span></>
+                        <> · <span className="text-caleo-success">Selesai {formatDate(claim.resolvedAt)}</span></>
                       )}
                     </div>
                     {claim.damageNotes && (

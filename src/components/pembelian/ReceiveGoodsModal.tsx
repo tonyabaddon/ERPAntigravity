@@ -127,18 +127,18 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Tanggal Terima <span className="text-rose-500">*</span></label>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Tanggal Terima <span className="text-caleo-danger">*</span></label>
               <input type="date" value={receivedAt} onChange={e => setReceivedAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2" />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Jatuh Tempo Pembayaran <span className="text-rose-500">*</span></label>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Jatuh Tempo Pembayaran <span className="text-caleo-danger">*</span></label>
               <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2" />
               <p className="text-caleo-10 text-gray-400 mt-1">
                 Pre-filled {supplierTermDays > 0 ? `Net ${supplierTermDays}` : 'Cash'}. Sesuaikan dengan invoice supplier.
               </p>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Gudang Tujuan <span className="text-rose-500">*</span></label>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Gudang Tujuan <span className="text-caleo-danger">*</span></label>
               <WarehousePicker
                 mode="single"
                 warehouses={warehouses}
@@ -154,8 +154,8 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
               <div className="grid grid-cols-12 px-3 py-2 bg-gray-50 border-b border-gray-200 text-caleo-10 font-bold uppercase tracking-wide text-gray-500">
                 <span className="col-span-4">Produk</span>
                 <span className="col-span-1 text-center">Dipesan</span>
-                <span className="col-span-2 text-center text-emerald-600">Qty Baik</span>
-                <span className="col-span-2 text-center text-rose-500">Qty Rusak</span>
+                <span className="col-span-2 text-center text-caleo-success">Qty Baik</span>
+                <span className="col-span-2 text-center text-caleo-danger">Qty Rusak</span>
                 <span className="col-span-3">Catatan Kerusakan</span>
               </div>
               {(po.items ?? []).map(item => {
@@ -192,7 +192,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
                             updateCondition(item.id, 'qty_damaged', qd);
                             updateCondition(item.id, 'qty_received', qr);
                           }}
-                          className={`w-14 text-center text-sm border rounded px-2 py-1 focus-visible:outline-none focus-visible:ring-1 ${hasDamage ? 'border-rose-300 text-rose-700 font-bold bg-white focus-visible:ring-caleo-gold' : 'border-gray-200 focus-visible:ring-caleo-gold'}`}
+                          className={`w-14 text-center text-sm border rounded px-2 py-1 focus-visible:outline-none focus-visible:ring-1 ${hasDamage ? 'border-rose-300 text-caleo-danger font-bold bg-white focus-visible:ring-caleo-gold' : 'border-gray-200 focus-visible:ring-caleo-gold'}`}
                         />
                       </div>
                       <div className="col-span-3 pl-2">
@@ -209,7 +209,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
                       </div>
                     </div>
                     {hasDamage && (
-                      <p className="px-3 pb-2 text-caleo-10 text-rose-500">⚠ {cond.qty_damaged} item rusak tidak masuk stok — akan ditrack untuk retur.</p>
+                      <p className="px-3 pb-2 text-caleo-10 text-caleo-danger">⚠ {cond.qty_damaged} item rusak tidak masuk stok — akan ditrack untuk retur.</p>
                     )}
                   </div>
                 );

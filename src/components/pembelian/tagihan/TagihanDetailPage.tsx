@@ -43,7 +43,7 @@ function effectiveStatus(t: TagihanRow, today = wibDateString()): TagihanStatus 
 
 function statusBadgeCls(label: string): string {
   switch (label) {
-    case 'LUNAS': return 'bg-green-100 text-green-800';
+    case 'LUNAS': return 'bg-green-100 text-caleo-success';
     case 'DIBAYAR_SEBAGIAN': return 'bg-sky-100 text-sky-800';
     case 'TERLAMBAT': return 'bg-red-100 text-caleo-danger';
     case 'BELUM_LUNAS': return 'bg-amber-100 text-amber-800';
@@ -247,8 +247,8 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
             <div className="text-lg font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(tgh.total)}</div>
           </div>
           <div className="bg-green-50 rounded p-3">
-            <div className="text-caleo-11 text-green-700 uppercase font-semibold">Sudah Dibayar</div>
-            <div className="text-lg font-extrabold mt-1 text-green-700">{formatIDR(paid)}</div>
+            <div className="text-caleo-11 text-caleo-success uppercase font-semibold">Sudah Dibayar</div>
+            <div className="text-lg font-extrabold mt-1 text-caleo-success">{formatIDR(paid)}</div>
           </div>
           <div className="bg-amber-50 rounded p-3">
             <div className="text-caleo-11 text-amber-700 uppercase font-semibold">Sisa Bayar</div>

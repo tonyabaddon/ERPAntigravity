@@ -225,7 +225,7 @@ export default function PinPad({
       </div>
 
       {(errorMsg || externalError) && (
-        <p className="text-center text-xs font-bold text-rose-600 mb-3">{errorMsg ?? externalError}</p>
+        <p className="text-center text-xs font-bold text-caleo-danger mb-3">{errorMsg ?? externalError}</p>
       )}
 
       <div className={`grid grid-cols-3 gap-3 ${gridMaxW} mx-auto`}>

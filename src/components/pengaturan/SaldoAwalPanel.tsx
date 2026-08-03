@@ -100,22 +100,22 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           <div className="bg-emerald-50 border border-emerald-200 rounded p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-caleo-11 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold uppercase tracking-wide">
+                <span className="text-caleo-11 px-2 py-0.5 rounded-full bg-emerald-100 text-caleo-success border border-emerald-200 font-bold uppercase tracking-wide">
                   Terpost
                 </span>
-                <span className="text-caleo-13 font-bold text-emerald-800">
+                <span className="text-caleo-13 font-bold text-caleo-success">
                   Saldo Awal per {cutoverFormatted}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setReverseOpen(true)}
-                className="text-xs text-rose-600 border border-rose-200 bg-white rounded px-3 py-1.5 hover:bg-rose-50 font-semibold"
+                className="text-xs text-caleo-danger border border-rose-200 bg-white rounded px-3 py-1.5 hover:bg-rose-50 font-semibold"
               >
                 Reverse & Edit
               </button>
             </div>
-            <div className="text-caleo-11 text-emerald-700">
+            <div className="text-caleo-11 text-caleo-success">
               Dipost pada {postedFormatted}
               {snapshot.posted_je_id && (
                 <span className="ml-2 font-mono">(Jurnal Umum ID: {snapshot.posted_je_id.slice(0, 8)}…)</span>
@@ -153,7 +153,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
           >
             <div className="bg-white rounded shadow-2xl w-full max-w-md">
               <div className="px-4 py-4 border-b border-slate-200">
-                <h3 className="text-sm font-bold text-rose-700">Reverse Saldo Awal?</h3>
+                <h3 className="text-sm font-bold text-caleo-danger">Reverse Saldo Awal?</h3>
                 <p className="text-xs text-slate-600 mt-1">
                   Ini akan membuat Jurnal Reversal dan mereset status ke draft. Setelah ini kamu bisa isi ulang via wizard.
                 </p>
@@ -264,9 +264,9 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
 function SummaryCard({ label, value, color }: { label: string; value: number; color: 'emerald' | 'rose' | 'slate' }) {
   const colorClass =
     color === 'emerald'
-      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+      ? 'bg-emerald-50 border-emerald-200 text-caleo-success'
       : color === 'rose'
-      ? 'bg-rose-50 border-rose-200 text-rose-800'
+      ? 'bg-rose-50 border-rose-200 text-caleo-danger'
       : 'bg-slate-50 border-slate-200 text-slate-700';
   return (
     <div className={`border rounded p-3 ${colorClass}`}>

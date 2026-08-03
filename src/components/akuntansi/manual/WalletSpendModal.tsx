@@ -283,21 +283,21 @@ export default function WalletSpendModal({
           style={{ background: '#fee2e2' }}
         >
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0 bg-rose-300 text-rose-700">
+            <div className="w-10 h-10 rounded flex items-center justify-center flex-shrink-0 bg-rose-300 text-caleo-danger">
               <ArrowDownCircle className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold" style={{ color: '#be123c' }}>
                 Catat Spending Wallet
               </h2>
-              <p className="text-xs text-rose-700 mt-0.5">
+              <p className="text-xs text-caleo-danger mt-0.5">
                 OUT only · saat dipakai
               </p>
             </div>
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-white/60"
+            className="text-caleo-danger hover:text-caleo-danger p-1 rounded hover:bg-white/60"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -310,7 +310,7 @@ export default function WalletSpendModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded p-3 text-xs text-caleo-danger">
               ⚠ {fetchError}
             </div>
           )}

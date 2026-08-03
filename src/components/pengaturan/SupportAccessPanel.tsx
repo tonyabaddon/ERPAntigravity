@@ -145,7 +145,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
       <section>
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 bg-emerald-100 rounded flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-5 h-5 text-emerald-700" />
+            <ShieldCheck className="w-5 h-5 text-caleo-success" />
           </div>
           <div className="flex-1">
             <h3 className="text-base font-bold text-[var(--color-caleo-primary)]">Support Access</h3>
@@ -204,12 +204,12 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 key={g.id}
                 className="rounded border border-emerald-200 bg-emerald-50/50 p-4 flex items-start gap-3"
               >
-                <ShieldCheck className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+                <ShieldCheck className="w-5 h-5 text-caleo-success shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-caleo-13 font-semibold text-emerald-900 break-all">
+                  <div className="text-caleo-13 font-semibold text-caleo-success break-all">
                     {g.admin_email}
                   </div>
-                  <div className="text-xs text-emerald-800 mt-1 flex items-center gap-1">
+                  <div className="text-xs text-caleo-success mt-1 flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     Kedaluwarsa {fmtDate(g.expires_at)}
                   </div>
@@ -223,7 +223,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 <button
                   type="button"
                   onClick={() => setPendingRevoke(g)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-rose-300 bg-white text-caleo-13 text-rose-700 font-semibold hover:bg-rose-50 shrink-0"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-rose-300 bg-white text-caleo-13 text-caleo-danger font-semibold hover:bg-rose-50 shrink-0"
                 >
                   <XCircle className="w-3.5 h-3.5" />
                   Cabut
@@ -259,7 +259,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                     <td className="px-3 py-2">{fmtDate(g.expires_at)}</td>
                     <td className="px-3 py-2">
                       {g.revoked_at ? (
-                        <span className="text-rose-700">
+                        <span className="text-caleo-danger">
                           Dicabut {fmtDate(g.revoked_at)}
                         </span>
                       ) : (
@@ -286,7 +286,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
           >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 bg-emerald-100 rounded flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5 text-emerald-700" />
+                <ShieldCheck className="w-5 h-5 text-caleo-success" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[var(--color-caleo-primary)]">Beri akses support</h3>
@@ -390,7 +390,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
           >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 bg-rose-100 rounded flex items-center justify-center shrink-0">
-                <XCircle className="w-5 h-5 text-rose-700" />
+                <XCircle className="w-5 h-5 text-caleo-danger" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[var(--color-caleo-primary)]">Cabut akses?</h3>

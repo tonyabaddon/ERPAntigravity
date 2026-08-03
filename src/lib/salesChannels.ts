@@ -54,7 +54,7 @@ export const CHANNEL_VISUAL: Record<SalesChannel, ChannelDef> = {
     code: 'tokopedia', label: 'Tokopedia / TikTok Shop', iconType: 'svg', iconAsset: '/icons/channels/tokopedia.svg',
     group: 'marketplace', invoicePrefix: 'TPD', flow: 'kasir', requiresOrderNo: true,
     brandColor: '#03AC0E',
-    bgClass: 'bg-green-50', textClass: 'text-green-700', borderClass: 'border-green-600',
+    bgClass: 'bg-green-50', textClass: 'text-caleo-success', borderClass: 'border-green-600',
   },
   shopee: {
     code: 'shopee', label: 'Shopee', iconType: 'svg', iconAsset: '/icons/channels/shopee.svg',
@@ -78,7 +78,7 @@ export const CHANNEL_VISUAL: Record<SalesChannel, ChannelDef> = {
     code: 'bukalapak', label: 'Bukalapak', iconType: 'svg', iconAsset: '/icons/channels/bukalapak.svg',
     group: 'marketplace', invoicePrefix: 'BKL', flow: 'kasir', requiresOrderNo: true,
     brandColor: '#E31E52',
-    bgClass: 'bg-rose-50', textClass: 'text-rose-700', borderClass: 'border-rose-600',
+    bgClass: 'bg-rose-50', textClass: 'text-caleo-danger', borderClass: 'border-rose-600',
   },
   ralali: {
     code: 'ralali', label: 'Ralali', iconType: 'svg', iconAsset: '/icons/channels/ralali.svg',
@@ -96,7 +96,7 @@ export const CHANNEL_VISUAL: Record<SalesChannel, ChannelDef> = {
     code: 'whatsapp', label: 'WhatsApp', iconType: 'svg', iconAsset: '/icons/channels/whatsapp.svg',
     group: 'direct', invoicePrefix: 'WAM', flow: 'orders', requiresOrderNo: false,
     brandColor: '#25D366',
-    bgClass: 'bg-emerald-50', textClass: 'text-emerald-700', borderClass: 'border-emerald-600',
+    bgClass: 'bg-emerald-50', textClass: 'text-caleo-success', borderClass: 'border-emerald-600',
   },
   instagram: {
     code: 'instagram', label: 'Instagram DM', iconType: 'svg', iconAsset: '/icons/channels/instagram.svg',

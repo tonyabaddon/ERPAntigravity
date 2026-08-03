@@ -85,7 +85,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
                     }`}>
               <div className="font-bold text-sm">{opt.label}</div>
               <div className="text-caleo-11 text-slate-500 mt-1">{opt.desc}</div>
-              {settings.pajak_mode === opt.v && <div className="text-caleo-10 text-emerald-700 mt-1 font-bold">✓ DIPILIH</div>}
+              {settings.pajak_mode === opt.v && <div className="text-caleo-10 text-caleo-success mt-1 font-bold">✓ DIPILIH</div>}
             </button>
           ))}
         </div>
@@ -120,7 +120,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
               <div className="text-2xl">⏰</div>
               <div className="text-xs text-slate-700">
                 <div className="font-bold text-[var(--color-caleo-primary)]">Otomatis expires: {new Date(settings.pajak_umkm_expires_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
-                <div className="mt-1">Kamu masih punya <strong className="text-emerald-700">{timeUntil(settings.pajak_umkm_expires_at)}</strong> sebelum harus pindah ke skema umum.</div>
+                <div className="mt-1">Kamu masih punya <strong className="text-caleo-success">{timeUntil(settings.pajak_umkm_expires_at)}</strong> sebelum harus pindah ke skema umum.</div>
                 <div className="mt-2 text-caleo-11 text-slate-500">⚠️ 90 hari sebelum expiry, kamu akan diingatkan untuk siap-siap pindah skema.</div>
               </div>
             </div>

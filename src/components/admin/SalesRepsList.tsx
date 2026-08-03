@@ -33,7 +33,7 @@ function StatusBadge({ status }: { status: SalesRep['status'] }) {
   if (status === 'active') {
     return (
       <span
-        className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold bg-emerald-100 text-emerald-800"
+        className="inline-block px-2 py-0.5 rounded-full text-caleo-11 font-semibold bg-emerald-100 text-caleo-success"
       >
         Aktif
       </span>

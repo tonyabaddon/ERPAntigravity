@@ -27,7 +27,7 @@ interface Props {
 const STATUS_BADGE: Record<TukarFakturStatus, string> = {
   BELUM_LUNAS: 'bg-amber-100 text-amber-800',
   DIBAYAR_SEBAGIAN: 'bg-sky-100 text-sky-800',
-  LUNAS: 'bg-green-100 text-green-800',
+  LUNAS: 'bg-green-100 text-caleo-success',
   VOIDED: 'bg-gray-200 text-gray-600',
 };
 

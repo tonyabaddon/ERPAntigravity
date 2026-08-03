@@ -253,7 +253,7 @@ export default function LockSubmissionModal({
                 : 'Isi komponen + harga final. Owner akan review & approve / reject.'}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-rose-500 text-2xl leading-none">✕</button>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-caleo-danger text-2xl leading-none">✕</button>
         </div>
 
         <div className="space-y-4">
@@ -343,7 +343,7 @@ export default function LockSubmissionModal({
                       <button
                         type="button"
                         onClick={() => removeComponent(d.id, c.key)}
-                        className="text-slate-300 hover:text-rose-500 text-base"
+                        className="text-slate-300 hover:text-caleo-danger text-base"
                       >✕</button>
                     </div>
                   ))}

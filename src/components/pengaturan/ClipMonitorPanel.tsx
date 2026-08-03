@@ -41,11 +41,11 @@ export default function ClipMonitorPanel() {
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-emerald-50 border border-emerald-200 rounded p-4">
-          <p className="text-caleo-10 font-extrabold uppercase tracking-widest text-emerald-700">Search Kasir</p>
-          <p className="text-2xl font-black text-emerald-900 mt-1">{agg.search.success + agg.search.error + agg.search.coldStart}</p>
+          <p className="text-caleo-10 font-extrabold uppercase tracking-widest text-caleo-success">Search Kasir</p>
+          <p className="text-2xl font-black text-caleo-success mt-1">{agg.search.success + agg.search.error + agg.search.coldStart}</p>
           <div className="flex gap-3 mt-1.5 text-caleo-10">
-            <span className="text-emerald-700"><strong>{agg.search.success}</strong> success</span>
-            <span className="text-rose-700"><strong>{agg.search.error}</strong> error</span>
+            <span className="text-caleo-success"><strong>{agg.search.success}</strong> success</span>
+            <span className="text-caleo-danger"><strong>{agg.search.error}</strong> error</span>
           </div>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded p-4">

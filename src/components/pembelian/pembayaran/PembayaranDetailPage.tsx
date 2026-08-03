@@ -53,7 +53,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>{pmb.pembayaran_number}</h1>
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isVoided ? 'bg-gray-200 text-gray-600' : 'bg-green-100 text-green-800'}`}>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isVoided ? 'bg-gray-200 text-gray-600' : 'bg-green-100 text-caleo-success'}`}>
               {isVoided ? 'VOIDED' : '● Lunas'}
             </span>
           </div>
