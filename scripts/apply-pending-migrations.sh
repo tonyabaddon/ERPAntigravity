@@ -313,6 +313,14 @@ MIGRATIONS=(
   # 541: partial index on clip_inference_log.status = 'error' for dashboard
   "20261115000540_cari_foto_tenant_scope_rpc.sql"
   "20261115000541_clip_inference_log_partial_status.sql"
+
+  # ─── Cetak SO (Penawaran) GJP — schema + seed 2026-08-04 ────────────────
+  # 570: store_settings SO defaults (validity days, payment terms, lead time,
+  #      notes, opening greeting, signatory name/title, telp_kantor, website_url,
+  #      4 footer toggles), customers (salutation, contact_person_name), and
+  #      sales_orders snapshot + override columns. Seeded with Indonesian
+  #      defaults for existing tenants. All idempotent.
+  "20261115000570_cetak_so_penawaran_gjp_schema.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
