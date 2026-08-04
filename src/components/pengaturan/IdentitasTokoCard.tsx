@@ -19,6 +19,8 @@ type StoreFormState = {
   email: string;
   google_maps_url: string;
   npwp: string;
+  telp_kantor: string;
+  website_url: string;
 };
 
 const EMPTY_FORM: StoreFormState = {
@@ -31,6 +33,8 @@ const EMPTY_FORM: StoreFormState = {
   email: '',
   google_maps_url: '',
   npwp: '',
+  telp_kantor: '',
+  website_url: '',
 };
 
 interface Props {
@@ -62,6 +66,8 @@ export default function IdentitasTokoCard({ showToast }: Props) {
           email: data.email ?? '',
           google_maps_url: data.google_maps_url ?? '',
           npwp: data.npwp ?? '',
+          telp_kantor: data.telp_kantor ?? '',
+          website_url: data.website_url ?? '',
         });
       })
       .catch(err => {
@@ -108,6 +114,8 @@ export default function IdentitasTokoCard({ showToast }: Props) {
         email: form.email.trim() || undefined,
         google_maps_url: form.google_maps_url.trim() || undefined,
         npwp: form.npwp.trim() || undefined,
+        telp_kantor: form.telp_kantor.trim() || undefined,
+        website_url: form.website_url.trim() || undefined,
       };
       await updateStoreSettings(patch);
       showToast('Identitas toko diperbarui.', 'success');
@@ -242,6 +250,30 @@ export default function IdentitasTokoCard({ showToast }: Props) {
                 placeholder="https://maps.app.goo.gl/..."
                 value={form.google_maps_url}
                 onChange={e => updateField('google_maps_url', e.target.value)}
+                disabled={saving}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Telepon Kantor</label>
+              <input
+                type="tel"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                placeholder="021-6234567"
+                value={form.telp_kantor}
+                onChange={e => updateField('telp_kantor', e.target.value)}
+                disabled={saving}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Website</label>
+              <input
+                type="url"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+                placeholder="https://gjp.co.id"
+                value={form.website_url}
+                onChange={e => updateField('website_url', e.target.value)}
                 disabled={saving}
               />
             </div>
