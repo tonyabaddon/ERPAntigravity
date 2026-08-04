@@ -271,6 +271,11 @@ export interface DbCustomer {
   default_pricing_tier?: TierKey;
   // Sprint 2: per-customer WA reminder opt-out
   wa_reminder_enabled?: boolean;
+  /** Salutation for contact person on Penawaran PDF. NULL = no prefix. */
+  salutation?: 'Bapak' | 'Ibu' | null;
+  /** Contact person name (separate from company name). Renders as
+   *  "Bapak {name}" / "Ibu {name}" on PDF. NULL = omit line. */
+  contact_person_name?: string | null;
 }
 
 export interface DbLead {
@@ -436,6 +441,12 @@ export interface KasirItem {
   qty_tier_min_qty?: number | null;
   qty_tier_applied?: boolean;
   manual_override?: boolean;
+  /** Brand / manufacturer for the item (free-text, e.g., "Schneider", "Chint").
+   *  PDF auto-hides MANUFACTURE column if ALL items have empty brand_name. */
+  brand_name?: string;
+  /** Sub-components rendered as bullet list under item description in PDF.
+   *  Free-form; qty/unit are optional. Empty/undefined → no bullets rendered. */
+  sub_parts?: Array<{ name: string; qty?: number; unit?: string }>;
 }
 
 export interface KasirTransaction {

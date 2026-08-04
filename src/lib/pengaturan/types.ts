@@ -15,6 +15,28 @@ export interface StoreSettings {
   npwp?: string;
   updated_at: string;
   updated_by?: string;
+
+  // Footer contact — telp_kantor separate from telp_wa
+  telp_kantor?: string | null;
+  website_url?: string | null;
+
+  // Sales Order (Penawaran) defaults
+  // NOTE: DB is NOT NULL with defaults, but marked optional here so existing test
+  // fixtures (which pre-date these fields) don't require migration. Consumers that
+  // render the SO PDF should default to 14 / true / false when undefined.
+  default_so_validity_days?: number;     // DB NOT NULL default 14
+  default_payment_terms?: string | null;
+  default_lead_time_text?: string | null;
+  default_so_notes?: string | null;
+  default_opening_greeting?: string | null;
+  default_signatory_name?: string | null;
+  default_signatory_title?: string | null;
+
+  // Footer visibility toggles (DB NOT NULL with defaults; optional here for fixture compat)
+  footer_show_telp_kantor?: boolean;     // DB default TRUE
+  footer_show_wa?: boolean;              // DB default TRUE
+  footer_show_email?: boolean;           // DB default TRUE
+  footer_show_website?: boolean;         // DB default FALSE
 }
 
 export interface OperatingHour {
