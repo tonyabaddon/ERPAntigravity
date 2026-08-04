@@ -41,6 +41,8 @@ import {
   supabase,
 } from '../../lib/supabaseClient';
 import { serviceTypesService, tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
+import { fetchStoreSettings } from '../../lib/pengaturan/queries';
+import type { StoreSettings } from '../../lib/pengaturan/types';
 import { computeDiscountAmount } from '../ui/discount';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
@@ -148,6 +150,32 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         captureError(err, { feature: 'wizard', action: 'fetch_tenant_settings' });
       });
   }, []);
+
+  // ── StoreSettings for SO quote-mode override defaults (Task 10) ───────────
+  // Not fetched elsewhere in this wizard — added here so override section can
+  // show placeholder text from store defaults (opening greeting, payment terms,
+  // lead time, notes, validity days). Mirrors KasirInvoiceModal fetch pattern.
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  useEffect(() => {
+    if (mode !== 'quote') return; // only needed in quote mode
+    fetchStoreSettings()
+      .then((s) => setStoreSettings(s))
+      .catch((err) => captureError(err, { feature: 'wizard', action: 'fetch_store_settings' }));
+  }, [mode]);
+
+  // ── Per-SO override fields (Task 10) ─────────────────────────────────────
+  // Lazy-comparison pattern for valid_until: store null until user actually edits
+  // (avoids useState init async-race when storeSettings loads after mount).
+  const [showOverrides, setShowOverrides] = useState(false);
+  const [openingOverride, setOpeningOverride] = useState('');
+  const [paymentOverride, setPaymentOverride] = useState('');
+  const [leadTimeOverride, setLeadTimeOverride] = useState('');
+  const [notesOverride, setNotesOverride] = useState('');
+  // null = user hasn't touched valid_until; UI shows computed defaultValidUntil
+  const [validUntilOverride, setValidUntilOverride] = useState<string | null>(null);
+  // Computed default validity date from StoreSettings (or fallback 14 days)
+  const validityDays = storeSettings?.default_so_validity_days ?? 14;
+  const defaultValidUntil = new Date(Date.now() + validityDays * 86400_000).toISOString().slice(0, 10);
 
   // ── Multi-tier pricing state (Task 7, widened Phase 1b Task 6) ───────────
   const [activeTier, setActiveTier] = useState<TierKey>('eceran');
@@ -897,6 +925,16 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         customer_phone: customer.wa_number || null,
         customer_company: customer.company || null,
         notes: notes.trim() || null,
+        selectedCustomer: customer,
+        // Per-SO overrides (Task 10): null = use StoreSettings default at PDF render
+        opening_greeting_override: openingOverride.trim() || null,
+        payment_terms_override: paymentOverride.trim() || null,
+        lead_time_override: leadTimeOverride.trim() || null,
+        so_notes_override: notesOverride.trim() || null,
+        // valid_until_override: only persist when user actually changed from default
+        valid_until_override: (validUntilOverride !== null && validUntilOverride !== defaultValidUntil)
+          ? validUntilOverride
+          : null,
       });
       showToast(`Sales Order ${so.so_number} tersimpan`, 'success');
       if (onNavigate) onNavigate('daftarPenawaran'); else onBack();
@@ -1272,47 +1310,126 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
             )}
 
             {currentStep === 3 && customer && (
-              <Step3Payment
-                mode={mode}
-                customer={customer}
-                items={cart}
-                rakitLines={rakitLines}
-                method={paymentMethod}
-                subtype={paymentSubtype}
-                onMethodChange={(m) => {
-                  setPaymentMethod(m);
-                  if (m === 'cash') setCashAccountId(null);
-                }}
-                onSubtypeChange={setPaymentSubtype}
-                cashAccountId={cashAccountId}
-                onCashAccountIdChange={setCashAccountId}
-                paymentType={paymentType}
-                onPaymentTypeChange={setPaymentType}
-                dpAmount={dpAmount}
-                dpInputType={dpInputType}
-                onDpAmountChange={setDpAmount}
-                onDpInputTypeChange={setDpInputType}
-                ongkirOn={ongkirOn}
-                ongkirAmount={ongkirAmount}
-                onOngkirToggle={setOngkirOn}
-                onOngkirAmountChange={setOngkirAmount}
-                deliveryAddress={deliveryAddress}
-                onDeliveryAddressChange={setDeliveryAddress}
-                notes={notes}
-                onNotesChange={setNotes}
-                subtotal={subtotalAfterLineDiscount}
-                totalInvoice={totalInvoice}
-                effectiveDp={effectiveDp}
-                sisaPelunasan={sisaPelunasan}
-                outstanding={tempoOutstanding}
-                orderDiscountValue={orderDiscountValue}
-                orderDiscountType={orderDiscountType}
-                onOrderDiscountChange={(v, t) => { setOrderDiscountValue(v); setOrderDiscountType(t); }}
-                modulDiskonOn={modulDiskonOn}
-                onSave={onSave}
-                onCancel={onCancel}
-                showToast={showToast}
-              />
+              <>
+                <Step3Payment
+                  mode={mode}
+                  customer={customer}
+                  items={cart}
+                  rakitLines={rakitLines}
+                  method={paymentMethod}
+                  subtype={paymentSubtype}
+                  onMethodChange={(m) => {
+                    setPaymentMethod(m);
+                    if (m === 'cash') setCashAccountId(null);
+                  }}
+                  onSubtypeChange={setPaymentSubtype}
+                  cashAccountId={cashAccountId}
+                  onCashAccountIdChange={setCashAccountId}
+                  paymentType={paymentType}
+                  onPaymentTypeChange={setPaymentType}
+                  dpAmount={dpAmount}
+                  dpInputType={dpInputType}
+                  onDpAmountChange={setDpAmount}
+                  onDpInputTypeChange={setDpInputType}
+                  ongkirOn={ongkirOn}
+                  ongkirAmount={ongkirAmount}
+                  onOngkirToggle={setOngkirOn}
+                  onOngkirAmountChange={setOngkirAmount}
+                  deliveryAddress={deliveryAddress}
+                  onDeliveryAddressChange={setDeliveryAddress}
+                  notes={notes}
+                  onNotesChange={setNotes}
+                  subtotal={subtotalAfterLineDiscount}
+                  totalInvoice={totalInvoice}
+                  effectiveDp={effectiveDp}
+                  sisaPelunasan={sisaPelunasan}
+                  outstanding={tempoOutstanding}
+                  orderDiscountValue={orderDiscountValue}
+                  orderDiscountType={orderDiscountType}
+                  onOrderDiscountChange={(v, t) => { setOrderDiscountValue(v); setOrderDiscountType(t); }}
+                  modulDiskonOn={modulDiskonOn}
+                  onSave={onSave}
+                  onCancel={onCancel}
+                  showToast={showToast}
+                />
+
+                {/* Task 10: Per-SO override section — quote mode only */}
+                {mode === 'quote' && (
+                  <div className="px-6 pb-6">
+                    <div className="border-t border-slate-200 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowOverrides(!showOverrides)}
+                        className="text-[var(--color-caleo-primary)] hover:opacity-75 text-sm font-medium"
+                      >
+                        {showOverrides ? '▲' : '▼'} Override untuk Penawaran ini (opsional)
+                      </button>
+
+                      {showOverrides && (
+                        <div className="mt-4 space-y-4 bg-slate-50 rounded-md p-4">
+                          <p className="text-xs text-slate-500">
+                            Kosong = pakai default dari Pengaturan
+                          </p>
+
+                          <label className="block">
+                            <span className="block text-sm font-medium text-slate-700 mb-1">Berlaku Sampai</span>
+                            <input
+                              type="date"
+                              value={validUntilOverride ?? defaultValidUntil}
+                              onChange={(e) => setValidUntilOverride(e.target.value)}
+                              className="px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]"
+                            />
+                          </label>
+
+                          <label className="block">
+                            <span className="block text-sm font-medium text-slate-700 mb-1">Kalimat Pembuka</span>
+                            <textarea
+                              rows={2}
+                              value={openingOverride}
+                              onChange={(e) => setOpeningOverride(e.target.value)}
+                              placeholder={storeSettings?.default_opening_greeting ?? ''}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                            />
+                          </label>
+
+                          <label className="block">
+                            <span className="block text-sm font-medium text-slate-700 mb-1">Cara Pembayaran</span>
+                            <textarea
+                              rows={2}
+                              value={paymentOverride}
+                              onChange={(e) => setPaymentOverride(e.target.value)}
+                              placeholder={storeSettings?.default_payment_terms ?? ''}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                            />
+                          </label>
+
+                          <label className="block">
+                            <span className="block text-sm font-medium text-slate-700 mb-1">Waktu Pengadaan</span>
+                            <textarea
+                              rows={2}
+                              value={leadTimeOverride}
+                              onChange={(e) => setLeadTimeOverride(e.target.value)}
+                              placeholder={storeSettings?.default_lead_time_text ?? ''}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                            />
+                          </label>
+
+                          <label className="block">
+                            <span className="block text-sm font-medium text-slate-700 mb-1">Catatan</span>
+                            <textarea
+                              rows={3}
+                              value={notesOverride}
+                              onChange={(e) => setNotesOverride(e.target.value)}
+                              placeholder={storeSettings?.default_so_notes ?? ''}
+                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
