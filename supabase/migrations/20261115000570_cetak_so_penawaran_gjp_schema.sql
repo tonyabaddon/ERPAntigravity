@@ -21,14 +21,16 @@ ALTER TABLE public.store_settings
   ADD COLUMN IF NOT EXISTS footer_show_website        BOOLEAN DEFAULT FALSE NOT NULL;
 
 -- Seed sensible Indonesian defaults for existing tenants where NULL.
+-- Skip orphan rows (tenant_id NULL or references deleted tenant) — audit_log
+-- trigger on store_settings would FK-fail those; leave for tenant-cleanup pass.
 UPDATE public.store_settings SET default_payment_terms = '50% DP saat penetapan order, 50% pelunasan sebelum barang diambil'
-  WHERE default_payment_terms IS NULL;
+  WHERE default_payment_terms IS NULL AND tenant_id IN (SELECT id FROM public.tenants);
 UPDATE public.store_settings SET default_lead_time_text = '7–10 hari kerja setelah uang muka diterima'
-  WHERE default_lead_time_text IS NULL;
+  WHERE default_lead_time_text IS NULL AND tenant_id IN (SELECT id FROM public.tenants);
 UPDATE public.store_settings SET default_opening_greeting = 'Dengan Hormat, bersama ini kami mengajukan penawaran harga untuk kebutuhan Bapak/Ibu, dengan perincian sebagai berikut:'
-  WHERE default_opening_greeting IS NULL;
+  WHERE default_opening_greeting IS NULL AND tenant_id IN (SELECT id FROM public.tenants);
 UPDATE public.store_settings SET default_so_notes = E'Harga belum termasuk PPN 11%\nHarga sudah termasuk perakitan dan pengujian\nPengiriman & instalasi tidak termasuk'
-  WHERE default_so_notes IS NULL;
+  WHERE default_so_notes IS NULL AND tenant_id IN (SELECT id FROM public.tenants);
 
 -- ---- customers: salutation + contact person ----
 DO $$ BEGIN

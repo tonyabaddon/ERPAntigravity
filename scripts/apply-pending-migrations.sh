@@ -321,6 +321,12 @@ MIGRATIONS=(
   #      sales_orders snapshot + override columns. Seeded with Indonesian
   #      defaults for existing tenants. All idempotent.
   "20261115000570_cetak_so_penawaran_gjp_schema.sql"
+  # 571: extend create_sales_order RPC (MINIMAL DIFF — preserves 6 validated
+  #      behaviors from original body: validate_sales_channel, items+customer
+  #      validation, find-or-create customer, next_sales_order_number,
+  #      SO number CASE formatting, auth.uid capture). Adds 8 nullable
+  #      snapshot + override columns from migration 570 to the INSERT.
+  "20261115000571_extend_create_sales_order_rpc.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
