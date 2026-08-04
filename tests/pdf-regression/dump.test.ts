@@ -517,28 +517,47 @@ describe('09 invoicePelunasanPdf', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 10. salesOrderPdf
+// 10. salesOrderPdf (new Penawaran template — Task 12, 2026-08-04)
 // ---------------------------------------------------------------------------
 describe('10 salesOrderPdf', () => {
   test('generateSalesOrderPdf', async () => {
     const { generateSalesOrderPdf } = await import(
       '../../src/lib/sales/pdf/salesOrderPdf'
     );
-    const order = {
+    // New signature: SalesOrderForPdf (DbSalesOrder + Penawaran fields) → Blob
+    const so = {
       id: 'abcd1234',
-      customer: 'Jenny Halim',
-      version: 0,
-      funnel_stage: 2,
-      funnel_sub_stage: '2c',
-      order_type: 'KOMPONEN',
-      total: 380_000,
-      items: [{ name: 'Kabel 10m', qty: 1, unit_price: 380_000, subtotal: 380_000 }],
-      ongkir_amount: 50_000,
+      so_number: 'SO/2026/00001',
+      date: '2026-07-20',
+      channel: 'OFFLINE',
+      items: [
+        {
+          sku: null, name: 'Panel MDB 100A', qty: 1,
+          unit_price: 380_000, hpp_per_unit: 280_000,
+          subtotal: 380_000, hpp_subtotal: 280_000, warehouse: null,
+          brand_name: 'Schneider',
+        },
+      ],
+      subtotal: 380_000,
+      customer_id: null,
+      customer_name: 'Jenny Halim',
+      customer_phone: '0812-3456-7890',
+      customer_company: 'PT Jenny Elektrik',
+      notes: null,
+      status: 'OPEN',
+      converted_to_kasir_tx_id: null,
+      converted_to_order_id: null,
+      closed_reason: null,
+      created_at: '2026-07-20T00:00:00Z',
+      created_by: null,
+      customer_salutation: 'Ibu',
+      customer_contact_person: 'Jenny Halim',
+      created_by_name: 'Ahmad Fauzi',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
-    const result = await generateSalesOrderPdf(order, storeSettings, bankAccounts);
-    expect(result.blob.size).toBeGreaterThan(2000);
-    await saveBlob('10-salesOrder', result.blob);
+    const blob = await generateSalesOrderPdf(so, storeSettings, bankAccounts);
+    expect(blob.size).toBeGreaterThan(2000);
+    await saveBlob('10-salesOrder', blob);
   });
 });
 

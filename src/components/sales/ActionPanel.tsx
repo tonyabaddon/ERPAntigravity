@@ -111,8 +111,32 @@ export function ActionPanel({
       let result;
       switch (kind) {
         case 'SO': {
+          // generateSalesOrderPdf now produces the new Penawaran template (Task 12).
+          // Map the Kasir Order to a minimal SalesOrderForPdf-compatible shape.
           const { generateSalesOrderPdf } = await import('../../lib/sales/pdf/salesOrderPdf');
-          result = await generateSalesOrderPdf(order, settings, banks, printMode);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const soForPdf: any = {
+            id: order.id,
+            so_number: order.id?.slice(0, 8) ?? '—',
+            date: new Date().toISOString().slice(0, 10),
+            channel: order.channel ?? 'OFFLINE',
+            items: order.items ?? [],
+            subtotal: order.total ?? 0,
+            customer_id: null,
+            customer_name: order.customer ?? '',
+            customer_phone: (order as { customer_phone?: string }).customer_phone ?? null,
+            customer_company: null,
+            notes: null,
+            status: 'OPEN',
+            converted_to_kasir_tx_id: null,
+            converted_to_order_id: null,
+            closed_reason: null,
+            created_at: new Date().toISOString(),
+            created_by: null,
+          };
+          const blob = await generateSalesOrderPdf(soForPdf, settings, banks);
+          const filename = `Sales_Order_${order.id?.slice(0, 8) ?? 'SO'}.pdf`;
+          result = { blob, filename };
           break;
         }
         case 'INV-DP': {
