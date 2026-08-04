@@ -532,3 +532,139 @@ export function renderFooter(
     align: 'right',
   });
 }
+
+// ============================================================================
+// Multi-page primitives for Penawaran template (task 11 of 2026-08-04 plan)
+// ============================================================================
+
+export interface PageHeaderContext {
+  store: StoreSettings;
+  logoDataUrl: string | null;
+  docLabel: string;        // e.g., "PENAWARAN HARGA"
+  docNumber: string;       // e.g., "SO/2026/00012"
+  docDate: string;         // formatted "04 Agu 2026"
+  validUntil: string;      // formatted "18 Agu 2026"
+  pageNumber: number;      // 1-based
+  totalPages: number;      // computed AFTER first pass; use placeholder then overlay
+}
+
+/**
+ * Draw full header (logo, company block, banner, doc-info). Returns Y for next content.
+ *
+ * Reuses the existing `renderHeader` for the logo + company + divider band, then
+ * overlays a navy banner (top-right) and a doc-info block below it. The "Halaman"
+ * row is rendered with an EMPTY value — overlayPageNumber in Task 12 fills in the
+ * actual "N dari M" text once all pages are rendered (single-pass pattern).
+ */
+export function renderPageHeader(doc: jsPDF, ctx: PageHeaderContext): number {
+  // Delegate logo + company + divider to the existing helper.
+  // renderHeader signature: (doc, settings, docNumber, isoDate, orderShortId?, mode?, logoDataUrl?)
+  // We pass docNumber as empty string so the right-column of renderHeader is blank —
+  // the Penawaran template uses its own banner+doc-info block for that region.
+  const headerBottomY = renderHeader(
+    doc,
+    ctx.store,
+    '',          // docNumber — suppressed; banner block below owns this area
+    '',          // isoDate  — suppressed; doc-info block below owns this area
+    undefined,   // orderShortId
+    'normal',
+    ctx.logoDataUrl,
+  );
+
+  // Doc banner (top-right, navy background, white text, 16pt bold)
+  const p = paletteFor('normal');
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const bannerX = pageWidth - 65;
+  const bannerY = 15;
+  doc.setFillColor(p.navy);
+  doc.rect(bannerX, bannerY, 55, 12, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(ctx.docLabel, bannerX + 27.5, bannerY + 8.5, { align: 'center' });
+
+  // Doc info (below banner, right-aligned).
+  // NOTE: "Halaman" row is rendered as label-only placeholder; the actual
+  // "N dari M" text is overlaid AFTER render pass (see salesOrderPdf.ts
+  // overlayPageNumber helper) once doc.getNumberOfPages() returns the real
+  // total. Placeholder pattern used because a single-pass render doesn't know
+  // the final page count until after all content is drawn.
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  const infoStartY = bannerY + 20;
+  const infoRows: [string, string][] = [
+    ['Nomor', ctx.docNumber],
+    ['Tanggal', ctx.docDate],
+    ['Berlaku sampai', ctx.validUntil],
+    ['Halaman', ''],  // placeholder — overlaid post-render
+  ];
+  infoRows.forEach(([label, value], i) => {
+    doc.text(`${label}:`, bannerX, infoStartY + i * 6);
+    if (value) doc.text(value, bannerX + 30, infoStartY + i * 6);
+  });
+
+  // Return Y of next content (whichever block is taller + spacing)
+  return Math.max(headerBottomY, infoStartY + infoRows.length * 6) + 8;
+}
+
+/**
+ * Y-coordinate constants for overlayPageNumber (must match renderPageHeader).
+ * bannerY = 15, rowIndex(3) * 6 = 18 → infoStartY = bannerY + 20 = 35,
+ * Halaman row Y = infoStartY + 3 * 6 = 53.
+ */
+export const PAGE_INFO_HALAMAN_Y_OFFSET = 15 + 20 + 3 * 6; // 53mm from page top
+export const PAGE_INFO_HALAMAN_X_OFFSET = 30;               // bannerX + 30 (value column offset from bannerX)
+
+/**
+ * Add a new page and draw the page header. Returns Y for next content.
+ * Uses jsPDF's automatic page-index; no manual pageNumber tracking needed
+ * since overlayPageNumber fills in "N dari M" after all pages are rendered.
+ */
+export function addPageWithHeader(doc: jsPDF, ctx: PageHeaderContext): number {
+  doc.addPage();
+  return renderPageHeader(doc, ctx);
+}
+
+/** Compute height of one item row including optional sub-parts bullets. */
+export function measureItemRowHeight(
+  doc: jsPDF,
+  item: { name: string; sub_parts?: Array<{ name: string }> },
+  opts: { rowFontSize: number; subPartFontSize: number; lineHeight: number; padVertical: number },
+): number {
+  // doc parameter reserved for future use (e.g., splitTextToSize for wrapped names)
+  void doc;
+  const baseHeight = opts.rowFontSize * 1.2;  // roughly one text line
+  const subCount = item.sub_parts?.length ?? 0;
+  const subHeight = subCount * (opts.subPartFontSize * 1.15);
+  return opts.padVertical * 2 + baseHeight + subHeight;
+}
+
+/** Draw running footer bar at the bottom of the current page. */
+export function renderRunningFooter(
+  doc: jsPDF,
+  store: StoreSettings,
+): void {
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const footerY = pageHeight - 12;
+
+  // Divider lines top + bottom of footer band
+  const p = paletteFor('normal');
+  doc.setDrawColor(p.navy);
+  doc.setLineWidth(0.5);
+  doc.line(10, footerY - 2, pageWidth - 10, footerY - 2);
+  doc.line(10, footerY + 6, pageWidth - 10, footerY + 6);
+
+  // Contact items separated by " | "
+  const parts: string[] = [];
+  if ((store.footer_show_telp_kantor ?? true) && store.telp_kantor) parts.push(`Telp: ${store.telp_kantor}`);
+  if ((store.footer_show_wa ?? true) && store.telp_wa) parts.push(`WA: ${store.telp_wa}`);
+  if ((store.footer_show_email ?? true) && store.email) parts.push(store.email);
+  if ((store.footer_show_website ?? false) && store.website_url) parts.push(store.website_url);
+
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+  doc.text(parts.join(' │ '), pageWidth / 2, footerY + 2, { align: 'center' });
+}

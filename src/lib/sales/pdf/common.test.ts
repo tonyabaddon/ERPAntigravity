@@ -9,6 +9,12 @@ import {
   formatRupiah,
   formatTanggal,
   MARGIN_MM,
+  renderPageHeader,
+  addPageWithHeader,
+  measureItemRowHeight,
+  renderRunningFooter,
+  PAGE_INFO_HALAMAN_Y_OFFSET,
+  PAGE_INFO_HALAMAN_X_OFFSET,
 } from './common';
 import type { StoreSettings, BankAccount } from '../../pengaturan/types';
 
@@ -97,5 +103,119 @@ describe('PDF common', () => {
         'Pembayaran dianggap sah setelah dana masuk ke rekening kami',
       ]),
     ).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Multi-page primitives (task 11)
+// ---------------------------------------------------------------------------
+
+const soSettings: StoreSettings = {
+  id: 1,
+  nama_toko: 'Sinar Elektrik',
+  alamat_lengkap: 'Jl. Y No. 5',
+  kota: 'Bandung',
+  telp_wa: '08123456789',
+  updated_at: '',
+  telp_kantor: '02212345',
+  email: 'sinar@example.com',
+  website_url: 'https://sinar.co.id',
+  footer_show_telp_kantor: true,
+  footer_show_wa: true,
+  footer_show_email: true,
+  footer_show_website: false,
+};
+
+describe('measureItemRowHeight', () => {
+  test('returns base height for item without sub_parts', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const h = measureItemRowHeight(doc, { name: 'Test' }, {
+      rowFontSize: 10, subPartFontSize: 9, lineHeight: 1.2, padVertical: 2,
+    });
+    expect(h).toBeGreaterThan(0);
+    expect(h).toBeLessThan(25);  // sanity
+  });
+
+  test('grows with sub_parts count', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const short = measureItemRowHeight(doc, { name: 'Test' }, {
+      rowFontSize: 10, subPartFontSize: 9, lineHeight: 1.2, padVertical: 2,
+    });
+    const long = measureItemRowHeight(doc, {
+      name: 'Test',
+      sub_parts: [{ name: 'a' }, { name: 'b' }, { name: 'c' }, { name: 'd' }, { name: 'e' }],
+    }, { rowFontSize: 10, subPartFontSize: 9, lineHeight: 1.2, padVertical: 2 });
+    expect(long).toBeGreaterThan(short + 40);  // 5 sub-parts should add >= 40mm
+  });
+});
+
+describe('renderPageHeader', () => {
+  test('returns Y past header + banner block', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const ctx = {
+      store: soSettings,
+      logoDataUrl: null,
+      docLabel: 'PENAWARAN HARGA',
+      docNumber: 'SO/2026/00012',
+      docDate: '04 Agustus 2026',
+      validUntil: '18 Agustus 2026',
+      pageNumber: 1,
+      totalPages: 1,
+    };
+    const y = renderPageHeader(doc, ctx);
+    expect(y).toBeGreaterThan(50); // banner ends around 53mm, content starts after
+  });
+
+  test('does not throw for minimal store settings', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const minimal: StoreSettings = {
+      id: 1, nama_toko: 'Min', alamat_lengkap: '', kota: '', telp_wa: '', updated_at: '',
+    };
+    expect(() => renderPageHeader(doc, {
+      store: minimal, logoDataUrl: null,
+      docLabel: 'PENAWARAN HARGA', docNumber: 'SO/1', docDate: '2026-08-04', validUntil: '2026-08-18',
+      pageNumber: 1, totalPages: 1,
+    })).not.toThrow();
+  });
+});
+
+describe('addPageWithHeader', () => {
+  test('adds a page and returns valid Y', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    expect(doc.getNumberOfPages()).toBe(1);
+    const ctx = {
+      store: soSettings, logoDataUrl: null,
+      docLabel: 'PENAWARAN HARGA', docNumber: 'SO/2026/00012',
+      docDate: '04 Agustus 2026', validUntil: '18 Agustus 2026',
+      pageNumber: 2, totalPages: 2,
+    };
+    const y = addPageWithHeader(doc, ctx);
+    expect(doc.getNumberOfPages()).toBe(2);
+    expect(y).toBeGreaterThan(0);
+  });
+});
+
+describe('renderRunningFooter', () => {
+  test('does not throw with full store settings', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    expect(() => renderRunningFooter(doc, soSettings)).not.toThrow();
+  });
+
+  test('does not throw with minimal store settings (no optional fields)', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const minimal: StoreSettings = {
+      id: 1, nama_toko: 'Min', alamat_lengkap: '', kota: '', telp_wa: '', updated_at: '',
+    };
+    expect(() => renderRunningFooter(doc, minimal)).not.toThrow();
+  });
+});
+
+describe('PAGE_INFO_HALAMAN constants', () => {
+  test('Y offset matches bannerY + 20 + 3*6 = 53', () => {
+    expect(PAGE_INFO_HALAMAN_Y_OFFSET).toBe(53);
+  });
+
+  test('X offset is 30', () => {
+    expect(PAGE_INFO_HALAMAN_X_OFFSET).toBe(30);
   });
 });
