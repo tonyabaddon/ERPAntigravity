@@ -46,7 +46,7 @@ export function SubPartsModal({ open, initialSubParts, onSave, onClose }: Props)
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={'Box Panel Indoor Plat 1.2 mm\nMCCB 3P 300A\nTerminal, Busbar, Rail & Duct\nPemasangan'}
-          className="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-[var(--color-caleo-primary)] font-mono text-sm"
+          className="w-full px-3 py-2 border border-slate-300 rounded focus-visible:ring-2 focus-visible:ring-caleo-gold font-mono text-sm"
         />
         <div className="flex justify-end gap-2 mt-4">
           <button

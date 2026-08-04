@@ -311,7 +311,7 @@ function CartRow({
             value={item.brand_name ?? ''}
             onChange={(e) => onBrandChange?.(item._key, e.target.value)}
             placeholder="Merek"
-            className="w-28 px-2 py-1 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-[var(--color-caleo-primary)] bg-white"
+            className="w-28 px-2 py-1 border border-slate-200 rounded text-xs focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white"
           />
           <button
             type="button"
