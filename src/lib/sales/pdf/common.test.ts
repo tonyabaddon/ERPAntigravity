@@ -145,7 +145,7 @@ describe('measureItemRowHeight', () => {
       name: 'Test',
       sub_parts: [{ name: 'a' }, { name: 'b' }, { name: 'c' }, { name: 'd' }, { name: 'e' }],
     }, { rowFontSize: 10, subPartFontSize: 9, lineHeight: 1.2, padVertical: 2 });
-    expect(long).toBeGreaterThan(short + 40);  // 5 sub-parts should add >= 40mm
+    expect(long).toBeGreaterThan(short + 15);  // 5 sub-parts add ~3.5mm gap + 4mm each = ~23.5mm; tighter formula post-fix
   });
 });
 

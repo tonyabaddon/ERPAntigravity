@@ -1366,7 +1366,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                       </button>
 
                       {showOverrides && (
-                        <div className="mt-4 space-y-4 bg-slate-50 rounded-md p-4">
+                        <div className="mt-4 space-y-4 bg-slate-50 rounded p-4">
                           <p className="text-xs text-slate-500">
                             Kosong = pakai default dari Pengaturan
                           </p>
@@ -1377,7 +1377,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                               type="date"
                               value={validUntilOverride ?? defaultValidUntil}
                               onChange={(e) => setValidUntilOverride(e.target.value)}
-                              className="px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]"
+                              className="px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]"
                             />
                           </label>
 
@@ -1388,7 +1388,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                               value={openingOverride}
                               onChange={(e) => setOpeningOverride(e.target.value)}
                               placeholder={storeSettings?.default_opening_greeting ?? ''}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                              className="w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
                             />
                           </label>
 
@@ -1399,7 +1399,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                               value={paymentOverride}
                               onChange={(e) => setPaymentOverride(e.target.value)}
                               placeholder={storeSettings?.default_payment_terms ?? ''}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                              className="w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
                             />
                           </label>
 
@@ -1410,7 +1410,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                               value={leadTimeOverride}
                               onChange={(e) => setLeadTimeOverride(e.target.value)}
                               placeholder={storeSettings?.default_lead_time_text ?? ''}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                              className="w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
                             />
                           </label>
 
@@ -1421,7 +1421,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                               value={notesOverride}
                               onChange={(e) => setNotesOverride(e.target.value)}
                               placeholder={storeSettings?.default_so_notes ?? ''}
-                              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
+                              className="w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)] text-sm"
                             />
                           </label>
                         </div>

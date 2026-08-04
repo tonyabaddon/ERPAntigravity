@@ -237,6 +237,16 @@ export function renderHeader(
   doc.text(settings.nama_toko || '—', infoX, infoY);
   infoY += 5;
 
+  // Tagline (italic, subtle) — only shows if tenant has set one; other PDFs
+  // unaffected when null.
+  if (settings.tagline) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(p.grayMuted);
+    doc.text(settings.tagline, infoX, infoY);
+    infoY += 4;
+  }
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(p.grayMuted);
@@ -254,7 +264,11 @@ export function renderHeader(
     infoY += wrapped.length * 4;
   }
   if (settings.telp_wa) {
-    doc.text(`Telp/WA: ${settings.telp_wa}`, infoX, infoY);
+    doc.text(`WA: ${settings.telp_wa}`, infoX, infoY);
+    infoY += 4;
+  }
+  if (settings.email) {
+    doc.text(settings.email, infoX, infoY);
     infoY += 4;
   }
 
@@ -634,10 +648,15 @@ export function measureItemRowHeight(
 ): number {
   // doc parameter reserved for future use (e.g., splitTextToSize for wrapped names)
   void doc;
-  const baseHeight = opts.rowFontSize * 1.2;  // roughly one text line
+  // Item name occupies ~5.5mm (padVertical top + baseline offset in renderer).
+  // For 0 bullets, add full line-height for balanced padding top+bottom.
+  // For N bullets, add 3.5mm gap before first bullet + 4mm per bullet.
   const subCount = item.sub_parts?.length ?? 0;
-  const subHeight = subCount * (opts.subPartFontSize * 1.15);
-  return opts.padVertical * 2 + baseHeight + subHeight;
+  const nameRow = opts.padVertical + 4;  // ~6mm for name + top padding
+  const bulletSpace = subCount > 0 ? 3.5 + subCount * 4 : 0;
+  const bottomPad = opts.padVertical;
+  const noSubExtra = subCount === 0 ? opts.rowFontSize * 0.4 : 0;  // extra bottom for tall single row
+  return nameRow + bulletSpace + bottomPad + noSubExtra;
 }
 
 /** Draw running footer bar at the bottom of the current page. */
@@ -666,5 +685,5 @@ export function renderRunningFooter(
   doc.setFontSize(9);
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
-  doc.text(parts.join(' │ '), pageWidth / 2, footerY + 2, { align: 'center' });
+  doc.text(parts.join(' | '), pageWidth / 2, footerY + 2, { align: 'center' });
 }

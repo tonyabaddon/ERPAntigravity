@@ -168,6 +168,16 @@ async function _render(
   y = renderTermsAndNotes(
     doc, y, paymentTerms, leadTime, validityDays, bankAccounts, soNotes,
   );
+
+  // Signature block reserves ~40mm (Hormat Kami + 3 blank lines + line + name + title).
+  // If T&C pushed us too close to the footer band (footer starts at pageHeight-14),
+  // force new page + repeat header so signature doesn't overlap footer or draw off-page.
+  const SIGNATURE_MIN_HEIGHT_MM = 40;
+  const FOOTER_BAND_HEIGHT_MM = 14;  // renderRunningFooter reserves ~14mm at bottom
+  const availableSpace = PAGE_BOTTOM_THRESHOLD_MM - y + (297 - PAGE_BOTTOM_THRESHOLD_MM - FOOTER_BAND_HEIGHT_MM);
+  if (availableSpace < SIGNATURE_MIN_HEIGHT_MM) {
+    y = addPageWithHeader(doc, ctx);
+  }
   renderSignature(doc, y, signatoryName, signatoryTitle);
 
   // ---- Overlay true page numbers + running footer on ALL pages ----
@@ -316,12 +326,12 @@ function renderItemsTable(
   doc.setTextColor(255, 255, 255);
 
   const headerY = y + headerH / 2 + 1.8;
-  doc.text('No', colNoX + 1, headerY);
-  doc.text('Deskripsi Produk', colDescX + 1, headerY);
-  if (showManufacture) doc.text('Merek', colMerekX + 1, headerY);
-  doc.text('Qty', colQtyX + COL_QTY_W / 2, headerY, { align: 'center' });
-  doc.text('Harga Satuan', colUnitPriceX + COL_UNIT_PRICE_W - 1, headerY, { align: 'right' });
-  doc.text('Total', colSubtotalX + COL_SUBTOTAL_W - 1, headerY, { align: 'right' });
+  doc.text('NO', colNoX + 1, headerY);
+  doc.text('DESCRIPTION', colDescX + 1, headerY);
+  if (showManufacture) doc.text('MANUFACTURE', colMerekX + 1, headerY);
+  doc.text('QTY', colQtyX + COL_QTY_W / 2, headerY, { align: 'center' });
+  doc.text('UNIT PRICE', colUnitPriceX + COL_UNIT_PRICE_W - 1, headerY, { align: 'right' });
+  doc.text('TOTAL PRICE', colSubtotalX + COL_SUBTOTAL_W - 1, headerY, { align: 'right' });
 
   y += headerH;
 
@@ -345,12 +355,12 @@ function renderItemsTable(
       doc.setFontSize(10);
       doc.setTextColor(255, 255, 255);
       const hY = y + headerH / 2 + 1.8;
-      doc.text('No', colNoX + 1, hY);
-      doc.text('Deskripsi Produk', colDescX + 1, hY);
-      if (showManufacture) doc.text('Merek', colMerekX + 1, hY);
-      doc.text('Qty', colQtyX + COL_QTY_W / 2, hY, { align: 'center' });
-      doc.text('Harga Satuan', colUnitPriceX + COL_UNIT_PRICE_W - 1, hY, { align: 'right' });
-      doc.text('Total', colSubtotalX + COL_SUBTOTAL_W - 1, hY, { align: 'right' });
+      doc.text('NO', colNoX + 1, hY);
+      doc.text('DESCRIPTION', colDescX + 1, hY);
+      if (showManufacture) doc.text('MANUFACTURE', colMerekX + 1, hY);
+      doc.text('QTY', colQtyX + COL_QTY_W / 2, hY, { align: 'center' });
+      doc.text('UNIT PRICE', colUnitPriceX + COL_UNIT_PRICE_W - 1, hY, { align: 'right' });
+      doc.text('TOTAL PRICE', colSubtotalX + COL_SUBTOTAL_W - 1, hY, { align: 'right' });
       y += headerH;
     }
 
@@ -391,20 +401,20 @@ function renderItemsTable(
     // Unit price
     const unitPrice = item.unit_price ?? (item.qty > 0 ? item.subtotal / item.qty : item.subtotal);
     doc.text(
-      formatRupiah(unitPrice),
+      `Rp ${formatRupiah(unitPrice)}`,
       colUnitPriceX + COL_UNIT_PRICE_W - 1,
       textY,
       { align: 'right' },
     );
 
     // Subtotal
-    doc.text(formatRupiah(item.subtotal), colSubtotalX + COL_SUBTOTAL_W - 1, textY, {
+    doc.text(`Rp ${formatRupiah(item.subtotal)}`, colSubtotalX + COL_SUBTOTAL_W - 1, textY, {
       align: 'right',
     });
 
-    // Sub-parts bullets (9pt mid-grey)
+    // Sub-parts bullets (9pt mid-grey) — tight line-height, no big gaps
     if (item.sub_parts && item.sub_parts.length > 0) {
-      let subY = textY + 4.5;
+      let subY = textY + 3.5;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(SUBPART_COLOR);
@@ -417,7 +427,7 @@ function renderItemsTable(
           .join(' ');
         const partLine = qtyUnit ? `• ${part.name} (${qtyUnit})` : `• ${part.name}`;
         doc.text(partLine, colDescX + 3, subY);
-        subY += 9 * 1.15;
+        subY += 4;  // tight 4mm per bullet (matches 9pt text ~3.2mm cap height + 0.8mm gap)
       }
     }
 
@@ -523,19 +533,19 @@ function renderTermsAndNotes(
   const leftLines: string[] = [];
 
   if (paymentTerms) {
-    leftLines.push('Syarat Pembayaran:');
+    leftLines.push('Cara Pembayaran:');
     const wrapped = doc.splitTextToSize(paymentTerms, colW - padding * 2) as string[];
     leftLines.push(...wrapped.map((l: string) => `  ${l}`));
   }
   if (leadTime) {
     if (leftLines.length) leftLines.push('');
-    leftLines.push('Waktu Pengerjaan:');
+    leftLines.push('Waktu Pengadaan:');
     const wrapped = doc.splitTextToSize(leadTime, colW - padding * 2) as string[];
     leftLines.push(...wrapped.map((l: string) => `  ${l}`));
   }
   if (validityDays > 0) {
     if (leftLines.length) leftLines.push('');
-    leftLines.push(`Berlaku: ${validityDays} hari`);
+    leftLines.push(`Masa Berlaku Penawaran: ${validityDays} hari`);
   }
 
   // Bank accounts (soft-cap at 3)
