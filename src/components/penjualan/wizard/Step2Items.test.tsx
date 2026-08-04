@@ -183,3 +183,27 @@ describe('Step2Items — tier pill (Task 7)', () => {
     expect(screen.queryByText(/Harga grosir belum di-set/i)).not.toBeInTheDocument();
   });
 });
+
+describe('Step2Items — Merek input + Sub-komponen (Task 9)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders Merek input per line and calls onBrandChange when changed', () => {
+    const onBrandChange = vi.fn();
+    const cartItem = makeCartItem({ brand_name: 'Schneider' });
+    render(
+      <Step2Items
+        {...BASE_PROPS}
+        cart={[cartItem]}
+        subtotal={100_000}
+        subtotalAfterLineDiscount={100_000}
+        onBrandChange={onBrandChange}
+      />,
+    );
+    const merekInput = screen.getByPlaceholderText(/merek/i);
+    expect(merekInput).toHaveValue('Schneider');
+    fireEvent.change(merekInput, { target: { value: 'Chint' } });
+    expect(onBrandChange).toHaveBeenCalledWith(1, 'Chint');
+  });
+});

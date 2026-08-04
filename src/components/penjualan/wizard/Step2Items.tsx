@@ -67,12 +67,16 @@ interface Props {
   onToggleManual?: (key: number) => void;
   /** Phase 2.2: set unit_price directly when manual mode is active. */
   onManualPriceOverride?: (key: number, unit_price: number) => void;
+  /** Task 9: update brand_name for a cart line (free-text Merek input). */
+  onBrandChange?: (key: number, brand_name: string) => void;
+  /** Task 9: update sub_parts for a cart line (from SubPartsModal). */
+  onSubPartsChange?: (key: number, sub_parts: Array<{ name: string; qty?: number; unit?: string }>) => void;
 }
 
 export default function Step2Items(props: Props) {
   const [q, setQ] = useState('');
   const [showNewProductForm, setShowNewProductForm] = useState(false);
-  const { activeTier = 'eceran', onTierChange, showTierPill = false, promos, tenantSettings, onToggleManual, onManualPriceOverride } = props;
+  const { activeTier = 'eceran', onTierChange, showTierPill = false, promos, tenantSettings, onToggleManual, onManualPriceOverride, onBrandChange, onSubPartsChange } = props;
 
   // Derive categories for the form's datalist
   const existingCategories = Array.from(new Set(props.stocks.map((s) => s.category).filter(Boolean))) as string[];
@@ -266,6 +270,8 @@ export default function Step2Items(props: Props) {
           stockQtyTiers={props.stockQtyTiers}
           onToggleManual={onToggleManual}
           onManualPriceOverride={onManualPriceOverride}
+          onBrandChange={onBrandChange}
+          onSubPartsChange={onSubPartsChange}
         />
 
         {preOrderCount > 0 && (

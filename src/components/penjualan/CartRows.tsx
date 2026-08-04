@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Lock, LockOpen } from 'lucide-react';
+import { SubPartsModal } from './wizard/SubPartsModal';
 import EmptyState from '../ui/EmptyState';
 import { KasirItem } from '../../types';
 import type { DiscountType, RakitServiceType, DbServiceType } from '../../types';
@@ -79,6 +80,10 @@ export interface CartRowsProps {
    * Wizard sets unit_price + master_price_at_sale, clears discount fields.
    */
   onManualPriceOverride?: (key: number, unit_price: number) => void;
+  /** Task 9: update brand_name for a cart line (free-text Merek input). */
+  onBrandChange?: (key: number, brand_name: string) => void;
+  /** Task 9: update sub_parts for a cart line (from SubPartsModal). */
+  onSubPartsChange?: (key: number, sub_parts: Array<{ name: string; qty?: number; unit?: string }>) => void;
 }
 
 // ── Per-row sub-component (isolates useDiscountBinding hook call) ─────────────
@@ -102,12 +107,17 @@ interface CartRowProps {
   onToggleManual?: (key: number) => void;
   /** Phase 2.2: set unit_price directly when manual mode is active. */
   onManualPriceOverride?: (key: number, unit_price: number) => void;
+  /** Task 9: update brand_name for this line. */
+  onBrandChange?: (key: number, brand_name: string) => void;
+  /** Task 9: open SubPartsModal for this line. */
+  onOpenSubParts?: (key: number) => void;
 }
 
 function CartRow({
   item, stock, warehouses, stockMap,
   onQtyChange, onWarehouseChange, onRemove, onDiscountChange, modulDiskonOn,
   activeTier, showTierPill, promo, stockQtyTiers, onToggleManual, onManualPriceOverride,
+  onBrandChange, onOpenSubParts,
 }: CartRowProps) {
   const masterPrice = item.master_price_at_sale ?? item.unit_price;
 
@@ -294,6 +304,25 @@ function CartRow({
             <div className="text-caleo-11 text-slate-400 mt-0.5">@ {formatRp(item.unit_price)}</div>
           )}
         </div>
+        {/* Task 9: Merek input + Sub-komponen button */}
+        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+          <input
+            type="text"
+            value={item.brand_name ?? ''}
+            onChange={(e) => onBrandChange?.(item._key, e.target.value)}
+            placeholder="Merek"
+            className="w-28 px-2 py-1 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-[var(--color-caleo-primary)] bg-white"
+          />
+          <button
+            type="button"
+            onClick={() => onOpenSubParts?.(item._key)}
+            className="text-xs text-[var(--color-caleo-primary)] hover:opacity-70"
+          >
+            {(item.sub_parts?.length ?? 0) > 0
+              ? `${item.sub_parts!.length} sub-komponen`
+              : '+ Sub-komponen'}
+          </button>
+        </div>
       </div>
       {/* Warehouse selector */}
       <div className="flex gap-0.5 bg-white border border-slate-200 rounded p-0.5">
@@ -336,7 +365,9 @@ function CartRow({
   );
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill, promos, stockQtyTiers, onToggleManual, onManualPriceOverride }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill, promos, stockQtyTiers, onToggleManual, onManualPriceOverride, onBrandChange, onSubPartsChange }: CartRowsProps) {
+  // Task 9: SubPartsModal state — which cart key's modal is open.
+  const [subPartsFor, setSubPartsFor] = useState<number | null>(null);
   // Build reverse lookup: RakitServiceType → display name from DB serviceTypes when supplied.
   const rakitLabelMap: Partial<Record<RakitServiceType, string>> = {};
   if (serviceTypes && serviceTypes.length > 0) {
@@ -414,9 +445,23 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             stockQtyTiers={stockQtyTiers}
             onToggleManual={onToggleManual}
             onManualPriceOverride={onManualPriceOverride}
+            onBrandChange={onBrandChange}
+            onOpenSubParts={setSubPartsFor}
           />
         );
       })}
+
+      {/* Task 9: SubPartsModal — portal-style, rendered once, controlled by subPartsFor state */}
+      <SubPartsModal
+        open={subPartsFor !== null}
+        initialSubParts={subPartsFor !== null ? (items.find(i => i._key === subPartsFor)?.sub_parts ?? []) : []}
+        onSave={(subParts) => {
+          if (subPartsFor !== null) {
+            onSubPartsChange?.(subPartsFor, subParts);
+          }
+        }}
+        onClose={() => setSubPartsFor(null)}
+      />
 
       {rakitLines && rakitLines.length > 0 && (
         <>

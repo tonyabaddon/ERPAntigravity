@@ -466,6 +466,16 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     setCart((prev) => prev.map((i) => (i._key === key ? { ...i, warehouse_id: warehouseId } : i)));
   }
 
+  // Task 9: update per-line brand_name from Merek input in CartRow.
+  function updateBrandName(key: number, brand_name: string) {
+    setCart((prev) => prev.map((i) => (i._key === key ? { ...i, brand_name } : i)));
+  }
+
+  // Task 9: update per-line sub_parts from SubPartsModal.
+  function updateSubParts(key: number, sub_parts: Array<{ name: string; qty?: number; unit?: string }>) {
+    setCart((prev) => prev.map((i) => (i._key === key ? { ...i, sub_parts } : i)));
+  }
+
   function removeItem(key: number) {
     setCart((prev) => prev.filter((i) => i._key !== key));
   }
@@ -1217,6 +1227,8 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onWarehouseChange={updateWarehouse}
                 onRemoveItem={removeItem}
                 onDiscountChange={updateLineDiscount}
+                onBrandChange={updateBrandName}
+                onSubPartsChange={updateSubParts}
                 onToggleManual={toggleManual}
                 onManualPriceOverride={handleManualPriceOverride}
                 onClearCart={() => { setCart([]); setRakitLines([]); }}
