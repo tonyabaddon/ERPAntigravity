@@ -867,11 +867,22 @@ export const customersService = {
     if (error) throw error;
   },
 
-  async updateNameCompany(id: string, name: string, company: string): Promise<void> {
+  async updateNameCompany(
+    id: string,
+    name: string,
+    company: string,
+    salutation?: 'Bapak' | 'Ibu' | null,
+    contactPersonName?: string | null,
+  ): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('customers')
-      .update({ name, company })
+      .update({
+        name,
+        company,
+        salutation: salutation ?? null,
+        contact_person_name: contactPersonName ?? null,
+      })
       .eq('id', id);
     if (error) throw error;
   },

@@ -18,6 +18,8 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
   const [wa, setWa] = useState('');
   const [company, setCompany] = useState('');
   const [address, setAddress] = useState('');
+  const [salutation, setSalutation] = useState<'Bapak' | 'Ibu' | null>(null);
+  const [contactPersonName, setContactPersonName] = useState('');
   const [tier, setTier] = useState<TierKey>('eceran');
   const [requestTempo, setRequestTempo] = useState(false);
   const [limit, setLimit] = useState('');
@@ -36,6 +38,8 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
         wa_number: wa.trim(),
         company: company.trim() || undefined,
         address: address.trim() || undefined,
+        salutation,
+        contact_person_name: contactPersonName.trim() || null,
         ...(showTierField ? { default_pricing_tier: tier } : {}),
       });
       if (requestTempo) {
@@ -93,6 +97,28 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
         <div>
           <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Alamat</label>
           <input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded" />
+        </div>
+        <div>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Sapaan</label>
+          <select
+            value={salutation ?? ''}
+            onChange={(e) => setSalutation(e.target.value === '' ? null : (e.target.value as 'Bapak' | 'Ibu'))}
+            className="w-full px-3 py-2 border border-slate-300 rounded"
+          >
+            <option value="">— (kosong)</option>
+            <option value="Bapak">Bapak</option>
+            <option value="Ibu">Ibu</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-caleo-11 font-bold text-slate-600 mb-1">Nama Kontak Person</label>
+          <input
+            type="text"
+            value={contactPersonName}
+            onChange={(e) => setContactPersonName(e.target.value)}
+            placeholder="Andi Wijaya"
+            className="w-full px-3 py-2 border border-slate-300 rounded"
+          />
         </div>
       </div>
 

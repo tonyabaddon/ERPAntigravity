@@ -12,6 +12,8 @@ export async function insertNewCustomer(args: {
   company?: string;
   address?: string;
   default_pricing_tier?: 'eceran' | 'grosir';
+  salutation?: 'Bapak' | 'Ibu' | null;
+  contact_person_name?: string | null;
 }): Promise<DbCustomer> {
   if (!supabase) throw new Error('Supabase not configured');
   // customers.id is TEXT NOT NULL with no default; matches existing
@@ -27,6 +29,8 @@ export async function insertNewCustomer(args: {
     company: args.company ?? '',
     address: args.address ?? null,
     allows_tempo: false,
+    salutation: args.salutation ?? null,
+    contact_person_name: args.contact_person_name ?? null,
   };
   if (args.default_pricing_tier !== undefined) {
     row.default_pricing_tier = args.default_pricing_tier;

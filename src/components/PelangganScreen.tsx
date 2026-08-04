@@ -75,6 +75,8 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editCompany, setEditCompany] = useState('');
+  const [editSalutation, setEditSalutation] = useState<'Bapak' | 'Ibu' | null>(null);
+  const [editContactPersonName, setEditContactPersonName] = useState('');
   const [editTier, setEditTier] = useState<TierKey>('eceran');
   const [saving, setSaving] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
@@ -120,11 +122,25 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
     if (!profile) return;
     setSaving(true);
     try {
-      await customersService.updateNameCompany(profile.id, editName.trim(), editCompany.trim());
+      const trimmedContactPersonName = editContactPersonName.trim() || null;
+      await customersService.updateNameCompany(
+        profile.id,
+        editName.trim(),
+        editCompany.trim(),
+        editSalutation,
+        trimmedContactPersonName,
+      );
       if (showTierDropdown) {
         await customersService.updateTier(profile.id, editTier);
       }
-      const updated = { ...profile, name: editName.trim(), company: editCompany.trim(), default_pricing_tier: editTier };
+      const updated = {
+        ...profile,
+        name: editName.trim(),
+        company: editCompany.trim(),
+        salutation: editSalutation,
+        contact_person_name: trimmedContactPersonName,
+        default_pricing_tier: editTier,
+      };
       setProfile(updated);
       setCustomers(prev => prev.map(c => c.id === profile.id ? { ...c, name: editName.trim(), company: editCompany.trim(), default_pricing_tier: editTier } : c));
       setEditing(false);
@@ -359,6 +375,23 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         placeholder="Nama perusahaan (opsional)"
                         className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white placeholder:text-white/40 outline-none focus:border-white/60"
                       />
+                      <div className="flex gap-2">
+                        <select
+                          value={editSalutation ?? ''}
+                          onChange={e => setEditSalutation(e.target.value === '' ? null : (e.target.value as 'Bapak' | 'Ibu'))}
+                          className="w-28 bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white outline-none focus:border-white/60"
+                        >
+                          <option value="" className="text-gray-900">— Sapaan</option>
+                          <option value="Bapak" className="text-gray-900">Bapak</option>
+                          <option value="Ibu" className="text-gray-900">Ibu</option>
+                        </select>
+                        <input
+                          value={editContactPersonName}
+                          onChange={e => setEditContactPersonName(e.target.value)}
+                          placeholder="Nama Kontak Person"
+                          className="flex-1 bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white placeholder:text-white/40 outline-none focus:border-white/60"
+                        />
+                      </div>
                       {showTierDropdown && tenantSettings && (
                         <div>
                           <label className="text-caleo-11 font-bold text-white/60">Tier Harga Default</label>
@@ -395,6 +428,11 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         {profile.wa_number}
                         {profile.company && ` · ${profile.company}`}
                       </div>
+                      {profile.contact_person_name && (
+                        <div className="text-caleo-11 opacity-60">
+                          Kontak: {profile.salutation ? `${profile.salutation} ` : ''}{profile.contact_person_name}
+                        </div>
+                      )}
                       <div className="text-caleo-11 opacity-60">Pelanggan sejak {formatDate(profile.created_at)}</div>
                     </>
                   )}
@@ -424,7 +462,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       <div className="text-caleo-9 opacity-55">total belanja</div>
                     </div>
                     <button
-                      onClick={() => { setEditName(profile.name); setEditCompany(profile.company); setEditTier(profile.default_pricing_tier ?? 'eceran'); setEditing(true); }}
+                      onClick={() => { setEditName(profile.name); setEditCompany(profile.company); setEditSalutation(profile.salutation ?? null); setEditContactPersonName(profile.contact_person_name ?? ''); setEditTier(profile.default_pricing_tier ?? 'eceran'); setEditing(true); }}
                       className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-caleo-10 px-2 py-1 rounded transition-colors"
                     >
                       <Pencil className="w-3 h-3" /> Edit
