@@ -1,6 +1,131 @@
 # ERP Antigravity — Implementation Progress
 
 
+## 2026-08-05 — Cetak Sales Order (Penawaran) template rework — shipped to prod
+
+Full rework of the SO/Penawaran customer-facing PDF template driven by GJP
+requirements at `docs/Requirements/requirements-cetak-sales-order-gjp.md`.
+
+**Spec:** `docs/superpowers/specs/2026-08-04-cetak-sales-order-gjp-design.md`
+**Plan:** `docs/superpowers/plans/2026-08-04-cetak-sales-order-gjp.md`
+**Migrations:** 20261115000570 (schema+seed) + 20261115000571 (RPC extend)
+
+### What changed
+
+- **Template:** brand-banner PENAWARAN HARGA (navy) top-right; hydrated
+  company header (logo, name, tagline, alamat, WA, email); Kepada Yth
+  block with Bapak/Ibu salutation + PT + WA; opening greeting paragraph;
+  6-column items table (NO / DESCRIPTION / MANUFACTURE / QTY /
+  UNIT PRICE / TOTAL PRICE — English caps per spec §5.1) with sub-part
+  bullets under items; highlighted GRAND TOTAL row; italic terbilang;
+  side-by-side Syarat & Kondisi (Cara Pembayaran + Waktu Pengadaan +
+  Masa Berlaku Penawaran + Rekening) and Catatan boxes; signature block
+  (Hormat Kami + name + Sales Engineer); running footer bar (Telp | WA |
+  Email | Website) with per-item toggles.
+- **Multi-page:** full header + doc-info repeats every page; footer bar
+  every page; T&C + Catatan + Signature on last page only; items never
+  split across pages; page-count overlaid via `getNumberOfPages`.
+- **Master-data hydration (no hardcoded strings):** 13 new `store_settings`
+  columns (`telp_kantor`, `website_url`, 4 default SO text fields,
+  signatory name/title, default validity days, 4 footer visibility toggles)
+  + new `SalesOrderDefaultsPanel` under Pengaturan; extended
+  `IdentitasTokoCard` with telp_kantor+website; extended `customers` with
+  `salutation` (Bapak/Ibu CHECK) + `contact_person_name`.
+- **Per-SO overrides:** 5 override fields on `sales_orders` (opening
+  greeting, payment terms, lead time, notes, valid until date); collapsible
+  "Override untuk Penawaran ini" section on wizard Step 3 (quote mode only)
+  prefilled from StoreSettings defaults.
+- **Snapshots on sales_orders:** `customer_salutation`,
+  `customer_contact_person`, `created_by_name` — client-side
+  `admin_users.name` lookup in `salesOrderService.ts` avoids miss-log
+  Entry #4 SECDEF auth-schema owner trap on `create_sales_order` RPC.
+- **RPC extended (MINIMAL DIFF, audit-verified):** 8 new nullable columns
+  appended to `create_sales_order` INSERT — all 6 preserved behaviors
+  intact (validate_sales_channel, item+customer validation,
+  find-or-create customer, next_sales_order_number counter, SO number CASE
+  formatting, auth.uid capture).
+- **Terbilang helper:** new pure `src/lib/terbilang.ts` — ID number-to-words
+  with 33-fixture Vitest suite.
+- **SO wizard Merek + Sub-komponen:** per-line brand input + new
+  `SubPartsModal` (textarea, one bullet per line → JSONB array).
+
+### Ship & Verify
+
+- Stage 1 (local): lint clean, 5 audits clean
+  (numinput/secdef-null-tenant/no-string-err-fallback/csp-backend-allowlist/
+  radius-non-canonical), 1208 vitest pass + 2 skipped, PDF regression
+  baselines regenerated. Requirements audit vs §3.1-§6 passed 8/8
+  acceptance criteria.
+- Stage 2 (deploy): merged worktree branch → main, pushed 5935dcd +
+  a693f17 (migration orphan fix); cloudbuild triggered for FE + BE
+  services.
+- Migrations applied to prod DB via psql (Supabase MCP not authenticated
+  in autonomous session): 570 (13 columns to store_settings + 2 customers
+  + 8 sales_orders + Indonesian seed for 7 of 8 tenants — 1 orphan
+  tenant_id skipped safely) + 571 (RPC extended). Post-migration
+  verification: 13/2/8 new cols present + RPC body includes new keys.
+- Stage 3 (prod-testing smoke on Toko Jaya Makmur): PENDING deploy
+  completion; will chrome-MCP verify golden path.
+
+### Notes for GJP tomorrow-morning trial
+
+- Sinar Elektrik tenant fixture fully populates all new fields — real GJP
+  tenant needs to fill `SalesOrderDefaultsPanel` in Pengaturan first
+  (validity days, opening greeting, payment terms, lead time, notes,
+  signatory name/title, footer toggles).
+- Customer entries need salutation + contact person filled to see them
+  render on the Penawaran (backward-compat: old customers show
+  company/phone only — no crash).
+- SO wizard Step 2 line items now have Merek input + Sub-komponen button
+  per row — auto-hides MANUFACTURE column on the PDF when zero brand_name
+  filled across items.
+- Override section on Step 3 (quote mode) is collapsible + prefilled;
+  empty overrides fall back to StoreSettings defaults.
+
+### Deferred to follow-up
+
+- Chrome-MCP prod-testing smoke on Toko Jaya Makmur (post-deploy completion
+  during founder's away window).
+- 5 deferred minor findings from SDD reviews (see ledger at
+  `.superpowers/sdd/2026-08-04-cetak-sales-order-gjp/progress.md`):
+  CartRows Merek/Sub-komponen inputs render dead in Step3Payment review;
+  overlayPageNumber fragile-if-refactored; ActionPanel SO shim uses
+  order.id.slice(0,8) as so_number; measureItemRowHeight sub-parts
+  no-word-wrap on long names; pre-existing `apply-pending-migrations.sh`
+  slot 540/541-after-547 array ordering.
+- WhatsApp send button (spec §4.6 deferred; own sub-project).
+- Product-BOM `stocks.brand_id` FK (spec §2 deferred).
+- Fix orphan store_settings row (tenant_id references deleted tenant) —
+  separate tenant-cleanup task.
+
+
+## 2026-08-04 — Design-system rollout PROMOTED TO PROD (ca55ebcd)
+
+**Founder validated staging via chrome-devtools MCP walkthrough** (Toko Jaya Makmur (Staging) impersonation seat), then approved go. Promoted `a55ebcd` → 100% traffic on both FE + BE prod services.
+
+**Promote path:** `./scripts/promote-to-prod.sh a55ebcd`
+- FE `garindo-jaya-panel-msme-erp-frontend-00889-moc` @ 100% (tag `ca55ebcd`)
+- BE `garindo-jaya-panel-msme-erp-00715-cuw` @ 100% (tag `ca55ebcd`, byte-identical to prior BE — design-system PRs FE-only)
+- Prev revision `-00864-yab` (`c7765fcc`) drained to 0%
+
+**Prod smoke post-promote:**
+- `https://app.caleo.id/` → HTTP 200, etag `6c47d264...` (matches staging etag pre-promote — same bundle)
+- `/api/v1/live` → HTTP 200
+- Chrome MCP navigation: prod tenant `toko-jaya-makmur` dashboard loads, sidebar shows Piutang badge, "SISTEM INTEGRASI AKTIF" pill, "Detak Jantung Log Aktivitas AI" section — all design-system components live in prod
+
+**Validation walkthrough (7 modules via chrome MCP against staging impersonation):**
+- Dashboard, Kasir, Penjualan, Laporan Performa, Laporan Akuntansi, Pembelian, Pengaturan — all clean, zero console errors, focus ring resolved `rgb(249,178,51)` = caleo-gold, typography tokens resolving CSS var, shared EmptyState visible in multiple modules
+- Bonus 404 page (compass icon + code URL + navy CTA) validated
+
+**Staging login bug discovered + fixed:** `bootstrap_tenant_context` RPC enforces env-hostname alignment (staging.app.caleo.id → tenant.environment='staging'). Founder's JWT was minted with first-membership tenant (garindo prod) by `custom_access_token_hook` which is not surface-aware — hook picks earliest `tenant_users` row. Fix used the existing impersonation mechanism: INSERT to `platform_admin_active_impersonation(admin_user_id, tenant_slug='toko-jaya-makmur-staging')`, forcing next-mint JWT to staging tenant. Row DELETED post-promote so founder's prod login returns to normal first-membership behavior.
+
+**No incident logged** — no prod break, all checks green pre + post promote.
+
+**Follow-up (deferred):** semantic color `bg-*` / `border-*` shade variations still per-site judgment (Track B module sweep). 25 EmptyState allowlist entries are documented false-positives (toast strings, `<option>` tags, intentional colored callouts).
+
+---
+
+
 ## 2026-08-02 evening — Autonomous 12h design-system rollout (COMPLETE, staging-ready)
 
 **Founder mandate (evening):** "Continue autonomous 12h — apply design system standardization to all modules on app.caleo.id. Test on staging.app.caleo.id. Do NOT deploy to gcloud prod until founder validates final tomorrow. Only design system changes — no journey changes."
