@@ -12,6 +12,7 @@ import NotificationSettingsScreen from './NotificationSettingsScreen';
 import WhatsappAiScreen from './WhatsappAiScreen';
 import SalesChannelConfigPanel from './pengaturan/SalesChannelConfigPanel';
 import IdentitasTokoCard from './pengaturan/IdentitasTokoCard';
+import { SalesOrderDefaultsPanel } from './pengaturan/SalesOrderDefaultsPanel';
 import JamOperasionalCard from './pengaturan/JamOperasionalCard';
 import RekeningBankCard from './pengaturan/RekeningBankCard';
 import ModulSwitchesPanel from './pengaturan/ModulSwitchesPanel';
@@ -25,6 +26,8 @@ import LayananPanel from './pengaturan/LayananPanel';
 import KasirExpenseCategoriesPanel from './pengaturan/KasirExpenseCategoriesPanel';
 import TierConfigPanel from './pengaturan/TierConfigPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
+import { updateStoreSettings } from '../lib/pengaturan/mutations';
+import type { StoreSettings } from '../lib/pengaturan/types';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
 import { captureError } from '../lib/captureError';
@@ -95,6 +98,9 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       .catch(err => captureError(err, { feature: 'pengaturan', action: 'fetch_tenant_settings' }));
   };
 
+  // StoreSettings — for SalesOrderDefaultsPanel
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+
   // Logo state
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -138,8 +144,10 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
 
       // Invoice PDF reads logo_url from store_settings — mirror it here so the
       // logo widget shows the same source that the PDF uses.
+      // Also store full settings for SalesOrderDefaultsPanel.
       if (storeResult.status === 'fulfilled') {
         setLogoUrl(storeResult.value?.logo_url ?? null);
+        setStoreSettings(storeResult.value ?? null);
       } else {
         captureError(storeResult.reason, { feature: 'pengaturan', action: 'load_store_settings' });
       }
@@ -277,6 +285,16 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         <div className="space-y-6 animate-fadeIn">
           {/* Phase 1B Pengaturan cards — source of truth for PDFs + WA. */}
           <IdentitasTokoCard showToast={showToast} />
+          {storeSettings && (
+            <SalesOrderDefaultsPanel
+              settings={storeSettings}
+              onSave={async (updates) => {
+                await updateStoreSettings(updates);
+                setStoreSettings(prev => prev ? { ...prev, ...updates } : prev);
+                showToast('Default Penawaran diperbarui.', 'success');
+              }}
+            />
+          )}
           <JamOperasionalCard showToast={showToast} />
           <RekeningBankCard showToast={showToast} />
 
