@@ -1,4 +1,5 @@
-import type { DbSalesOrder, KasirItem } from '../types';
+import type { DbCustomer, DbSalesOrder, KasirItem } from '../types';
+import { extractErrorMessage } from './extractErrorMessage';
 import { supabase } from './supabaseClient';
 
 export interface CreateSalesOrderInput {
@@ -11,9 +12,52 @@ export interface CreateSalesOrderInput {
   customer_phone: string | null;
   customer_company: string | null;
   notes: string | null;
+  // Penawaran customer snapshot (from selected customer record)
+  selectedCustomer?: DbCustomer | null;
+  // Per-SO override fields (null = use StoreSettings default at PDF render)
+  opening_greeting_override?: string | null;
+  payment_terms_override?: string | null;
+  lead_time_override?: string | null;
+  so_notes_override?: string | null;
+  valid_until_override?: string | null; // ISO date YYYY-MM-DD
+}
+
+/**
+ * Look up the current user's admin_users.name for the Penawaran signatory snapshot.
+ * Returns null if the current user has no matching admin_users row (edge case:
+ * super-admin, provisioning race). Consumer falls back to
+ * store_settings.default_signatory_name at PDF render time.
+ *
+ * Uses admin_users' open-access RLS (POLICY "anon full access admin_users",
+ * migration 20260603000003). Runs entirely client-side to avoid extending
+ * create_sales_order's SECDEF body to read auth.* (miss-log Entry #4 class trap).
+ */
+async function resolveCreatedByName(): Promise<string | null> {
+  try {
+    const { data: userResp } = await supabase.auth.getUser();
+    const email = userResp?.user?.email;
+    if (!email) return null;
+
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('name')
+      .eq('email', email) // exact match — matches existing convention in supabaseClient.ts fetchByEmail
+      .maybeSingle();
+
+    if (error) {
+      console.warn('resolveCreatedByName lookup failed:', extractErrorMessage(error));
+      return null;
+    }
+    return data?.name ?? null;
+  } catch (e) {
+    console.warn('resolveCreatedByName unexpected error:', extractErrorMessage(e));
+    return null;
+  }
 }
 
 export async function createSalesOrder(input: CreateSalesOrderInput): Promise<DbSalesOrder> {
+  const createdByName = await resolveCreatedByName();
+
   const { data, error } = await supabase.rpc('create_sales_order', {
     p_payload: {
       channel: input.channel,
@@ -25,6 +69,17 @@ export async function createSalesOrder(input: CreateSalesOrderInput): Promise<Db
       customer_phone: input.customer_phone,
       customer_company: input.customer_company,
       notes: input.notes,
+      // Penawaran snapshot fields from selected customer
+      customer_salutation: input.selectedCustomer?.salutation ?? null,
+      customer_contact_person: input.selectedCustomer?.contact_person_name ?? null,
+      // Signatory snapshot (client-side lookup)
+      created_by_name: createdByName,
+      // Per-SO override fields
+      opening_greeting_override: input.opening_greeting_override ?? null,
+      payment_terms_override: input.payment_terms_override ?? null,
+      lead_time_override: input.lead_time_override ?? null,
+      so_notes_override: input.so_notes_override ?? null,
+      valid_until_override: input.valid_until_override ?? null,
     },
   });
   if (error) throw new Error(error.message);
