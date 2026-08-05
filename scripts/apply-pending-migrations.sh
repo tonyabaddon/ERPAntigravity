@@ -327,6 +327,10 @@ MIGRATIONS=(
   #      SO number CASE formatting, auth.uid capture). Adds 8 nullable
   #      snapshot + override columns from migration 570 to the INSERT.
   "20261115000571_extend_create_sales_order_rpc.sql"
+  # 572: fix create_sales_order OWNER → postgres (SECDEF auth.* trap per
+  #      miss-log Entry #4 — CREATE OR REPLACE in 571 preserved pre-existing
+  #      vosi_rpc_owner which broke auth.uid() at call time with 42501).
+  "20261115000572_fix_create_sales_order_owner.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

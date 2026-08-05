@@ -49,7 +49,35 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
   const [viewSo, setViewSo] = useState<DbSalesOrder | null>(null);
   const [printSo, setPrintSo] = useState<{ so: DbSalesOrder; mode: InvoicePrintMode; autoPrint: boolean } | null>(null);
 
-  const openPrintSo = (so: DbSalesOrder, mode: InvoicePrintMode) => {
+  const openPrintSo = async (so: DbSalesOrder, mode: InvoicePrintMode) => {
+    // A4 (normal) mode → use the new jsPDF Penawaran template (Task 12).
+    // Dot-matrix keeps the HTML-based SalesInvoicePDF path (ribbon-friendly).
+    if (mode === 'normal') {
+      try {
+        const [
+          { generateSalesOrderPdf },
+          { fetchStoreSettings, fetchBankAccounts },
+        ] = await Promise.all([
+          import('../../lib/sales/pdf/salesOrderPdf'),
+          import('../../lib/pengaturan/queries'),
+        ]);
+        const [settings, banks] = await Promise.all([
+          fetchStoreSettings(),
+          fetchBankAccounts(true),
+        ]);
+        if (!settings) throw new Error('StoreSettings belum di-set — buka Pengaturan → Identitas Toko dulu.');
+        const blob = await generateSalesOrderPdf(so, settings, banks ?? []);
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        // Revoke after a delay to let the browser open the PDF
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      } catch (err) {
+        captureError(err, { feature: 'daftar_penawaran', action: 'print_a4', so_number: so.so_number });
+        showToast(`Gagal cetak: ${extractErrorMessage(err)}`, 'warning');
+      }
+      return;
+    }
+    // Dot-matrix falls back to the existing HTML-based SalesInvoicePDF component.
     setPrintSo({ so, mode, autoPrint: true });
   };
 
