@@ -251,24 +251,32 @@ export function renderHeader(
   doc.setFontSize(9);
   doc.setTextColor(p.grayMuted);
 
-  // Address: wrap to remaining width before the right column starts
-  const rightColumnStart = PAGE_WIDTH_MM - MARGIN_MM - 60;
-  const addressMaxWidth = Math.max(50, rightColumnStart - infoX - 4);
+  // Address: wrap to remaining width before the right column starts.
+  // In 'normal' (color) mode, prepend line-art icons per requirements §3.1.
+  // Dot-matrix skips icons (ribbon-unfriendly).
+  const rightColumnStart = PAGE_WIDTH_MM - MARGIN_MM - 75;  // 75mm reserved for banner+doc-info
+  const iconOffset = mode === 'normal' ? 5 : 0;
+  const addressMaxWidth = Math.max(45, rightColumnStart - infoX - iconOffset - 4);
+  // Dedupe kota if already contained in alamat_lengkap (fixture-data safety)
+  const kotaInAlamat = settings.kota && settings.alamat_lengkap?.toLowerCase().includes(settings.kota.toLowerCase());
   const addressParts: string[] = [];
   if (settings.alamat_lengkap) addressParts.push(settings.alamat_lengkap);
-  if (settings.kota) addressParts.push(settings.kota);
+  if (settings.kota && !kotaInAlamat) addressParts.push(settings.kota);
   const addressLine = addressParts.join(', ');
   if (addressLine) {
+    if (mode === 'normal') drawNavyIcon(doc, 'location', infoX + 2, infoY - 1, 2);
     const wrapped = doc.splitTextToSize(addressLine, addressMaxWidth);
-    doc.text(wrapped, infoX, infoY);
+    doc.text(wrapped, infoX + iconOffset, infoY);
     infoY += wrapped.length * 4;
   }
   if (settings.telp_wa) {
-    doc.text(`WA: ${settings.telp_wa}`, infoX, infoY);
+    if (mode === 'normal') drawNavyIcon(doc, 'phone', infoX + 2, infoY - 1, 2);
+    doc.text(settings.telp_wa, infoX + iconOffset, infoY);
     infoY += 4;
   }
   if (settings.email) {
-    doc.text(settings.email, infoX, infoY);
+    if (mode === 'normal') drawNavyIcon(doc, 'email', infoX + 2, infoY - 1, 2);
+    doc.text(settings.email, infoX + iconOffset, infoY);
     infoY += 4;
   }
 
@@ -548,6 +556,93 @@ export function renderFooter(
 }
 
 // ============================================================================
+// Icon helpers for Penawaran template — line-art via jsPDF primitives
+// ============================================================================
+
+/**
+ * Draw a small icon inside a navy-filled circle at (cx, cy).
+ * Icons are white line-art on navy background — matches reference GJP template.
+ *
+ * @param size outer circle radius in mm (default 2.5mm = 5mm diameter)
+ */
+export function drawNavyIcon(
+  doc: jsPDF,
+  icon: 'phone' | 'email' | 'location' | 'calendar' | 'clock' | 'wallet' | 'doc' | 'globe' | 'mobile',
+  cx: number,
+  cy: number,
+  size = 2.5,
+): void {
+  const p = paletteFor('normal');
+  doc.setFillColor(p.navy);
+  doc.circle(cx, cy, size, 'F');
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.35);
+
+  const s = size * 0.55; // interior symbol half-size
+
+  switch (icon) {
+    case 'phone': {
+      // Handset: rounded rect corner + small dot for earpiece
+      doc.roundedRect(cx - s * 0.7, cy - s, s * 1.4, s * 2, 0.4, 0.4, 'S');
+      break;
+    }
+    case 'mobile': {
+      // Same as phone visually
+      doc.roundedRect(cx - s * 0.7, cy - s, s * 1.4, s * 2, 0.4, 0.4, 'S');
+      break;
+    }
+    case 'email': {
+      // Envelope: rect + M-fold
+      doc.rect(cx - s, cy - s * 0.65, s * 2, s * 1.3, 'S');
+      doc.line(cx - s, cy - s * 0.65, cx, cy + s * 0.15);
+      doc.line(cx + s, cy - s * 0.65, cx, cy + s * 0.15);
+      break;
+    }
+    case 'location': {
+      // Pin: circle on top of inverted triangle
+      doc.circle(cx, cy - s * 0.25, s * 0.55, 'S');
+      doc.line(cx - s * 0.55, cy - s * 0.05, cx, cy + s * 0.95);
+      doc.line(cx + s * 0.55, cy - s * 0.05, cx, cy + s * 0.95);
+      break;
+    }
+    case 'calendar': {
+      // Rect + top ring holders + horizontal divider
+      doc.rect(cx - s, cy - s * 0.75, s * 2, s * 1.5, 'S');
+      doc.line(cx - s, cy - s * 0.25, cx + s, cy - s * 0.25);
+      doc.line(cx - s * 0.55, cy - s, cx - s * 0.55, cy - s * 0.55);
+      doc.line(cx + s * 0.55, cy - s, cx + s * 0.55, cy - s * 0.55);
+      break;
+    }
+    case 'clock': {
+      doc.circle(cx, cy, s * 0.85, 'S');
+      doc.line(cx, cy, cx, cy - s * 0.5);
+      doc.line(cx, cy, cx + s * 0.4, cy);
+      break;
+    }
+    case 'wallet': {
+      // Credit card rect + magnetic strip
+      doc.rect(cx - s, cy - s * 0.55, s * 2, s * 1.1, 'S');
+      doc.line(cx - s, cy - s * 0.15, cx + s, cy - s * 0.15);
+      break;
+    }
+    case 'doc': {
+      // Doc rect + text lines
+      doc.rect(cx - s * 0.7, cy - s * 0.9, s * 1.4, s * 1.8, 'S');
+      doc.line(cx - s * 0.4, cy - s * 0.35, cx + s * 0.4, cy - s * 0.35);
+      doc.line(cx - s * 0.4, cy + s * 0.1, cx + s * 0.4, cy + s * 0.1);
+      doc.line(cx - s * 0.4, cy + s * 0.55, cx + s * 0.4, cy + s * 0.55);
+      break;
+    }
+    case 'globe': {
+      doc.circle(cx, cy, s * 0.85, 'S');
+      doc.line(cx - s * 0.85, cy, cx + s * 0.85, cy);
+      doc.ellipse(cx, cy, s * 0.35, s * 0.85, 'S');
+      break;
+    }
+  }
+}
+
+// ============================================================================
 // Multi-page primitives for Penawaran template (task 11 of 2026-08-04 plan)
 // ============================================================================
 
@@ -585,17 +680,20 @@ export function renderPageHeader(doc: jsPDF, ctx: PageHeaderContext): number {
     ctx.logoDataUrl,
   );
 
-  // Doc banner (top-right, navy background, white text, 16pt bold)
+  // Doc banner (top-right, navy background, white text).
+  // Width 75mm — fits "PENAWARAN HARGA" at 16pt bold (~62mm) or "QUOTATION" (~48mm)
+  // with generous padding. Right-aligned to page edge with 10mm margin.
   const p = paletteFor('normal');
   const pageWidth = doc.internal.pageSize.getWidth();
-  const bannerX = pageWidth - 65;
+  const bannerW = 75;
+  const bannerX = pageWidth - MARGIN_MM - bannerW;
   const bannerY = 15;
   doc.setFillColor(p.navy);
-  doc.rect(bannerX, bannerY, 55, 12, 'F');
+  doc.rect(bannerX, bannerY, bannerW, 12, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text(ctx.docLabel, bannerX + 27.5, bannerY + 8.5, { align: 'center' });
+  doc.text(ctx.docLabel, bannerX + bannerW / 2, bannerY + 8.5, { align: 'center' });
 
   // Doc info (below banner, right-aligned).
   // NOTE: "Halaman" row is rendered as label-only placeholder; the actual
@@ -614,8 +712,9 @@ export function renderPageHeader(doc: jsPDF, ctx: PageHeaderContext): number {
     ['Halaman', ''],  // placeholder — overlaid post-render
   ];
   infoRows.forEach(([label, value], i) => {
-    doc.text(`${label}:`, bannerX, infoStartY + i * 6);
-    if (value) doc.text(value, bannerX + 30, infoStartY + i * 6);
+    doc.text(`${label}`, bannerX + 2, infoStartY + i * 6);
+    doc.text(':', bannerX + 32, infoStartY + i * 6);
+    if (value) doc.text(value, bannerX + 35, infoStartY + i * 6);
   });
 
   // Return Y of next content (whichever block is taller + spacing)
@@ -628,7 +727,7 @@ export function renderPageHeader(doc: jsPDF, ctx: PageHeaderContext): number {
  * Halaman row Y = infoStartY + 3 * 6 = 53.
  */
 export const PAGE_INFO_HALAMAN_Y_OFFSET = 15 + 20 + 3 * 6; // 53mm from page top
-export const PAGE_INFO_HALAMAN_X_OFFSET = 30;               // bannerX + 30 (value column offset from bannerX)
+export const PAGE_INFO_HALAMAN_X_OFFSET = 35;               // bannerX + 35 (value column offset from bannerX)
 
 /**
  * Add a new page and draw the page header. Returns Y for next content.
@@ -659,31 +758,65 @@ export function measureItemRowHeight(
   return nameRow + bulletSpace + bottomPad + noSubExtra;
 }
 
-/** Draw running footer bar at the bottom of the current page. */
+/** Draw running footer bar at the bottom of the current page.
+ *  Navy full-width band, white text, distributed contact items with icons.
+ *  Matches reference GJP template (bottom navy bar). */
 export function renderRunningFooter(
   doc: jsPDF,
   store: StoreSettings,
 ): void {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
-  const footerY = pageHeight - 12;
-
-  // Divider lines top + bottom of footer band
   const p = paletteFor('normal');
-  doc.setDrawColor(p.navy);
-  doc.setLineWidth(0.5);
-  doc.line(10, footerY - 2, pageWidth - 10, footerY - 2);
-  doc.line(10, footerY + 6, pageWidth - 10, footerY + 6);
 
-  // Contact items separated by " | "
-  const parts: string[] = [];
-  if ((store.footer_show_telp_kantor ?? true) && store.telp_kantor) parts.push(`Telp: ${store.telp_kantor}`);
-  if ((store.footer_show_wa ?? true) && store.telp_wa) parts.push(`WA: ${store.telp_wa}`);
-  if ((store.footer_show_email ?? true) && store.email) parts.push(store.email);
-  if ((store.footer_show_website ?? false) && store.website_url) parts.push(store.website_url);
+  const bandH = 11;
+  const bandY = pageHeight - bandH;
+
+  // Full-width navy band
+  doc.setFillColor(p.navy);
+  doc.rect(0, bandY, pageWidth, bandH, 'F');
+
+  // Build contact list
+  interface FooterItem { icon: 'phone' | 'mobile' | 'email' | 'globe'; text: string; }
+  const items: FooterItem[] = [];
+  if ((store.footer_show_telp_kantor ?? true) && store.telp_kantor) items.push({ icon: 'phone', text: store.telp_kantor });
+  if ((store.footer_show_wa ?? true) && store.telp_wa) items.push({ icon: 'mobile', text: store.telp_wa });
+  if ((store.footer_show_email ?? true) && store.email) items.push({ icon: 'email', text: store.email });
+  if ((store.footer_show_website ?? false) && store.website_url) items.push({ icon: 'globe', text: store.website_url });
+
+  if (items.length === 0) return;
+
+  const centerY = bandY + bandH / 2;
+  const colW = (pageWidth - 20) / items.length;
+  const iconRadius = 2;
 
   doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
-  doc.text(parts.join(' | '), pageWidth / 2, footerY + 2, { align: 'center' });
+  doc.setTextColor(255, 255, 255);
+
+  items.forEach((item, i) => {
+    const cx = 10 + colW * i + colW / 2;
+    // White filled circle with navy icon (inverted vs header)
+    doc.setFillColor(255, 255, 255);
+    doc.circle(cx - 22, centerY, iconRadius, 'F');
+    doc.setDrawColor(p.navy);
+    doc.setLineWidth(0.3);
+    const s = iconRadius * 0.55;
+    // Simple inline icon (compact for footer)
+    switch (item.icon) {
+      case 'phone':
+      case 'mobile':
+        doc.roundedRect(cx - 22 - s * 0.7, centerY - s, s * 1.4, s * 2, 0.3, 0.3, 'S');
+        break;
+      case 'email':
+        doc.rect(cx - 22 - s, centerY - s * 0.6, s * 2, s * 1.2, 'S');
+        break;
+      case 'globe':
+        doc.circle(cx - 22, centerY, s * 0.8, 'S');
+        doc.line(cx - 22 - s * 0.8, centerY, cx - 22 + s * 0.8, centerY);
+        break;
+    }
+    doc.setTextColor(255, 255, 255);
+    doc.text(item.text, cx - 18, centerY + 1.5);
+  });
 }

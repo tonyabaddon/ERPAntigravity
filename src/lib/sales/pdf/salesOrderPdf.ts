@@ -15,6 +15,7 @@ import {
   formatRupiah,
   fetchLogoDataUrl,
   paletteFor,
+  drawNavyIcon,
   MARGIN_MM,
   PAGE_WIDTH_MM,
   PAGE_INFO_HALAMAN_Y_OFFSET,
@@ -149,7 +150,7 @@ async function _render(
   const ctx: PageHeaderContext = {
     store: storeSettings,
     logoDataUrl: logo,
-    docLabel: 'PENAWARAN HARGA',
+    docLabel: 'QUOTATION',
     docNumber: so.so_number,
     docDate: formatTanggal(so.date),
     validUntil: formatTanggal(validUntil.toISOString()),
@@ -202,7 +203,8 @@ async function _render(
  */
 function overlayPageNumber(doc: jsPDF, page: number, total: number): void {
   const pageWidth = doc.internal.pageSize.getWidth();
-  const bannerX = pageWidth - 65;
+  // Match renderPageHeader banner geometry: bannerW=75, right-aligned to page edge
+  const bannerX = pageWidth - MARGIN_MM - 75;
   const y = PAGE_INFO_HALAMAN_Y_OFFSET;
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
@@ -223,38 +225,46 @@ function renderRecipient(doc: jsPDF, y: number, so: SalesOrderForPdf): number {
   const lineHeight = 5;
   let cursorY = y + 2;
 
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(p.navy);
-  doc.text('Kepada Yth.', MARGIN_MM, cursorY);
+  doc.text('Kepada Yth,', MARGIN_MM, cursorY);
   cursorY += lineHeight;
 
-  // Salutation + contact person (if available)
+  // Salutation + contact person as BOLD NAVY UPPERCASE (matches reference GJP style).
+  // Strip leading salutation from contact_person if already prefixed (data-safety).
   if (so.customer_salutation || so.customer_contact_person) {
-    const line = [so.customer_salutation, so.customer_contact_person]
-      .filter(Boolean)
-      .join(' ');
-    doc.setFont('helvetica', 'normal');
+    let contact = so.customer_contact_person ?? '';
+    const salPrefix = so.customer_salutation ? `${so.customer_salutation} ` : '';
+    if (salPrefix && contact.toLowerCase().startsWith(salPrefix.toLowerCase())) {
+      contact = contact.slice(salPrefix.length);
+    }
+    const line = [so.customer_salutation, contact].filter(Boolean).join(' ').toUpperCase();
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(p.grayMuted);
+    doc.setTextColor(p.navy);
     doc.text(line, MARGIN_MM, cursorY);
     cursorY += lineHeight;
   }
 
-  // Company name (customer_company or customer_name)
+  // Company name — only render if it differs from what we already showed above.
+  // If no contact-person block was drawn, this becomes the primary bold name.
+  const primaryShown = so.customer_salutation || so.customer_contact_person;
   const companyLine = so.customer_company || so.customer_name;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(p.navy);
-  doc.text(companyLine, MARGIN_MM, cursorY);
-  cursorY += lineHeight;
+  if (companyLine && (!primaryShown || companyLine !== so.customer_name)) {
+    doc.setFont('helvetica', primaryShown ? 'normal' : 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(primaryShown ? p.grayMuted : p.navy);
+    doc.text(companyLine, MARGIN_MM, cursorY);
+    cursorY += lineHeight;
+  }
 
   // WA / phone
   if (so.customer_phone) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
     doc.setTextColor(p.grayMuted);
-    doc.text(`WA: ${so.customer_phone}`, MARGIN_MM, cursorY);
+    doc.text(so.customer_phone, MARGIN_MM, cursorY);
     cursorY += lineHeight;
   }
 
@@ -384,17 +394,20 @@ function renderItemsTable(
     // No.
     doc.text(String(i + 1), colNoX + 1, textY);
 
-    // Description
-    doc.setTextColor('#222222');
-    doc.text(item.name, colDescX + 1, textY);
+    // Description — item title in bold navy uppercase (matches reference GJP)
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(p.navy);
+    doc.text(item.name.toUpperCase(), colDescX + 1, textY);
 
-    // Merek
+    // Merek — UPPERCASE brand name (SCHNEIDER, CHINT, etc.)
     if (showManufacture) {
-      doc.setTextColor(p.grayMuted);
-      doc.text(item.brand_name ?? '', colMerekX + 1, textY);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(p.navy);
+      doc.text((item.brand_name ?? '').toUpperCase(), colMerekX + 1, textY);
     }
 
     // Qty
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor('#222222');
     doc.text(String(item.qty), colQtyX + COL_QTY_W / 2, textY, { align: 'center' });
 
@@ -407,12 +420,14 @@ function renderItemsTable(
       { align: 'right' },
     );
 
-    // Subtotal
+    // Subtotal — bold navy per reference (emphasized total for the row)
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(p.navy);
     doc.text(`Rp ${formatRupiah(item.subtotal)}`, colSubtotalX + COL_SUBTOTAL_W - 1, textY, {
       align: 'right',
     });
 
-    // Sub-parts bullets (9pt mid-grey) — tight line-height, no big gaps
+    // Sub-parts — dashed list (matches reference "- Box Panel Indoor Plat 1.2 mm")
     if (item.sub_parts && item.sub_parts.length > 0) {
       let subY = textY + 3.5;
       doc.setFont('helvetica', 'normal');
@@ -425,9 +440,9 @@ function renderItemsTable(
         ]
           .filter(Boolean)
           .join(' ');
-        const partLine = qtyUnit ? `• ${part.name} (${qtyUnit})` : `• ${part.name}`;
+        const partLine = qtyUnit ? `-  ${part.name} (${qtyUnit})` : `-  ${part.name}`;
         doc.text(partLine, colDescX + 3, subY);
-        subY += 4;  // tight 4mm per bullet (matches 9pt text ~3.2mm cap height + 0.8mm gap)
+        subY += 4;
       }
     }
 
@@ -453,26 +468,21 @@ function renderItemsTable(
 function renderGrandTotalRow(doc: jsPDF, y: number, subtotal: number): number {
   const p = paletteFor('normal');
   const rowH = 9;
-  const labelX = PAGE_WIDTH_MM - MARGIN_MM - 100;
+  // Full-width bar matching table width (matches reference GJP pale-blue GRAND TOTAL strip)
+  const barX = MARGIN_MM;
+  const barW = PAGE_WIDTH_MM - MARGIN_MM * 2;
   const valueX = PAGE_WIDTH_MM - MARGIN_MM;
-  const rowW = 100;
 
-  // Highlighted fill
+  // Highlighted pale-blue fill spanning full table width
   doc.setFillColor(TOTAL_ROW_BG);
-  doc.rect(labelX, y, rowW, rowH, 'F');
-
-  // Border
-  doc.setDrawColor(p.navy);
-  doc.setLineWidth(0.4);
-  doc.rect(labelX, y, rowW, rowH, 'S');
+  doc.rect(barX, y, barW, rowH, 'F');
 
   const textY = y + rowH / 2 + 2;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(p.navy);
-  doc.text('GRAND TOTAL', labelX + 3, textY);
-
-  doc.setFontSize(11);
+  // "GRAND TOTAL" right-aligned near the right edge (matches reference — value follows)
+  doc.text('GRAND TOTAL', valueX - 55, textY, { align: 'right' });
   doc.text(`Rp ${formatRupiah(subtotal)}`, valueX - 3, textY, { align: 'right' });
 
   return y + rowH + 3;
@@ -522,100 +532,117 @@ function renderTermsAndNotes(
   soNotes: string,
 ): number {
   const p = paletteFor('normal');
-  const padding = 3;
-  const colGap = 4;
+  const gap = 6;
   const blockW = PAGE_WIDTH_MM - MARGIN_MM * 2;
-  const colW = (blockW - colGap) / 2;
-  const lineH = 4.5;
-  const labelH = 5.5;
+  const leftW = (blockW - gap) * 0.6;   // T&C box gets 60% (has more content)
+  const rightW = blockW - gap - leftW;   // Catatan gets 40%
 
-  // ---- Build left column lines ----
-  const leftLines: string[] = [];
+  // ---- Left: SYARAT & KONDISI PENAWARAN — bordered box with navy header bar + icons ----
+  interface Row { icon: 'wallet' | 'clock' | 'calendar' | 'doc'; label: string; text: string[]; }
+  const rows: Row[] = [];
+  if (paymentTerms) rows.push({ icon: 'wallet', label: 'Cara Pembayaran', text: paymentTerms.split('\n') });
+  if (leadTime) rows.push({ icon: 'clock', label: 'Waktu Pengadaan', text: leadTime.split('\n') });
+  if (validityDays > 0) rows.push({ icon: 'calendar', label: 'Masa Berlaku Penawaran', text: [`${validityDays} Hari`] });
 
-  if (paymentTerms) {
-    leftLines.push('Cara Pembayaran:');
-    const wrapped = doc.splitTextToSize(paymentTerms, colW - padding * 2) as string[];
-    leftLines.push(...wrapped.map((l: string) => `  ${l}`));
-  }
-  if (leadTime) {
-    if (leftLines.length) leftLines.push('');
-    leftLines.push('Waktu Pengadaan:');
-    const wrapped = doc.splitTextToSize(leadTime, colW - padding * 2) as string[];
-    leftLines.push(...wrapped.map((l: string) => `  ${l}`));
-  }
-  if (validityDays > 0) {
-    if (leftLines.length) leftLines.push('');
-    leftLines.push(`Masa Berlaku Penawaran: ${validityDays} hari`);
-  }
-
-  // Bank accounts (soft-cap at 3)
   const activeAccounts = bankAccounts.filter((b) => b.is_active);
   if (activeAccounts.length > 0) {
-    if (leftLines.length) leftLines.push('');
-    leftLines.push('Rekening Pembayaran:');
     const shown = activeAccounts.slice(0, 3);
     const overflow = activeAccounts.length - shown.length;
+    const rekLines: string[] = ['Dapat di transfer ke'];
     for (const acct of shown) {
-      leftLines.push(`  ${acct.bank_name} · ${acct.account_number}`);
-      leftLines.push(`  a.n. ${acct.account_holder}`);
+      rekLines.push(`${acct.bank_name} : ${acct.account_number}`);
+      rekLines.push(`a.n. ${acct.account_holder}`);
     }
-    if (overflow > 0) {
-      leftLines.push(`  ... dan ${overflow} rekening lainnya`);
-    }
+    if (overflow > 0) rekLines.push(`... dan ${overflow} rekening lainnya`);
+    rows.push({ icon: 'doc', label: 'Keterangan', text: rekLines });
   }
 
-  // ---- Build right column lines ----
-  const rightLines: string[] = [];
-  if (soNotes) {
-    rightLines.push('Catatan:');
-    const noteLines = soNotes.split('\n');
-    for (const noteLine of noteLines) {
-      const wrapped = doc.splitTextToSize(noteLine, colW - padding * 2) as string[];
-      rightLines.push(...wrapped.map((l: string) => `  ${l}`));
-    }
-  }
+  // Left column geometry
+  const iconColW = 8;   // navy icon + gap
+  const labelColW = 40;  // label + colon column
+  const valueColX = MARGIN_MM + iconColW + labelColW + 3;
+  const valueColW = leftW - iconColW - labelColW - 6;
 
-  // ---- Box height ----
-  const contentLines = Math.max(leftLines.length, rightLines.length, 1);
-  const boxH = padding * 2 + labelH + contentLines * lineH;
+  // Header bar height + row layout
+  const headerBarH = 6;
+  const rowGap = 3;
+  const lineH = 4;
+
+  // Pre-measure rows for accurate box height
+  const wrappedRows = rows.map((r) => ({
+    ...r,
+    wrapped: r.text.flatMap((t) => doc.splitTextToSize(t, valueColW) as string[]),
+  }));
+  const leftContentH = wrappedRows.reduce((sum, r) => sum + Math.max(r.wrapped.length * lineH, 5) + rowGap, 4);
+  const leftBoxH = headerBarH + leftContentH + 4;
+
+  // Right column height (Catatan bullets)
+  const noteLines = soNotes ? soNotes.split('\n').filter((l) => l.trim()) : [];
+  const rightContentH = noteLines.reduce((sum, note) => {
+    const wrapped = doc.splitTextToSize(note, rightW - 6) as string[];
+    return sum + wrapped.length * lineH + 1;
+  }, 6);
+  const rightBoxH = Math.max(rightContentH, leftBoxH);
+
+  // ---- Draw LEFT box: SYARAT & KONDISI ----
+  const leftX = MARGIN_MM;
+  const boxH = Math.max(leftBoxH, rightBoxH);
 
   // Box border
   doc.setDrawColor(p.hairline);
-  doc.setLineWidth(0.3);
-  doc.rect(MARGIN_MM, y, blockW, boxH, 'S');
+  doc.setLineWidth(0.4);
+  doc.rect(leftX, y, leftW, boxH, 'S');
 
-  // Vertical divider between left and right columns
-  const divX = MARGIN_MM + colW;
-  doc.line(divX, y, divX, y + boxH);
-
-  // Draw left column
-  doc.setFont('helvetica', 'normal');
+  // Navy header bar (spans top of the box)
+  doc.setFillColor(p.navy);
+  doc.rect(leftX, y, leftW, headerBarH, 'F');
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(p.grayMuted);
-  let leftY = y + padding + lineH;
-  for (const line of leftLines) {
-    if (line === '') { leftY += lineH / 2; continue; }
-    const isBold = !line.startsWith(' ');
-    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-    doc.setTextColor(isBold ? p.navy : p.grayMuted);
-    doc.text(line.trimStart(), MARGIN_MM + padding, leftY);
-    leftY += lineH;
+  doc.setTextColor(255, 255, 255);
+  doc.text('SYARAT & KONDISI PENAWARAN', leftX + 3, y + headerBarH / 2 + 1.6);
+
+  // Rows with icons
+  let rowY = y + headerBarH + 5;
+  for (const r of wrappedRows) {
+    const rowMidY = rowY + Math.max(r.wrapped.length * lineH, 5) / 2 - 1;
+    // Icon (navy filled circle with white line-art)
+    drawNavyIcon(doc, r.icon, leftX + 4.5, rowMidY, 2);
+    // Label
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(p.navy);
+    doc.text(r.label, leftX + iconColW + 2, rowMidY + 1);
+    doc.text(':', leftX + iconColW + labelColW - 2, rowMidY + 1);
+    // Value (may span multiple lines)
+    doc.setTextColor('#222222');
+    r.wrapped.forEach((line, i) => {
+      doc.text(line, valueColX, rowY + i * lineH + 1);
+    });
+    rowY += Math.max(r.wrapped.length * lineH, 5) + rowGap;
   }
 
-  // Draw right column
+  // ---- Draw RIGHT: CATATAN (no border, per reference) ----
+  const rightX = leftX + leftW + gap;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(p.navy);
+  doc.text('CATATAN :', rightX, y + 4);
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  let rightY = y + padding + lineH;
-  for (const line of rightLines) {
-    if (line === '') { rightY += lineH / 2; continue; }
-    const isBold = !line.startsWith(' ');
-    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-    doc.setTextColor(isBold ? p.navy : p.grayMuted);
-    doc.text(line.trimStart(), divX + padding, rightY);
-    rightY += lineH;
+  doc.setTextColor('#222222');
+  let noteY = y + 10;
+  for (const note of noteLines) {
+    const wrapped = doc.splitTextToSize(note, rightW - 6) as string[];
+    // Bullet char
+    doc.text('•', rightX, noteY);
+    wrapped.forEach((line, i) => {
+      doc.text(line, rightX + 4, noteY + i * lineH);
+    });
+    noteY += wrapped.length * lineH + 1;
   }
 
-  return y + boxH + 4;
+  return y + boxH + 6;
 }
 
 // ============================================================================
@@ -645,30 +672,29 @@ function renderSignature(
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  doc.setTextColor(p.grayMuted);
+  doc.setTextColor(p.navy);
   doc.text('Hormat Kami,', rightX, cursorY, { align: 'right' });
-  cursorY += lineH * 4; // 3 blank lines for signature area
+  cursorY += lineH * 3; // 2 blank lines for signature area
 
-  // Signature underline
-  const lineWidth = 60;
-  const lineX = rightX - lineWidth;
-  doc.setDrawColor(p.navy);
-  doc.setLineWidth(0.5);
-  doc.line(lineX, cursorY, rightX, cursorY);
+  // Signature placeholder in parens-with-dots style (matches reference GJP)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(p.grayMuted);
+  doc.text('( ......................................... )', rightX, cursorY, { align: 'right' });
   cursorY += lineH;
 
   if (name) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(p.navy);
-    doc.text(name, rightX, cursorY, { align: 'right' });
+    doc.text(name.toUpperCase(), rightX, cursorY, { align: 'right' });
     cursorY += lineH;
   }
   if (title) {
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.setTextColor(p.grayMuted);
-    doc.text(title, rightX, cursorY, { align: 'right' });
+    doc.setTextColor(p.navy);
+    doc.text(title.toUpperCase(), rightX, cursorY, { align: 'right' });
     cursorY += lineH;
   }
 

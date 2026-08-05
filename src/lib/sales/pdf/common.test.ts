@@ -215,7 +215,7 @@ describe('PAGE_INFO_HALAMAN constants', () => {
     expect(PAGE_INFO_HALAMAN_Y_OFFSET).toBe(53);
   });
 
-  test('X offset is 30', () => {
-    expect(PAGE_INFO_HALAMAN_X_OFFSET).toBe(30);
+  test('X offset is 35', () => {
+    expect(PAGE_INFO_HALAMAN_X_OFFSET).toBe(35);
   });
 });
