@@ -64,8 +64,13 @@ requirements at `docs/Requirements/requirements-cetak-sales-order-gjp.md`.
   + 8 sales_orders + Indonesian seed for 7 of 8 tenants — 1 orphan
   tenant_id skipped safely) + 571 (RPC extended). Post-migration
   verification: 13/2/8 new cols present + RPC body includes new keys.
-- Stage 3 (prod-testing smoke on Toko Jaya Makmur): PENDING deploy
-  completion; will chrome-MCP verify golden path.
+- Stage 2 (promoted): `./scripts/promote-to-prod.sh 5905df9` at ~00:30 local
+  → both FE + BE at 100% traffic on revision `-00896-pub` (FE) /
+  `-00722-nid` (BE). app.caleo.id etag `9515bdb7d1c849cae9ccc84244384bdf8a71caf3`
+  (fresh bundle, distinct from prior `6c47d264...`). HTTP 200 both endpoints.
+- Stage 3 (prod-testing chrome-MCP smoke): DEFERRED — chrome MCP profile
+  in use by another Claude session; autonomous session couldn't attach.
+  Founder to eyeball on wake before handing GJP tenant the link.
 
 ### Notes for GJP tomorrow-morning trial
 
