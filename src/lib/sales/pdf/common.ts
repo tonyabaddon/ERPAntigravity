@@ -304,11 +304,15 @@ export function renderHeader(
   }
 
   // --- Divider just below whichever side is taller ---
+  // For the Penawaran template (docNumber='' path), the caller draws a banner +
+  // doc-info block in the right region — clip the divider so it stops before
+  // that region, otherwise the "Berlaku sampai" / "Halaman" rows get cut.
   const stackBottom = Math.max(infoY, rightY, logoY + LOGO_SIZE_MM);
   const dividerY = stackBottom + DIVIDER_GAP_MM;
   doc.setDrawColor(p.navy);
   doc.setLineWidth(DIVIDER_WEIGHT_MM);
-  doc.line(MARGIN_MM, dividerY, PAGE_WIDTH_MM - MARGIN_MM, dividerY);
+  const bannerReservedStart = docNumber ? PAGE_WIDTH_MM - MARGIN_MM : PAGE_WIDTH_MM - MARGIN_MM - 75 - 2;
+  doc.line(MARGIN_MM, dividerY, bannerReservedStart, dividerY);
 
   return dividerY + 5;
 }
