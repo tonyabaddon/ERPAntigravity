@@ -305,14 +305,14 @@ export function renderHeader(
 
   // --- Divider just below whichever side is taller ---
   // For the Penawaran template (docNumber='' path), the caller draws a banner +
-  // doc-info block in the right region — clip the divider so it stops before
-  // that region, otherwise the "Berlaku sampai" / "Halaman" rows get cut.
-  const stackBottom = Math.max(infoY, rightY, logoY + LOGO_SIZE_MM);
+  // doc-info block ending at Y=47 (bannerY 15 + 17 + 3*5). Account for that so
+  // the divider sits BELOW both left and right blocks aligned.
+  const penawaranRightBottom = docNumber ? 0 : 15 + 17 + 4 * 5;  // Y=52 (row 4 + spacing)
+  const stackBottom = Math.max(infoY, rightY, logoY + LOGO_SIZE_MM, penawaranRightBottom);
   const dividerY = stackBottom + DIVIDER_GAP_MM;
   doc.setDrawColor(p.navy);
   doc.setLineWidth(DIVIDER_WEIGHT_MM);
-  const bannerReservedStart = docNumber ? PAGE_WIDTH_MM - MARGIN_MM : PAGE_WIDTH_MM - MARGIN_MM - 75 - 2;
-  doc.line(MARGIN_MM, dividerY, bannerReservedStart, dividerY);
+  doc.line(MARGIN_MM, dividerY, PAGE_WIDTH_MM - MARGIN_MM, dividerY);
 
   return dividerY + 5;
 }
@@ -700,15 +700,15 @@ export function renderPageHeader(doc: jsPDF, ctx: PageHeaderContext): number {
   doc.text(ctx.docLabel, bannerX + bannerW / 2, bannerY + 8.5, { align: 'center' });
 
   // Doc info (below banner, right-aligned).
-  // NOTE: "Halaman" row is rendered as label-only placeholder; the actual
-  // "N dari M" text is overlaid AFTER render pass (see salesOrderPdf.ts
-  // overlayPageNumber helper) once doc.getNumberOfPages() returns the real
-  // total. Placeholder pattern used because a single-pass render doesn't know
-  // the final page count until after all content is drawn.
+  // Font 9pt to MATCH left-side company header (same visual weight).
+  // Row height 5mm (compact) so 4 rows fit above the header divider.
+  // "Halaman" row rendered as label-only placeholder; the actual "N dari M"
+  // text is overlaid post-render by salesOrderPdf.ts overlayPageNumber.
   doc.setTextColor(0, 0, 0);
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  const infoStartY = bannerY + 20;
+  const infoStartY = bannerY + 17;
+  const infoRowH = 5;
   const infoRows: [string, string][] = [
     ['Nomor', ctx.docNumber],
     ['Tanggal', ctx.docDate],
@@ -716,21 +716,21 @@ export function renderPageHeader(doc: jsPDF, ctx: PageHeaderContext): number {
     ['Halaman', ''],  // placeholder — overlaid post-render
   ];
   infoRows.forEach(([label, value], i) => {
-    doc.text(`${label}`, bannerX + 2, infoStartY + i * 6);
-    doc.text(':', bannerX + 32, infoStartY + i * 6);
-    if (value) doc.text(value, bannerX + 35, infoStartY + i * 6);
+    doc.text(`${label}`, bannerX + 2, infoStartY + i * infoRowH);
+    doc.text(':', bannerX + 32, infoStartY + i * infoRowH);
+    if (value) doc.text(value, bannerX + 35, infoStartY + i * infoRowH);
   });
 
   // Return Y of next content (whichever block is taller + spacing)
-  return Math.max(headerBottomY, infoStartY + infoRows.length * 6) + 8;
+  return Math.max(headerBottomY, infoStartY + infoRows.length * infoRowH) + 8;
 }
 
 /**
  * Y-coordinate constants for overlayPageNumber (must match renderPageHeader).
- * bannerY = 15, rowIndex(3) * 6 = 18 → infoStartY = bannerY + 20 = 35,
- * Halaman row Y = infoStartY + 3 * 6 = 53.
+ * bannerY = 15, infoStartY = bannerY + 17 = 32, infoRowH = 5,
+ * Halaman row Y = infoStartY + 3 * 5 = 47.
  */
-export const PAGE_INFO_HALAMAN_Y_OFFSET = 15 + 20 + 3 * 6; // 53mm from page top
+export const PAGE_INFO_HALAMAN_Y_OFFSET = 15 + 17 + 3 * 5; // 47mm from page top
 export const PAGE_INFO_HALAMAN_X_OFFSET = 35;               // bannerX + 35 (value column offset from bannerX)
 
 /**

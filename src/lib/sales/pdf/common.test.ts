@@ -211,8 +211,8 @@ describe('renderRunningFooter', () => {
 });
 
 describe('PAGE_INFO_HALAMAN constants', () => {
-  test('Y offset matches bannerY + 20 + 3*6 = 53', () => {
-    expect(PAGE_INFO_HALAMAN_Y_OFFSET).toBe(53);
+  test('Y offset matches bannerY + 17 + 3*5 = 47', () => {
+    expect(PAGE_INFO_HALAMAN_Y_OFFSET).toBe(47);
   });
 
   test('X offset is 35', () => {
