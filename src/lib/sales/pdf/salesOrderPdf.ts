@@ -206,7 +206,7 @@ function overlayPageNumber(doc: jsPDF, page: number, total: number): void {
   // Match renderPageHeader banner geometry: bannerW=75, right-aligned to page edge
   const bannerX = pageWidth - MARGIN_MM - 75;
   const y = PAGE_INFO_HALAMAN_Y_OFFSET;
-  doc.setFontSize(11);
+  doc.setFontSize(9);  // match doc-info row font (Nomor/Tanggal/Berlaku sampai)
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
   doc.text(`${page} dari ${total}`, bannerX + PAGE_INFO_HALAMAN_X_OFFSET, y);
@@ -223,7 +223,7 @@ function overlayPageNumber(doc: jsPDF, page: number, total: number): void {
 function renderRecipient(doc: jsPDF, y: number, so: SalesOrderForPdf): number {
   const p = paletteFor('normal');
   const lineHeight = 5;
-  let cursorY = y + 2;
+  let cursorY = y + 3;  // tight gap from divider
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);

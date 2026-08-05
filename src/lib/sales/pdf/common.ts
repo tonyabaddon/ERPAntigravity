@@ -307,14 +307,17 @@ export function renderHeader(
   // For the Penawaran template (docNumber='' path), the caller draws a banner +
   // doc-info block ending at Y=47 (bannerY 15 + 17 + 3*5). Account for that so
   // the divider sits BELOW both left and right blocks aligned.
+  // Tight spacing above + below divider for compact professional look:
+  //   - 2mm gap before divider (was 4mm)
+  //   - 2mm gap after divider (was 5mm)
   const penawaranRightBottom = docNumber ? 0 : 15 + 17 + 4 * 5;  // Y=52 (row 4 + spacing)
   const stackBottom = Math.max(infoY, rightY, logoY + LOGO_SIZE_MM, penawaranRightBottom);
-  const dividerY = stackBottom + DIVIDER_GAP_MM;
+  const dividerY = stackBottom + 2;
   doc.setDrawColor(p.navy);
   doc.setLineWidth(DIVIDER_WEIGHT_MM);
   doc.line(MARGIN_MM, dividerY, PAGE_WIDTH_MM - MARGIN_MM, dividerY);
 
-  return dividerY + 5;
+  return dividerY + 2;
 }
 
 // ---------- Doc title ----------
@@ -721,8 +724,8 @@ export function renderPageHeader(doc: jsPDF, ctx: PageHeaderContext): number {
     if (value) doc.text(value, bannerX + 35, infoStartY + i * infoRowH);
   });
 
-  // Return Y of next content (whichever block is taller + spacing)
-  return Math.max(headerBottomY, infoStartY + infoRows.length * infoRowH) + 8;
+  // Return Y of next content (whichever block is taller + tight spacing)
+  return Math.max(headerBottomY, infoStartY + infoRows.length * infoRowH) + 3;
 }
 
 /**
